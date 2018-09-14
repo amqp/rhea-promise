@@ -15,4 +15,4 @@
 /**
  * Describes the default operation timeout in seconds. Value: `60`.
  */
-export const defaultOperationTimeoutInSeconds = 60;
+export const defaultPromiseTimeoutInSeconds = 60;

@@ -17,7 +17,6 @@ import * as log from "./log";
 import { Session } from "./session";
 import { Connection } from "./connection";
 import { ReceiverEvents } from "rhea";
-import { defaultOperationTimeoutInSeconds } from "./util/constants";
 import { Func } from "./util/utils";
 
 /**
@@ -26,7 +25,7 @@ import { Func } from "./util/utils";
  */
 export interface ReceiverOptions extends rhea.ReceiverOptions {
   /**
-   * @property {rhea.OnAmqpEvent} [onAccepted] The handler that can be provided for receiving the
+   * @property {rhea.OnAmqpEvent} [onMessage] The handler that can be provided for receiving the
    * "message" event when a message is received on the underling rhea receiver.
    */
   onMessage?: rhea.OnAmqpEvent;
@@ -209,7 +208,7 @@ export class Receiver {
 
         onClose = (context: rhea.EventContext) => {
           removeListeners();
-          process.nextTick(() => {
+          setImmediate(() => {
             log.receiver("[%s] Resolving the promise as the amqp receiver has been closed.",
               this.connection.id);
             resolve();
@@ -232,7 +231,7 @@ export class Receiver {
 
         this._receiver.once(ReceiverEvents.receiverClose, onClose);
         this._receiver.once(ReceiverEvents.receiverError, onError);
-        waitTimer = setTimeout(actionAfterTimeout, defaultOperationTimeoutInSeconds * 1000);
+        waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.promiseTimeoutInSeconds! * 1000);
         this._receiver.close();
       } else {
         resolve();

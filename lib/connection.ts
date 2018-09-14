@@ -18,7 +18,7 @@ import { Session } from "./session";
 import { Sender, SenderOptions } from "./sender";
 import { Receiver, ReceiverOptions } from "./receiver";
 import { ConnectionEvents, SessionEvents } from "rhea";
-import { defaultOperationTimeoutInSeconds } from "./util/constants";
+import { defaultPromiseTimeoutInSeconds } from "./util/constants";
 import { Func } from "./util/utils";
 
 /**
@@ -39,6 +39,17 @@ export interface ReceiverOptionsWithSession extends ReceiverOptions {
   session?: Session;
 }
 
+/**
+ * Describes the options that can be provided while creating an AMQP connection.
+ */
+export interface ConnectionOptions extends rhea.ConnectionOptions {
+  /**
+   * @property {number} [promiseTimeoutInSeconds] - The duration in which the promise should
+   * complete (resolve/reject). If it is not completed, then the Promise will be rejected after
+   * timeout occurs. Default: `60 seconds`.
+   */
+  promiseTimeoutInSeconds?: number;
+}
 /**
  * Provides a sender and a receiver link on the same session. It is useful while constructing a
  * request/response link.
@@ -67,10 +78,10 @@ export interface ReqResLink {
  */
 export class Connection {
   /**
-   * @property {rhea.ConnectionOptions} [options] Options that can be provided while creating the
+   * @property {ConnectionOptions} [options] Options that can be provided while creating the
    * connection.
    */
-  options?: rhea.ConnectionOptions;
+  options?: ConnectionOptions;
   /**
    * @property {rhea.Connection} _connection The connection object from rhea library.
    * @private
@@ -82,7 +93,11 @@ export class Connection {
    * @constructor
    * @param {rhea.Connection} _connection The connection object from rhea library.
    */
-  constructor(options?: rhea.ConnectionOptions) {
+  constructor(options?: ConnectionOptions) {
+    if (!options) options = {};
+    if (options.promiseTimeoutInSeconds == undefined) {
+      options.promiseTimeoutInSeconds = defaultPromiseTimeoutInSeconds;
+    }
     this.options = options;
     this._connection = rhea.create_connection(options);
   }
@@ -97,7 +112,6 @@ export class Connection {
 
   /**
    * Creates a new amqp connection.
-   * @param {ConnectionOptions} [options] Options to be provided for establishing an amqp connection.
    * @return {Promise<Connection>} Promise<Connection>
    * - **Resolves** the promise with the Connection object when rhea emits the "connection_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "connection_close" event while trying
@@ -120,7 +134,7 @@ export class Connection {
 
         onOpen = (context: rhea.EventContext) => {
           removeListeners();
-          process.nextTick(() => {
+          setImmediate(() => {
             log.connection("[%s] Resolving the promise with amqp connection.", this.id);
             resolve(this);
           });
@@ -144,7 +158,7 @@ export class Connection {
         this._connection.once(ConnectionEvents.connectionOpen, onOpen);
         this._connection.once(ConnectionEvents.connectionClose, onClose);
         this._connection.once(ConnectionEvents.disconnected, onClose);
-        waitTimer = setTimeout(actionAfterTimeout, defaultOperationTimeoutInSeconds * 1000);
+        waitTimer = setTimeout(actionAfterTimeout, this.options!.promiseTimeoutInSeconds! * 1000);
         this._connection.connect();
       } else {
         resolve(this);
@@ -175,7 +189,7 @@ export class Connection {
 
         onClose = (context: rhea.EventContext) => {
           removeListeners();
-          process.nextTick(() => {
+          setImmediate(() => {
             log.connection("[%s] Resolving the promise as the connection has been successfully closed.",
               this.id);
             resolve();
@@ -198,7 +212,7 @@ export class Connection {
 
         this._connection.once(ConnectionEvents.connectionClose, onClose);
         this._connection.once(ConnectionEvents.connectionError, onError);
-        waitTimer = setTimeout(actionAfterTimeout, defaultOperationTimeoutInSeconds * 1000);
+        waitTimer = setTimeout(actionAfterTimeout, this.options!.promiseTimeoutInSeconds! * 1000);
         this._connection.close();
       } else {
         resolve();
@@ -250,7 +264,7 @@ export class Connection {
 
       onOpen = (context: rhea.EventContext) => {
         removeListeners();
-        process.nextTick(() => {
+        setImmediate(() => {
           log.connection("[%s] Resolving the promise with amqp session.", this.id);
           resolve(session);
         });
@@ -273,7 +287,7 @@ export class Connection {
       rheaSession.once(SessionEvents.sessionOpen, onOpen);
       rheaSession.once(SessionEvents.sessionClose, onClose);
       log.connection("[%s] Calling amqp session.begin().", this.id);
-      waitTimer = setTimeout(actionAfterTimeout, defaultOperationTimeoutInSeconds * 1000);
+      waitTimer = setTimeout(actionAfterTimeout, this.options!.promiseTimeoutInSeconds! * 1000);
       rheaSession.begin();
     });
   }
@@ -322,8 +336,10 @@ export class Connection {
       throw new Error(`Please provide receiver options.`);
     }
     const session = providedSession || await this.createSession();
-    const sender = await session.createSender(senderOptions);
-    const receiver = await session.createReceiver(receiverOptions);
+    const [sender, receiver] = await Promise.all([
+      session.createSender(senderOptions),
+      session.createReceiver(receiverOptions)
+    ]);
     log.connection("[%s] Successfully created the sender and receiver links on the same session.", this.id);
     return {
       session: session,

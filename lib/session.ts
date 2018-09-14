@@ -18,7 +18,6 @@ import { Connection } from "./connection";
 import { Receiver, ReceiverOptions } from "./receiver";
 import { Sender, SenderOptions } from "./sender";
 import { SenderEvents, ReceiverEvents, SessionEvents } from "rhea";
-import { defaultOperationTimeoutInSeconds } from "./util/constants";
 import { Func } from "./util/utils";
 
 /**
@@ -112,7 +111,7 @@ export class Session {
 
         onClose = (context: rhea.EventContext) => {
           removeListeners();
-          process.nextTick(() => {
+          setImmediate(() => {
             log.session("[%s] Resolving the promise as the amqp session has been closed.",
               this.connection.id);
             resolve();
@@ -136,7 +135,7 @@ export class Session {
         this._session.once(SessionEvents.sessionClose, onClose);
         this._session.once(SessionEvents.sessionError, onError);
         log.session("[%s] Calling session.close()", this.connection.id);
-        waitTimer = setTimeout(actionAfterTimeout, defaultOperationTimeoutInSeconds * 1000);
+        waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.promiseTimeoutInSeconds! * 1000);
         this._session.close();
       } else {
         resolve();
@@ -154,15 +153,14 @@ export class Session {
    * to create an amqp receiver.
    */
   createReceiver(options?: ReceiverOptions): Promise<Receiver> {
-    if (options &&
-      ((options.onMessage && !options.onError) || (options.onError && !options.onMessage))) {
-      throw new Error("Both onMessage and onError handlers must be provided if one of " +
-        "them is provided.");
-    }
-
-    const handlersProvided = options && options.onMessage ? true : false;
     return new Promise((resolve, reject) => {
+      if (options &&
+        ((options.onMessage && !options.onError) || (options.onError && !options.onMessage))) {
+        reject(new Error("Both onMessage and onError handlers must be provided if one of " +
+          "them is provided."));
+      }
 
+      const handlersProvided = options && options.onMessage ? true : false;
       // Register session handlers for session_error and session_close if provided.
       if (options && options.onSessionError) {
         this._session.on(SessionEvents.sessionError, options.onSessionError);
@@ -194,7 +192,7 @@ export class Session {
 
       onOpen = (context: rhea.EventContext) => {
         removeListeners();
-        process.nextTick(() => {
+        setImmediate(() => {
           log.session("[%s] Resolving the promise with amqp receiver '%s'.",
             this.connection.id, rheaReceiver.name);
           resolve(receiver);
@@ -218,7 +216,7 @@ export class Session {
 
       rheaReceiver.once(ReceiverEvents.receiverOpen, onOpen);
       rheaReceiver.once(ReceiverEvents.receiverClose, onClose);
-      waitTimer = setTimeout(actionAfterTimeout, defaultOperationTimeoutInSeconds * 1000);
+      waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.promiseTimeoutInSeconds! * 1000);
     });
   }
 
@@ -276,7 +274,7 @@ export class Session {
 
       onSendable = (context: rhea.EventContext) => {
         removeListeners();
-        process.nextTick(() => {
+        setImmediate(() => {
           log.session("[%s] Resolving the promise with amqp sender '%s'.",
             this.connection.id, rheaSender.name);
           resolve(sender);
@@ -300,7 +298,7 @@ export class Session {
 
       rheaSender.once(SenderEvents.sendable, onSendable);
       rheaSender.once(SenderEvents.senderClose, onClose);
-      waitTimer = setTimeout(actionAfterTimeout, defaultOperationTimeoutInSeconds * 1000);
+      waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.promiseTimeoutInSeconds! * 1000);
     });
   }
 

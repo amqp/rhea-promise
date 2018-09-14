@@ -10,13 +10,14 @@ import {
   Connection, Sender, EventContext, Message, ConnectionOptions, Delivery, SenderOptions
 } from "rhea-promise";
 
-import * as dotenv from "dotenv";
+import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
 dotenv.config();
 
 const host = process.env.AMQP_HOST || "host";
 const username = process.env.AMQP_USERNAME || "username";
 const port = parseInt(process.env.AMQP_PORT || "5671");
 const senderAddress = process.env.SENDER_ADDRESS || "address";
+
 async function main(): Promise<void> {
   const connectionOptions: ConnectionOptions = {
     transport: "tls",
@@ -48,6 +49,8 @@ async function main(): Promise<void> {
       }
     }
   };
+
+  await connection.open();
   const sender: Sender = await connection.createSender(senderOptions);
   const message: Message = {
     body: "Hello World!!",
@@ -71,13 +74,14 @@ import {
   Connection, Receiver, EventContext, ConnectionOptions, ReceiverOptions, delay
 } from "rhea-promise";
 
-import * as dotenv from "dotenv";
+import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
 dotenv.config();
 
 const host = process.env.AMQP_HOST || "host";
 const username = process.env.AMQP_USERNAME || "username";
 const port = parseInt(process.env.AMQP_PORT || "5671");
 const receiverAddress = process.env.RECEIVER_ADDRESS || "address";
+
 async function main(): Promise<void> {
   const connectionOptions: ConnectionOptions = {
     transport: "tls",
@@ -112,6 +116,8 @@ async function main(): Promise<void> {
       }
     }
   };
+
+  await connection.open();
   const receiver: Receiver = await connection.createReceiver(receiverOptions);
   // sleeping for 2 mins to let the receiver receive messages and then closing it.
   await delay(120000);

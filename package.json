@@ -19,7 +19,6 @@
   "devDependencies": {
     "@types/debug": "^0.0.30",
     "@types/node": "^8.0.37",
-    "@types/uuid": "^3.4.3",
     "@types/dotenv": "^4.0.3",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",

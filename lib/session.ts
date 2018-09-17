@@ -111,7 +111,7 @@ export class Session {
 
         onClose = (context: rhea.EventContext) => {
           removeListeners();
-          setImmediate(() => {
+          setTimeout(() => {
             log.session("[%s] Resolving the promise as the amqp session has been closed.",
               this.connection.id);
             resolve();
@@ -135,7 +135,7 @@ export class Session {
         this._session.once(SessionEvents.sessionClose, onClose);
         this._session.once(SessionEvents.sessionError, onError);
         log.session("[%s] Calling session.close()", this.connection.id);
-        waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.promiseTimeoutInSeconds! * 1000);
+        waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._session.close();
       } else {
         resolve();
@@ -192,7 +192,7 @@ export class Session {
 
       onOpen = (context: rhea.EventContext) => {
         removeListeners();
-        setImmediate(() => {
+        setTimeout(() => {
           log.session("[%s] Resolving the promise with amqp receiver '%s'.",
             this.connection.id, rheaReceiver.name);
           resolve(receiver);
@@ -216,7 +216,7 @@ export class Session {
 
       rheaReceiver.once(ReceiverEvents.receiverOpen, onOpen);
       rheaReceiver.once(ReceiverEvents.receiverClose, onClose);
-      waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.promiseTimeoutInSeconds! * 1000);
+      waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
     });
   }
 
@@ -274,7 +274,7 @@ export class Session {
 
       onSendable = (context: rhea.EventContext) => {
         removeListeners();
-        setImmediate(() => {
+        setTimeout(() => {
           log.session("[%s] Resolving the promise with amqp sender '%s'.",
             this.connection.id, rheaSender.name);
           resolve(sender);
@@ -298,7 +298,7 @@ export class Session {
 
       rheaSender.once(SenderEvents.sendable, onSendable);
       rheaSender.once(SenderEvents.senderClose, onClose);
-      waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.promiseTimeoutInSeconds! * 1000);
+      waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
     });
   }
 

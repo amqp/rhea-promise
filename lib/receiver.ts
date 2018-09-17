@@ -208,7 +208,7 @@ export class Receiver {
 
         onClose = (context: rhea.EventContext) => {
           removeListeners();
-          setImmediate(() => {
+          setTimeout(() => {
             log.receiver("[%s] Resolving the promise as the amqp receiver has been closed.",
               this.connection.id);
             resolve();
@@ -231,7 +231,7 @@ export class Receiver {
 
         this._receiver.once(ReceiverEvents.receiverClose, onClose);
         this._receiver.once(ReceiverEvents.receiverError, onError);
-        waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.promiseTimeoutInSeconds! * 1000);
+        waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._receiver.close();
       } else {
         resolve();

@@ -78,6 +78,9 @@ export class Session extends EventEmitter {
 
   remove(): void {
     if (this._session) {
+      // Remove our listeners and listeners from rhea's session object.
+      this.removeAllListeners();
+      this._session.removeAllListeners();
       this._session.remove();
     }
   }

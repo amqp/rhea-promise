@@ -187,11 +187,14 @@ export abstract class Link extends EventEmitter {
   }
 
   /**
-   * Removes the sender and it's underlying session from the internal map.
+   * Removes the sender/receiver and it's underlying session from the internal map.
    * @returns {void} void
    */
   remove(): void {
     if (this._link) {
+      // Remove our listeners and listeners from rhea's link object.
+      this.removeAllListeners();
+      this._link.removeAllListeners();
       this._link.remove();
     }
     if (this._session) {

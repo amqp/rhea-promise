@@ -222,8 +222,8 @@ export abstract class Link extends EventEmitter {
 
         const removeListeners = () => {
           clearTimeout(waitTimer);
-          this.removeListener(errorEvent, onError);
-          this.removeListener(closeEvent, onClose);
+          this._link.removeListener(errorEvent, onError);
+          this._link.removeListener(closeEvent, onClose);
         };
 
         onClose = (context: EventContext) => {
@@ -249,8 +249,9 @@ export abstract class Link extends EventEmitter {
           reject(new Error(msg));
         };
 
-        this.once(closeEvent, onClose);
-        this.once(errorEvent, onError);
+        // listeners that we add for completing the operation are added directly to rhea's objects.
+        this._link.once(closeEvent, onClose);
+        this._link.once(errorEvent, onError);
         waitTimer = setTimeout(actionAfterTimeout,
           this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._link.close();

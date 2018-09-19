@@ -105,8 +105,8 @@ export class Session extends EventEmitter {
 
         const removeListeners = () => {
           clearTimeout(waitTimer);
-          this.removeListener(SessionEvents.sessionError, onError);
-          this.removeListener(SessionEvents.sessionClose, onClose);
+          this._session.removeListener(SessionEvents.sessionError, onError);
+          this._session.removeListener(SessionEvents.sessionClose, onClose);
         };
 
         onClose = (context: rhea.EventContext) => {
@@ -132,8 +132,9 @@ export class Session extends EventEmitter {
           reject(new Error(msg));
         };
 
-        this.once(SessionEvents.sessionClose, onClose);
-        this.once(SessionEvents.sessionError, onError);
+        // listeners that we add for completing the operation are added directly to rhea's objects.
+        this._session.once(SessionEvents.sessionClose, onClose);
+        this._session.once(SessionEvents.sessionError, onError);
         log.session("[%s] Calling session.close()", this.connection.id);
         waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._session.close();
@@ -150,7 +151,7 @@ export class Session extends EventEmitter {
    * @return {Promise<Receiver>} Promise<Receiver>
    * - **Resolves** the promise with the Receiver object when rhea emits the "receiver_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "receiver_close" event while trying
-   * to create an amqp receiver.
+   * to create an amqp receiver or the operation timeout occurs.
    */
   createReceiver(options?: ReceiverOptions): Promise<Receiver> {
     return new Promise((resolve, reject) => {
@@ -162,6 +163,8 @@ export class Session extends EventEmitter {
 
       const handlersProvided = options && options.onMessage ? true : false;
       // Register session handlers for session_error and session_close if provided.
+      // listeners provided by the user in the options object should be added
+      // to our (rhea-promise) object.
       if (options && options.onSessionError) {
         this.on(SessionEvents.sessionError, options.onSessionError);
       }
@@ -186,8 +189,8 @@ export class Session extends EventEmitter {
 
       const removeListeners = () => {
         clearTimeout(waitTimer);
-        receiver.removeListener(ReceiverEvents.receiverOpen, onOpen);
-        receiver.removeListener(ReceiverEvents.receiverClose, onClose);
+        rheaReceiver.removeListener(ReceiverEvents.receiverOpen, onOpen);
+        rheaReceiver.removeListener(ReceiverEvents.receiverClose, onClose);
       };
 
       onOpen = (context: rhea.EventContext) => {
@@ -214,8 +217,9 @@ export class Session extends EventEmitter {
         reject(new Error(msg));
       };
 
-      receiver.once(ReceiverEvents.receiverOpen, onOpen);
-      receiver.once(ReceiverEvents.receiverClose, onClose);
+      // listeners that we add for completing the operation are added directly to rhea's objects.
+      rheaReceiver.once(ReceiverEvents.receiverOpen, onOpen);
+      rheaReceiver.once(ReceiverEvents.receiverClose, onClose);
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
     });
   }
@@ -226,7 +230,7 @@ export class Session extends EventEmitter {
    * @return {Promise<Sender>} Promise<Sender>
    * - **Resolves** the promise with the Sender object when rhea emits the "sender_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "sender_close" event while trying
-   * to create an amqp sender.
+   * to create an amqp sender or the operation timeout occurs.
    */
   createSender(options?: SenderOptions): Promise<Sender> {
     return new Promise((resolve, reject) => {
@@ -245,6 +249,8 @@ export class Session extends EventEmitter {
       let onClose: Func<rhea.EventContext, void>;
       let waitTimer: any;
 
+      // listeners provided by the user in the options object should be added
+      // to our (rhea-promise) object.
       if (options) {
         if (options.onError) {
           sender.on(SenderEvents.senderError, options.onError);
@@ -268,8 +274,8 @@ export class Session extends EventEmitter {
 
       const removeListeners = () => {
         clearTimeout(waitTimer);
-        sender.removeListener(SenderEvents.senderOpen, onSendable);
-        sender.removeListener(SenderEvents.senderClose, onClose);
+        rheaSender.removeListener(SenderEvents.senderOpen, onSendable);
+        rheaSender.removeListener(SenderEvents.senderClose, onClose);
       };
 
       onSendable = (context: rhea.EventContext) => {
@@ -296,8 +302,9 @@ export class Session extends EventEmitter {
         reject(new Error(msg));
       };
 
-      sender.once(SenderEvents.sendable, onSendable);
-      sender.once(SenderEvents.senderClose, onClose);
+      // listeners that we add for completing the operation are added directly to rhea's objects.
+      rheaSender.once(SenderEvents.sendable, onSendable);
+      rheaSender.once(SenderEvents.senderClose, onClose);
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
     });
   }

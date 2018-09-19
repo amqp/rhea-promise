@@ -131,9 +131,9 @@ export class Connection extends EventEmitter {
 
         const removeListeners: Function = () => {
           clearTimeout(waitTimer);
-          this.removeListener(ConnectionEvents.connectionOpen, onOpen);
-          this.removeListener(ConnectionEvents.connectionClose, onClose);
-          this.removeListener(ConnectionEvents.disconnected, onClose);
+          this._connection.removeListener(ConnectionEvents.connectionOpen, onOpen);
+          this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
+          this._connection.removeListener(ConnectionEvents.disconnected, onClose);
         };
 
         onOpen = (context: EventContext) => {
@@ -159,9 +159,10 @@ export class Connection extends EventEmitter {
           reject(new Error(msg));
         };
 
-        this.once(ConnectionEvents.connectionOpen, onOpen);
-        this.once(ConnectionEvents.connectionClose, onClose);
-        this.once(ConnectionEvents.disconnected, onClose);
+        // listeners that we add for completing the operation are added directly to rhea's objects.
+        this._connection.once(ConnectionEvents.connectionOpen, onOpen);
+        this._connection.once(ConnectionEvents.connectionClose, onClose);
+        this._connection.once(ConnectionEvents.disconnected, onClose);
         waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
         log.connection("[%s] Trying to create a new amqp connection.", this.id);
         this._connection.connect();
@@ -188,8 +189,8 @@ export class Connection extends EventEmitter {
         let waitTimer: any;
         const removeListeners = () => {
           clearTimeout(waitTimer);
-          this.removeListener(ConnectionEvents.connectionError, onError);
-          this.removeListener(ConnectionEvents.connectionClose, onClose);
+          this._connection.removeListener(ConnectionEvents.connectionError, onError);
+          this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
         };
 
         onClose = (context: EventContext) => {
@@ -215,8 +216,9 @@ export class Connection extends EventEmitter {
           reject(new Error(msg));
         };
 
-        this.once(ConnectionEvents.connectionClose, onClose);
-        this.once(ConnectionEvents.connectionError, onError);
+        // listeners that we add for completing the operation are added directly to rhea's objects.
+        this._connection.once(ConnectionEvents.connectionClose, onClose);
+        this._connection.once(ConnectionEvents.connectionError, onError);
         waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
         this._connection.close();
       } else {
@@ -321,6 +323,7 @@ export class Connection extends EventEmitter {
         reject(new Error(msg));
       };
 
+      // listeners that we add for completing the operation are added directly to rhea's objects.
       rheaSession.once(SessionEvents.sessionOpen, onOpen);
       rheaSession.once(SessionEvents.sessionClose, onClose);
       log.connection("[%s] Calling amqp session.begin().", this.id);

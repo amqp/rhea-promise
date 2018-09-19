@@ -1,13 +1,16 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the Apache License. See License in the project root for license information.
 
 import {
-  Connection, Receiver, EventContext, ConnectionOptions, ReceiverOptions, delay
+  Connection, Receiver, EventContext, ConnectionOptions, ReceiverOptions, delay, ReceiverEvents
 } from "../lib";
 
 import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
 dotenv.config();
 
 const host = process.env.AMQP_HOST || "host";
-const username = process.env.AMQP_USERNAME || "username";
+const username = process.env.AMQP_USERNAME || "sharedAccessKeyName";
+const password = process.env.AMQP_PASSWORD || "sharedAccessKeyValue";
 const port = parseInt(process.env.AMQP_PORT || "5671");
 const receiverAddress = process.env.RECEIVER_ADDRESS || "address";
 
@@ -17,6 +20,7 @@ async function main(): Promise<void> {
     host: host,
     hostname: host,
     username: username,
+    password: password,
     port: port,
     reconnect: false
   };
@@ -24,23 +28,13 @@ async function main(): Promise<void> {
   const receiverName = "receiver-1";
   const receiverOptions: ReceiverOptions = {
     name: receiverName,
-    target: {
+    source: {
       address: receiverAddress
-    },
-    onMessage: (context: EventContext) => {
-      console.log("Received message: %O", context.message);
-    },
-    onError: (context: EventContext) => {
-      const receiverError = context.receiver && context.receiver.error;
-      if (receiverError) {
-        console.log("[%s] An error occurred for receiver '%s': %O.",
-          connection.id, receiverName, receiverError);
-      }
     },
     onSessionError: (context: EventContext) => {
       const sessionError = context.session && context.session.error;
       if (sessionError) {
-        console.log("[%s] An error occurred for session of receiver '%s': %O.",
+        console.log(">>>>> [%s] An error occurred for session of receiver '%s': %O.",
           connection.id, receiverName, sessionError);
       }
     }
@@ -48,6 +42,16 @@ async function main(): Promise<void> {
 
   await connection.open();
   const receiver: Receiver = await connection.createReceiver(receiverOptions);
+  receiver.on(ReceiverEvents.message, (context: EventContext) => {
+    console.log("Received message: %O", context.message);
+  });
+  receiver.on(ReceiverEvents.receiverError, (context: EventContext) => {
+    const receiverError = context.receiver && context.receiver.error;
+    if (receiverError) {
+      console.log(">>>>> [%s] An error occurred for receiver '%s': %O.",
+        connection.id, receiverName, receiverError);
+    }
+  });
   // sleeping for 2 mins to let the receiver receive messages and then closing it.
   await delay(120000);
   await receiver.close();

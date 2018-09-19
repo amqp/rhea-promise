@@ -54,6 +54,5 @@ obj/*
 typings/
 dist/
 output/
-client/examples/js/lib/
-processor/examples/js/lib/
+out/
 typedoc

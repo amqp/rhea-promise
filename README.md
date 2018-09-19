@@ -38,6 +38,29 @@ export DEBUG=rhea*,-rhea:raw,-rhea:message
       node your-test-script.js &> out.log
     ```
 
+## Notable differences between rhea and rhea-promise
+
+### Error propogation to the parent entity
+- In `AMQP`, for two peers to communicate successfully, different entities (Container, Connection, Session, Link) need to be created. There is a relationship between those entities.
+  - 1 Container can have 1..* Connections.
+  - 1 Connection can have 1..* Sessions. 
+  - 1 Session can have 1..* Links.
+  - A Link can have the role of Receiver or Sender.
+- Each entity (connection, session, link) maintains its own state to let other entities know about what it is doing. Thus,
+  - if the connection goes down then, everything on the connection - sessions, links are down.
+  - if a session goes down then, all the the links on that session are down.
+- When an entity goes down rhea emits \*_error and \*_close events, where * can be "sender", "receiver", "session", "connection". If event listeners for the aforementioned events are not added at the appropriate level, then `rhea` propogates those events to its parent entity. 
+If they are not handled at the `Container` level (uber parent), then they are transformed into an `error` event. This would cause your 
+application to crash if there is no listener added for the `error` event.
+- In `rhea-promise`, the library creates, equivalent objects `Connection, Session, Sender, Receiver` and wraps objects from `rhea` within them.
+It adds event listeners to all the possible events that can occur at any level and re-emits those events with the same arguments as one would 
+expect from rhea. This makes it easy for consumers of `rhea-promise` to use the **EventEmitter** pattern. Users can efficiently use different 
+event emitter methods like `.once()`, `.on()`, `.prependListeners()`, etc. Since `rhea-promise` add those event listeners on `rhea` objects, 
+the errors will never be propogated to the parent entity. This can be good as well as bad depending on what you do.
+   - **Good** - `*_error` events and `*_close` events emitted on an entity will not be propogated to it's parent. Thus ensuring that errors are handled at the right level.
+   - **Bad** - If you do not add listeners for `*_error` and `*_close` events at the right level, then you will never know why an entity shutdown.
+
+We believe our design enforces good practices to be followed while using the event emitter pattern.
 
 ## Examples
 
@@ -174,45 +197,6 @@ async function main(): Promise<void> {
 
 main().catch((err) => console.log(err));
 ```
-
-## Design 
-The library provides an easy to use promisfied API for creating connection, session, sender and 
-receiver links. One can provide event handlers as optional properties while creating entities or 
-can use the standard event emitter pattern to add listeners to the created entities.
-
-For implementing the Event Emitter pattern, we considered different approaches like:
-**extending rhea's objects** (Connection, Session, Sender, Receiver). However, this has an overhead 
-of ensuring that there are no naming conflicts in the method names. Selecting different names for 
-operations like `open` and `close` would add more confusion.
-
-Hence we settled with, **wrapping rhea's objects** under our own equivalent objects. To ensure that 
-user's can efficiently use different event emitter methods like `.once()`, `.on()`,
-`.prependListeners()`, etc. we decided to add listeners to rhea's objects 
-(connection, session, sender, receiver) for all the possible events that those objects can 
-emit. From those listeners, equivalent `rhea-promise` objects emit the same events with same 
-arguments as one would expect from an event emitted by one of the above mentioned objects from 
-`rhea`. User's can add/remove listeners to `rhea-promise` objects. Whenever an event is emitted 
-from an object from `rhea`, it's equivalent counterpart in `rhea-romise` would emit the same event.
-
-`rhea` deals little differently with *_error and *_close events. If an event listener is **not added** 
-to a link (sender, receiver) then it will emit the `sender_error, sender_close, receiver_error, receiver_close` 
-events to the `session` object that the `link` belongs to. If there are no event listeners 
-for thoe events at the `session` level then, it emits those events to the `connection` object. Still 
-if it could not find listeners for those events then the events are bubbled up to the `container` 
-object and eventually those events are transformed into `error` events, if there were no event 
-listeners for those events at the container level. 
-
-It does the same thing for `session_error, session_close` events. Events are bubbled up to the 
-`connection`  and `container` objects and eventually emitted as `error` events if no listeners 
-were found for those events at the respective levels.
-
-This behavior of `rhea` will not be reciprocated by `rhea-promise` since, it adds event listeners 
-to each of the equivalent rhea objects. Thus *_error and *_close events will never bubble up. 
-If you do not add event listeners for those objects while using `rhea-promise` then you will not 
-know why an `error` or a `close` event occurred. So please make sure that right kind of event 
-listeners are added to the right objects. This enforces good practices to be followed while using 
-the event emitter pattern.
-
 
 ## Building the library
 - Clone the repo

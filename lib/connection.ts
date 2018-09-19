@@ -1,18 +1,20 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the Apache License. See License in the project root for license information.
+
+import { EventEmitter } from "events";
+import { PeerCertificate } from "tls";
+import { Socket } from "net";
 import * as log from "./log";
 import { Session } from "./session";
 import { Sender, SenderOptions } from "./sender";
 import { Receiver, ReceiverOptions } from "./receiver";
+import { Container } from "./container";
+import { defaultOperationTimeoutInSeconds } from "./util/constants";
+import { Func } from "./util/utils";
 import {
   ConnectionEvents, SessionEvents, SenderEvents, ReceiverEvents, OnAmqpEvent, create_connection,
   ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, EventContext, ConnectionError
 } from "rhea";
-import { defaultOperationTimeoutInSeconds } from "./util/constants";
-import { Func } from "./util/utils";
-import { EventEmitter } from "events";
-import { PeerCertificate } from "tls";
-import { Socket } from "net";
 
 /**
  * Describes the options that can be provided while creating an AMQP sender. One can also provide a
@@ -85,6 +87,10 @@ export class Connection extends EventEmitter {
    */
   options?: ConnectionOptions;
   /**
+   * @property {Container} container The underlying Container instance on which the connection exists.
+   */
+  readonly container: Container;
+  /**
    * @property {RheaConnection} _connection The connection object from rhea library.
    * @private
    */
@@ -103,6 +109,7 @@ export class Connection extends EventEmitter {
     super();
     this.options = options;
     this._connection = create_connection(options);
+    this.container = Container.copyFromContainerInstance(this._connection.container);
     this._initializeEventListeners();
   }
 

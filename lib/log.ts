@@ -4,6 +4,11 @@
 import * as debugModule from "debug";
 /**
  * @ignore
+ * log statements for container
+ */
+export const container = debugModule("rhea-promise:container");
+/**
+ * @ignore
  * log statements for connection
  */
 export const connection = debugModule("rhea-promise:connection");

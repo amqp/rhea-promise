@@ -3,13 +3,16 @@
 
 export {
   Delivery, Message, OnAmqpEvent, MessageProperties, MessageHeader, EventContext,
-  ConnectionOptions, AmqpError, Dictionary, types, message, filter, Filter, MessageUtil,
+  ConnectionOptions as ConnectionOptionsBase, AmqpError, Dictionary, types, message, filter, Filter, MessageUtil,
   uuid_to_string, generate_uuid, string_to_uuid, LinkError, ProtocolError, LinkOptions,
   DeliveryAnnotations, MessageAnnotations, ReceiverEvents, SenderEvents, ConnectionEvents,
-  SessionEvents
+  SessionEvents, ContainerOptions as ContainerOptionsBase, TerminusOptions, Types, Sasl,
 } from "rhea";
 
-export { Connection, ReqResLink } from "./connection";
+export { Container, ContainerOptions } from "./container";
+export {
+  Connection, ReqResLink, ConnectionOptions, ReceiverOptionsWithSession, SenderOptionsWithSession
+} from "./connection";
 export { Session } from "./session";
 export { Receiver, ReceiverOptions } from "./receiver";
 export { Sender, SenderOptions } from "./sender";

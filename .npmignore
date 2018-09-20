@@ -45,3 +45,4 @@ typedoc/
 # coverage #
 .nyc_output
 coverage
+out/

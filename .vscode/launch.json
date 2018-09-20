@@ -7,8 +7,12 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
-            "program": "${file}"
+            "name": "examples",
+            "program": "${workspaceFolder}/examples/send.ts",
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ],
+            "envFile": "${workspaceFolder}/.env" // You can take a look at the sample.env file for supported environment variables.
         }
     ]
 }

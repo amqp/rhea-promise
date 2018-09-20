@@ -1,3 +1,5 @@
+//  Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the Apache License. See License in the project root for license information.
 
 import {
   Connection, Sender, EventContext, Message, ConnectionOptions, Delivery, SenderOptions
@@ -7,7 +9,8 @@ import * as dotenv from "dotenv"; // Optional for loading environment configurat
 dotenv.config();
 
 const host = process.env.AMQP_HOST || "host";
-const username = process.env.AMQP_USERNAME || "username";
+const username = process.env.AMQP_USERNAME || "sharedAccessKeyName";
+const password = process.env.AMQP_PASSWORD || "sharedAccessKeyValue";
 const port = parseInt(process.env.AMQP_PORT || "5671");
 const senderAddress = process.env.SENDER_ADDRESS || "address";
 
@@ -17,6 +20,7 @@ async function main(): Promise<void> {
     host: host,
     hostname: host,
     username: username,
+    password: password,
     port: port,
     reconnect: false
   };
@@ -30,14 +34,14 @@ async function main(): Promise<void> {
     onError: (context: EventContext) => {
       const senderError = context.sender && context.sender.error;
       if (senderError) {
-        console.log("[%s] An error occurred for sender '%s': %O.",
+        console.log(">>>>> [%s] An error occurred for sender '%s': %O.",
           connection.id, senderName, senderError);
       }
     },
     onSessionError: (context: EventContext) => {
       const sessionError = context.session && context.session.error;
       if (sessionError) {
-        console.log("[%s] An error occurred for session of sender '%s': %O.",
+        console.log(">>>>> [%s] An error occurred for session of sender '%s': %O.",
           connection.id, senderName, sessionError);
       }
     }
@@ -51,7 +55,7 @@ async function main(): Promise<void> {
   };
 
   const delivery: Delivery = await sender.send(message);
-  console.log(delivery);
+  console.log(">>>>>[%s] Delivery id: ", connection.id, delivery.id);
 
   await sender.close();
   await connection.close();

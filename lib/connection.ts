@@ -1,25 +1,21 @@
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the Apache License. See License in the project root for license information.
 
-import * as rhea from "rhea";
+import { EventEmitter } from "events";
+import { PeerCertificate } from "tls";
+import { Socket } from "net";
 import * as log from "./log";
 import { Session } from "./session";
 import { Sender, SenderOptions } from "./sender";
 import { Receiver, ReceiverOptions } from "./receiver";
-import { ConnectionEvents, SessionEvents } from "rhea";
+import { Container } from "./container";
 import { defaultOperationTimeoutInSeconds } from "./util/constants";
 import { Func } from "./util/utils";
+import {
+  ConnectionEvents, SessionEvents, SenderEvents, ReceiverEvents, OnAmqpEvent, create_connection,
+  ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, EventContext,
+  ConnectionError, Dictionary, AmqpError
+} from "rhea";
 
 /**
  * Describes the options that can be provided while creating an AMQP sender. One can also provide a
@@ -41,8 +37,9 @@ export interface ReceiverOptionsWithSession extends ReceiverOptions {
 
 /**
  * Describes the options that can be provided while creating an AMQP connection.
+ * @interface ConnectionOptions
  */
-export interface ConnectionOptions extends rhea.ConnectionOptions {
+export interface ConnectionOptions extends RheaConnectionOptions {
   /**
    * @property {number} [operationTimeoutInSeconds] - The duration in which the promise should
    * complete (resolve/reject). If it is not completed, then the Promise will be rejected after
@@ -73,33 +70,48 @@ export interface ReqResLink {
 }
 
 /**
+ * Describes the event listeners that can be added to the Connection.
+ * @interface Connection
+ */
+export declare interface Connection {
+  on(event: ConnectionEvents, listener: OnAmqpEvent): this;
+}
+
+/**
  * Descibes the AQMP Connection.
  * @class Connection
  */
-export class Connection {
+export class Connection extends EventEmitter {
   /**
    * @property {ConnectionOptions} [options] Options that can be provided while creating the
    * connection.
    */
   options?: ConnectionOptions;
   /**
-   * @property {rhea.Connection} _connection The connection object from rhea library.
+   * @property {Container} container The underlying Container instance on which the connection exists.
+   */
+  readonly container: Container;
+  /**
+   * @property {RheaConnection} _connection The connection object from rhea library.
    * @private
    */
-  private _connection: rhea.Connection;
+  private _connection: RheaConnection;
 
   /**
    * Creates an instance of the Connection object.
    * @constructor
-   * @param {rhea.Connection} _connection The connection object from rhea library.
+   * @param {Connection} _connection The connection object from rhea library.
    */
   constructor(options?: ConnectionOptions) {
     if (!options) options = {};
     if (options.operationTimeoutInSeconds == undefined) {
       options.operationTimeoutInSeconds = defaultOperationTimeoutInSeconds;
     }
+    super();
     this.options = options;
-    this._connection = rhea.create_connection(options);
+    this._connection = create_connection(options);
+    this.container = Container.copyFromContainerInstance(this._connection.container);
+    this._initializeEventListeners();
   }
 
   /**
@@ -111,18 +123,66 @@ export class Connection {
   }
 
   /**
+   * @property {Dictionary<any> | undefined} [properties] Provides the connection properties.
+   * @readonly
+   */
+  get properties(): Dictionary<any> | undefined {
+    return this._connection.properties;
+  }
+
+  /**
+   * @property {number | undefined} [maxFrameSize] Provides the max frame size.
+   * @readonly
+   */
+  get maxFrameSize(): number | undefined {
+    return this._connection.max_frame_size;
+  }
+
+  /**
+   * @property {number | undefined} [idleTimeout] Provides the idle timeout for the connection.
+   * @readonly
+   */
+  get idleTimeout(): number | undefined {
+    return this._connection.idle_time_out;
+  }
+
+  /**
+   * @property {number | undefined} [channelMax] Provides the maximum number of channels supported.
+   * @readonly
+   */
+  get channelMax(): number | undefined {
+    return this._connection.channel_max;
+  }
+
+  /**
+   * @property {AmqpError | Error | undefined} [error] Provides the last error that occurred on the
+   * connection.
+   */
+  get error(): AmqpError | Error | undefined {
+    return this._connection.error;
+  }
+
+  /**
+   * Removes the provided session from the internal map.
+   * @param {Session} session The session to be removed.
+   */
+  removeSession(session: Session): void {
+    return session.remove();
+  }
+
+  /**
    * Creates a new amqp connection.
    * @return {Promise<Connection>} Promise<Connection>
    * - **Resolves** the promise with the Connection object when rhea emits the "connection_open" event.
-   * - **Rejects** the promise with an AmqpError when rhea emits the "connection_close" event while trying
-   * to establish an amqp connection.
+   * - **Rejects** the promise with an AmqpError when rhea emits the "connection_close" event
+   * while trying to establish an amqp connection.
    */
   open(): Promise<Connection> {
     return new Promise((resolve, reject) => {
       if (!this.isOpen()) {
 
-        let onOpen: Func<rhea.EventContext, void>;
-        let onClose: Func<rhea.EventContext, void>;
+        let onOpen: Func<EventContext, void>;
+        let onClose: Func<EventContext, void>;
         let waitTimer: any;
 
         const removeListeners: Function = () => {
@@ -132,7 +192,7 @@ export class Connection {
           this._connection.removeListener(ConnectionEvents.disconnected, onClose);
         };
 
-        onOpen = (context: rhea.EventContext) => {
+        onOpen = (context: EventContext) => {
           removeListeners();
           setTimeout(() => {
             log.connection("[%s] Resolving the promise with amqp connection.", this.id);
@@ -140,7 +200,7 @@ export class Connection {
           });
         };
 
-        onClose = (context: rhea.EventContext) => {
+        onClose = (context: EventContext) => {
           removeListeners();
           const err = context.error || context.connection.error;
           log.error("[%s] Error occurred while establishing amqp connection: %O",
@@ -155,10 +215,12 @@ export class Connection {
           reject(new Error(msg));
         };
 
+        // listeners that we add for completing the operation are added directly to rhea's objects.
         this._connection.once(ConnectionEvents.connectionOpen, onOpen);
         this._connection.once(ConnectionEvents.connectionClose, onClose);
         this._connection.once(ConnectionEvents.disconnected, onClose);
         waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
+        log.connection("[%s] Trying to create a new amqp connection.", this.id);
         this._connection.connect();
       } else {
         resolve(this);
@@ -178,8 +240,8 @@ export class Connection {
     return new Promise<void>((resolve, reject) => {
       log.error("[%s] The connection is open ? -> %s", this.id, this.isOpen());
       if (this.isOpen()) {
-        let onClose: Func<rhea.EventContext, void>;
-        let onError: Func<rhea.EventContext, void>;
+        let onClose: Func<EventContext, void>;
+        let onError: Func<EventContext, void>;
         let waitTimer: any;
         const removeListeners = () => {
           clearTimeout(waitTimer);
@@ -187,7 +249,7 @@ export class Connection {
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
         };
 
-        onClose = (context: rhea.EventContext) => {
+        onClose = (context: EventContext) => {
           removeListeners();
           setTimeout(() => {
             log.connection("[%s] Resolving the promise as the connection has been successfully closed.",
@@ -196,7 +258,7 @@ export class Connection {
           });
         };
 
-        onError = (context: rhea.EventContext) => {
+        onError = (context: EventContext) => {
           removeListeners();
           log.error("[%s] Error occurred while closing amqp connection: %O.",
             this.id, context.connection.error);
@@ -210,6 +272,7 @@ export class Connection {
           reject(new Error(msg));
         };
 
+        // listeners that we add for completing the operation are added directly to rhea's objects.
         this._connection.once(ConnectionEvents.connectionClose, onClose);
         this._connection.once(ConnectionEvents.connectionError, onError);
         waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
@@ -233,6 +296,38 @@ export class Connection {
   }
 
   /**
+   * Determines whether the remote end of the connection is open.
+   * @returns {boolean} result `true` - is open; `false` otherwise.
+   */
+  isRemoteOpen(): boolean {
+    return this._connection.is_remote_open();
+  }
+
+  /**
+   * Gets the connection error if present.
+   * @returns {ConnectionError | undefined} ConnectionError | undefined
+   */
+  getError(): ConnectionError | undefined {
+    return this._connection.get_error();
+  }
+
+  /**
+   * Gets the peer certificate if present.
+   * @returns {PeerCertificate | undefined} PeerCertificate | undefined
+   */
+  getPeerCertificate(): PeerCertificate | undefined {
+    return this._connection.get_peer_certificate();
+  }
+
+  /**
+   * Gets the tls socket if present.
+   * @returns {Socket | undefined} Socket | undefined
+   */
+  getTlsSocket(): Socket | undefined {
+    return this._connection.get_tls_socket();
+  }
+
+  /**
    * Determines whether the close from the peer is a response to a locally initiated close request
    * for the connection.
    * @returns {boolean} `true` if close was locally initiated, `false` otherwise.
@@ -252,8 +347,8 @@ export class Connection {
     return new Promise((resolve, reject) => {
       const rheaSession = this._connection.create_session();
       const session = new Session(this, rheaSession);
-      let onOpen: Func<rhea.EventContext, void>;
-      let onClose: Func<rhea.EventContext, void>;
+      let onOpen: Func<EventContext, void>;
+      let onClose: Func<EventContext, void>;
       let waitTimer: any;
 
       const removeListeners = () => {
@@ -262,7 +357,7 @@ export class Connection {
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
       };
 
-      onOpen = (context: rhea.EventContext) => {
+      onOpen = (context: EventContext) => {
         removeListeners();
         setTimeout(() => {
           log.connection("[%s] Resolving the promise with amqp session.", this.id);
@@ -270,7 +365,7 @@ export class Connection {
         });
       };
 
-      onClose = (context: rhea.EventContext) => {
+      onClose = (context: EventContext) => {
         removeListeners();
         log.error("[%s] Error occurred while establishing a session over amqp connection: %O.",
           this.id, context.session!.error);
@@ -284,6 +379,7 @@ export class Connection {
         reject(new Error(msg));
       };
 
+      // listeners that we add for completing the operation are added directly to rhea's objects.
       rheaSession.once(SessionEvents.sessionOpen, onOpen);
       rheaSession.once(SessionEvents.sessionClose, onClose);
       log.connection("[%s] Calling amqp session.begin().", this.id);
@@ -349,23 +445,33 @@ export class Connection {
   }
 
   /**
-   * Registers the given handler for the specified event.
-   * @param {rhea.ConnectionEvents} event The event for which the handler needs to be registered.
-   * @param {rhea.OnAmqpEvent} handler The handler function that needs to be executed when the event
-   * occurs.
-   * @returns {void} void.
+   * Adds event listeners for the possible events that can occur on the connection object and
+   * re-emits the same event back with the received arguments from rhea's event emitter.
+   * @private
+   * @returns {void} void
    */
-  registerHandler(event: ConnectionEvents, handler: rhea.OnAmqpEvent): void {
-    this._connection.on(event, handler);
-  }
+  private _initializeEventListeners(): void {
+    for (const eventName in ConnectionEvents) {
+      this._connection.on(ConnectionEvents[eventName],
+        (...args) => this.emit(ConnectionEvents[eventName], ...args));
+    }
 
-  /**
-   * Removes the given handler for the specified event.
-   * @param {rhea.ConnectionEvents} event The event for which the handler needs to be removed.
-   * @param {rhea.OnAmqpEvent} handler The handler function that needs to be removed.
-   * @returns {void} void.
-   */
-  removeHandler(event: ConnectionEvents, handler: rhea.OnAmqpEvent): void {
-    this._connection.removeListener(event, handler);
+    // Add event handlers for *_error and *_close events that can be propogated to the connection
+    // object, if they are not handled at their level. * denotes - Sender, Receiver, Session
+    // Sender
+    this._connection.on(SenderEvents.senderError,
+      (...args) => this.emit(SenderEvents.senderError, ...args));
+    this._connection.on(SenderEvents.senderClose,
+      (...args) => this.emit(SenderEvents.senderClose, ...args));
+    // Receiver
+    this._connection.on(ReceiverEvents.receiverError,
+      (...args) => this.emit(ReceiverEvents.receiverError, ...args));
+    this._connection.on(ReceiverEvents.receiverClose,
+      (...args) => this.emit(ReceiverEvents.receiverClose, ...args));
+    // Session
+    this._connection.on(SessionEvents.sessionError,
+      (...args) => this.emit(SessionEvents.sessionError, ...args));
+    this._connection.on(SessionEvents.sessionClose,
+      (...args) => this.emit(SessionEvents.sessionClose, ...args));
   }
 }

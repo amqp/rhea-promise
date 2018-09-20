@@ -3,7 +3,7 @@
 A Promisified layer over rhea AMQP client.
 
 ## Pre-requisite ##
-- **Node.js version: 8.x or higher.** We would encourage you to install the latest available LTS version at any given time from https://nodejs.org. Please **do not** use older LTS versions of node.js.
+- **Node.js version: 6.x or higher.** We would encourage you to install the latest available LTS version at any given time from https://nodejs.org. Please **do not** use older LTS versions of node.js.
 
 ## Installation ##
 ```bash

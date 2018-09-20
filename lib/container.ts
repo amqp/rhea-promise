@@ -2,7 +2,8 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import {
-  Container as RheaContainer, ContainerOptions as ContainerOptionsBase, create_container, Filter, Types, MessageUtil, Sasl
+  Container as RheaContainer, ContainerOptions as ContainerOptionsBase, create_container,
+  Filter, Types, MessageUtil, Sasl
 } from "rhea";
 import { EventEmitter } from "events";
 import { ConnectionOptions, Connection } from './connection';

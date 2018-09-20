@@ -13,7 +13,8 @@ import { defaultOperationTimeoutInSeconds } from "./util/constants";
 import { Func } from "./util/utils";
 import {
   ConnectionEvents, SessionEvents, SenderEvents, ReceiverEvents, OnAmqpEvent, create_connection,
-  ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, EventContext, ConnectionError
+  ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, EventContext,
+  ConnectionError, Dictionary, AmqpError
 } from "rhea";
 
 /**
@@ -122,11 +123,59 @@ export class Connection extends EventEmitter {
   }
 
   /**
+   * @property {Dictionary<any> | undefined} [properties] Provides the connection properties.
+   * @readonly
+   */
+  get properties(): Dictionary<any> | undefined {
+    return this._connection.properties;
+  }
+
+  /**
+   * @property {number | undefined} [maxFrameSize] Provides the max frame size.
+   * @readonly
+   */
+  get maxFrameSize(): number | undefined {
+    return this._connection.max_frame_size;
+  }
+
+  /**
+   * @property {number | undefined} [idleTimeout] Provides the idle timeout for the connection.
+   * @readonly
+   */
+  get idleTimeout(): number | undefined {
+    return this._connection.idle_time_out;
+  }
+
+  /**
+   * @property {number | undefined} [channelMax] Provides the maximum number of channels supported.
+   * @readonly
+   */
+  get channelMax(): number | undefined {
+    return this._connection.channel_max;
+  }
+
+  /**
+   * @property {AmqpError | Error | undefined} [error] Provides the last error that occurred on the
+   * connection.
+   */
+  get error(): AmqpError | Error | undefined {
+    return this._connection.error;
+  }
+
+  /**
+   * Removes the provided session from the internal map.
+   * @param {Session} session The session to be removed.
+   */
+  removeSession(session: Session): void {
+    return session.remove();
+  }
+
+  /**
    * Creates a new amqp connection.
    * @return {Promise<Connection>} Promise<Connection>
    * - **Resolves** the promise with the Connection object when rhea emits the "connection_open" event.
-   * - **Rejects** the promise with an AmqpError when rhea emits the "connection_close" event while trying
-   * to establish an amqp connection.
+   * - **Rejects** the promise with an AmqpError when rhea emits the "connection_close" event
+   * while trying to establish an amqp connection.
    */
   open(): Promise<Connection> {
     return new Promise((resolve, reject) => {

@@ -1,6 +1,6 @@
 {
   "name": "rhea-promise",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Promisified layer over rhea AMQP client",
   "license": "Apache-2.0",
   "main": "./dist/lib/index.js",
@@ -32,12 +32,12 @@
     "test": "npm run build",
     "prepare": "npm run build"
   },
-  "homepage": "https://github.com/amqp/rhea",
+  "homepage": "https://github.com/amqp/rhea-promise",
   "repository": {
     "type": "git",
-    "url": "https://github.com/amqp/rhea.git"
+    "url": "https://github.com/amqp/rhea-promise.git"
   },
   "bugs": {
-    "url": "http://github.com/amqp/rhea/issues"
+    "url": "http://github.com/amqp/rhea-promise/issues"
   }
 }

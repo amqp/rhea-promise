@@ -2,7 +2,7 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 export {
-  Delivery, Message, MessageProperties, MessageHeader,
+  Delivery, Message, MessageProperties, MessageHeader, EventContext as RheaEventContext,
   ConnectionOptions as ConnectionOptionsBase, AmqpError, Dictionary, types, message, filter, Filter,
   uuid_to_string, generate_uuid, string_to_uuid, LinkError, ProtocolError, LinkOptions,
   DeliveryAnnotations, MessageAnnotations, ReceiverEvents, SenderEvents, ConnectionEvents,

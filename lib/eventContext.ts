@@ -72,6 +72,12 @@ export interface EventContext {
    * is used in conjunction with "disconnected" event.
    */
   reconnecting?: boolean;
+  /**
+   * @property {RheaEventContext} _context The EventContext emitted by objects from rhea. This
+   * can be used as a fallback mechanism when the translated EventContext provided by this library
+   * has any issues.
+   */
+  _context: RheaEventContext;
 }
 
 export module EventContext {
@@ -82,16 +88,14 @@ export module EventContext {
    */
   export function translate(rheaContext: RheaEventContext, emitter: Link | Session | Connection): EventContext {
     // initialize the result
-    const result: EventContext = {} as any;
-
-    // clone/copy
-    for (const prop of Object.keys(rheaContext)) {
-      (result as any)[prop] = (rheaContext as any)[prop];
-    }
+    const result: EventContext = {
+      _context: rheaContext,
+      ...rheaContext
+    } as any;
 
     const connection: Connection = emitter instanceof Connection
       ? emitter
-      : (emitter as Link).connection; // both session and link have the connection property.
+      : (emitter as Link | Session).connection;
 
     // set rhea-promise connection and container
     result.connection = connection;

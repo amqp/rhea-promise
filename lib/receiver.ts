@@ -2,12 +2,10 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import * as rhea from "rhea";
-
 import { Session } from "./session";
-
 import { ReceiverEvents, Receiver as RheaReceiver } from "rhea";
-
 import { Link, LinkType } from "./link";
+import { OnAmqpEvent } from "./eventContext";
 
 /**
  * Descibes the options that can be provided while creating an AMQP sender.
@@ -15,30 +13,30 @@ import { Link, LinkType } from "./link";
  */
 export interface ReceiverOptions extends rhea.ReceiverOptions {
   /**
-   * @property {rhea.OnAmqpEvent} [onMessage] The handler that can be provided for receiving the
+   * @property {OnAmqpEvent} [onMessage] The handler that can be provided for receiving the
    * "message" event when a message is received on the underling rhea receiver.
    */
-  onMessage?: rhea.OnAmqpEvent;
+  onMessage?: OnAmqpEvent;
   /**
-   * @property {rhea.OnAmqpEvent} [onError] The handler that can be provided for receiving any
+   * @property {OnAmqpEvent} [onError] The handler that can be provided for receiving any
    * errors that occur on the "receiver_error" event on the underlying rhea receiver.
    */
-  onError?: rhea.OnAmqpEvent;
+  onError?: OnAmqpEvent;
   /**
-   * @property {rhea.OnAmqpEvent} [onClose] The handler that can be provided for receiving the
+   * @property {OnAmqpEvent} [onClose] The handler that can be provided for receiving the
    * "receiver_close" event on the underlying rhea receiver.
    */
-  onClose?: rhea.OnAmqpEvent;
+  onClose?: OnAmqpEvent;
   /**
-   * @property {rhea.OnAmqpEvent} [onSessionError] The handler that can be provided for receiving
+   * @property {OnAmqpEvent} [onSessionError] The handler that can be provided for receiving
    * the "session_error" event that occurs on the underlying rhea session.
    */
-  onSessionError?: rhea.OnAmqpEvent;
+  onSessionError?: OnAmqpEvent;
   /**
-   * @property {rhea.OnAmqpEvent} [onSessionClose] The handler that can be provided for receiving the
+   * @property {OnAmqpEvent} [onSessionClose] The handler that can be provided for receiving the
    * "session_close" event that occurs on the underlying rhea session.
    */
-  onSessionClose?: rhea.OnAmqpEvent;
+  onSessionClose?: OnAmqpEvent;
 }
 
 /**
@@ -46,7 +44,7 @@ export interface ReceiverOptions extends rhea.ReceiverOptions {
  * @interface Receiver
  */
 export declare interface Receiver {
-  on(event: ReceiverEvents, listener: rhea.OnAmqpEvent): this;
+  on(event: ReceiverEvents, listener: OnAmqpEvent): this;
 }
 
 /**

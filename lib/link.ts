@@ -2,11 +2,15 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import * as log from "./log";
-import { link, LinkOptions, AmqpError, Dictionary, Source, TerminusOptions, EventContext, SenderEvents, ReceiverEvents } from "rhea";
+import {
+  link, LinkOptions, AmqpError, Dictionary, Source, TerminusOptions, SenderEvents, ReceiverEvents,
+  EventContext as RheaEventContext
+} from "rhea";
 import { EventEmitter } from "events";
 import { Session } from "./session";
 import { Connection } from "./connection";
 import { Func } from './util/utils';
+import { EventContext } from "./eventContext";
 
 export enum LinkType {
   sender = "sender",
@@ -219,8 +223,8 @@ export abstract class Link extends EventEmitter {
         const closeEvent = this.type === LinkType.sender
           ? SenderEvents.senderClose
           : ReceiverEvents.receiverClose;
-        let onError: Func<EventContext, void>;
-        let onClose: Func<EventContext, void>;
+        let onError: Func<RheaEventContext, void>;
+        let onClose: Func<RheaEventContext, void>;
         let waitTimer: any;
 
         const removeListeners = () => {
@@ -229,7 +233,7 @@ export abstract class Link extends EventEmitter {
           this._link.removeListener(closeEvent, onClose);
         };
 
-        onClose = (context: EventContext) => {
+        onClose = (context: RheaEventContext) => {
           removeListeners();
           setTimeout(() => {
             log[this.type]("[%s] Resolving the promise as the amqp %s has been closed.",
@@ -238,7 +242,7 @@ export abstract class Link extends EventEmitter {
           });
         };
 
-        onError = (context: EventContext) => {
+        onError = (context: RheaEventContext) => {
           removeListeners();
           log.error("[%s] Error occurred while closing amqp %s: %O.",
             this.connection.id, this.type, context.session!.error);
@@ -277,7 +281,7 @@ export abstract class Link extends EventEmitter {
     const events = this.type === LinkType.sender ? SenderEvents : ReceiverEvents;
     for (const eventName in events) {
       this._link.on(events[eventName],
-        (...args) => this.emit(events[eventName], ...args));
+        (context: RheaEventContext) => this.emit(events[eventName], EventContext.translate(context, this)));
     }
   }
 }

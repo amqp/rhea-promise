@@ -2,11 +2,12 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import {
-  SenderOptions as RheaSenderOptions, OnAmqpEvent, Delivery, Message, Sender as RheaSender
+  SenderOptions as RheaSenderOptions, Delivery, Message, Sender as RheaSender
 } from "rhea";
 import { Session } from "./session";
 import { SenderEvents } from "rhea";
 import { Link, LinkType } from './link';
+import { OnAmqpEvent } from "./eventContext";
 
 /**
  * Descibes the options that can be provided while creating an AMQP sender.

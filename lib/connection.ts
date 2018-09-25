@@ -12,10 +12,11 @@ import { Container } from "./container";
 import { defaultOperationTimeoutInSeconds } from "./util/constants";
 import { Func } from "./util/utils";
 import {
-  ConnectionEvents, SessionEvents, SenderEvents, ReceiverEvents, OnAmqpEvent, create_connection,
-  ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, EventContext,
-  ConnectionError, Dictionary, AmqpError
+  ConnectionEvents, SessionEvents, SenderEvents, ReceiverEvents, create_connection,
+  ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, AmqpError, Dictionary,
+  ConnectionError, EventContext as RheaEventContext
 } from "rhea";
+import { EventContext, OnAmqpEvent } from "./eventContext";
 
 /**
  * Describes the options that can be provided while creating an AMQP sender. One can also provide a
@@ -181,8 +182,8 @@ export class Connection extends EventEmitter {
     return new Promise((resolve, reject) => {
       if (!this.isOpen()) {
 
-        let onOpen: Func<EventContext, void>;
-        let onClose: Func<EventContext, void>;
+        let onOpen: Func<RheaEventContext, void>;
+        let onClose: Func<RheaEventContext, void>;
         let waitTimer: any;
 
         const removeListeners: Function = () => {
@@ -192,7 +193,7 @@ export class Connection extends EventEmitter {
           this._connection.removeListener(ConnectionEvents.disconnected, onClose);
         };
 
-        onOpen = (context: EventContext) => {
+        onOpen = (context: RheaEventContext) => {
           removeListeners();
           setTimeout(() => {
             log.connection("[%s] Resolving the promise with amqp connection.", this.id);
@@ -200,7 +201,7 @@ export class Connection extends EventEmitter {
           });
         };
 
-        onClose = (context: EventContext) => {
+        onClose = (context: RheaEventContext) => {
           removeListeners();
           const err = context.error || context.connection.error;
           log.error("[%s] Error occurred while establishing amqp connection: %O",
@@ -240,8 +241,8 @@ export class Connection extends EventEmitter {
     return new Promise<void>((resolve, reject) => {
       log.error("[%s] The connection is open ? -> %s", this.id, this.isOpen());
       if (this.isOpen()) {
-        let onClose: Func<EventContext, void>;
-        let onError: Func<EventContext, void>;
+        let onClose: Func<RheaEventContext, void>;
+        let onError: Func<RheaEventContext, void>;
         let waitTimer: any;
         const removeListeners = () => {
           clearTimeout(waitTimer);
@@ -249,7 +250,7 @@ export class Connection extends EventEmitter {
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
         };
 
-        onClose = (context: EventContext) => {
+        onClose = (context: RheaEventContext) => {
           removeListeners();
           setTimeout(() => {
             log.connection("[%s] Resolving the promise as the connection has been successfully closed.",
@@ -258,7 +259,7 @@ export class Connection extends EventEmitter {
           });
         };
 
-        onError = (context: EventContext) => {
+        onError = (context: RheaEventContext) => {
           removeListeners();
           log.error("[%s] Error occurred while closing amqp connection: %O.",
             this.id, context.connection.error);
@@ -347,8 +348,8 @@ export class Connection extends EventEmitter {
     return new Promise((resolve, reject) => {
       const rheaSession = this._connection.create_session();
       const session = new Session(this, rheaSession);
-      let onOpen: Func<EventContext, void>;
-      let onClose: Func<EventContext, void>;
+      let onOpen: Func<RheaEventContext, void>;
+      let onClose: Func<RheaEventContext, void>;
       let waitTimer: any;
 
       const removeListeners = () => {
@@ -357,7 +358,7 @@ export class Connection extends EventEmitter {
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
       };
 
-      onOpen = (context: EventContext) => {
+      onOpen = (context: RheaEventContext) => {
         removeListeners();
         setTimeout(() => {
           log.connection("[%s] Resolving the promise with amqp session.", this.id);
@@ -365,7 +366,7 @@ export class Connection extends EventEmitter {
         });
       };
 
-      onClose = (context: EventContext) => {
+      onClose = (context: RheaEventContext) => {
         removeListeners();
         log.error("[%s] Error occurred while establishing a session over amqp connection: %O.",
           this.id, context.session!.error);
@@ -453,25 +454,25 @@ export class Connection extends EventEmitter {
   private _initializeEventListeners(): void {
     for (const eventName in ConnectionEvents) {
       this._connection.on(ConnectionEvents[eventName],
-        (...args) => this.emit(ConnectionEvents[eventName], ...args));
+        (context) => this.emit(ConnectionEvents[eventName], EventContext.translate(context, this)));
     }
 
     // Add event handlers for *_error and *_close events that can be propogated to the connection
     // object, if they are not handled at their level. * denotes - Sender, Receiver, Session
     // Sender
     this._connection.on(SenderEvents.senderError,
-      (...args) => this.emit(SenderEvents.senderError, ...args));
+      (context) => this.emit(SenderEvents.senderError, EventContext.translate(context, this)));
     this._connection.on(SenderEvents.senderClose,
-      (...args) => this.emit(SenderEvents.senderClose, ...args));
+      (context) => this.emit(SenderEvents.senderClose, EventContext.translate(context, this)));
     // Receiver
     this._connection.on(ReceiverEvents.receiverError,
-      (...args) => this.emit(ReceiverEvents.receiverError, ...args));
+      (context) => this.emit(ReceiverEvents.receiverError, EventContext.translate(context, this)));
     this._connection.on(ReceiverEvents.receiverClose,
-      (...args) => this.emit(ReceiverEvents.receiverClose, ...args));
+      (context) => this.emit(ReceiverEvents.receiverClose, EventContext.translate(context, this)));
     // Session
     this._connection.on(SessionEvents.sessionError,
-      (...args) => this.emit(SessionEvents.sessionError, ...args));
+      (context) => this.emit(SessionEvents.sessionError, EventContext.translate(context, this)));
     this._connection.on(SessionEvents.sessionClose,
-      (...args) => this.emit(SessionEvents.sessionClose, ...args));
+      (context) => this.emit(SessionEvents.sessionClose, EventContext.translate(context, this)));
   }
 }

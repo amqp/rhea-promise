@@ -6,16 +6,17 @@ import * as log from "./log";
 import { Connection } from "./connection";
 import { Receiver, ReceiverOptions } from "./receiver";
 import { Sender, SenderOptions } from "./sender";
-import { SenderEvents, ReceiverEvents, SessionEvents } from "rhea";
+import { SenderEvents, ReceiverEvents, SessionEvents, AmqpError } from "rhea";
 import { Func } from "./util/utils";
 import { EventEmitter } from "events";
+import { EventContext, OnAmqpEvent } from './eventContext';
 
 /**
  * Describes the event listeners that can be added to the Session.
  * @interface Session
  */
 export declare interface Session {
-  on(event: SessionEvents, listener: rhea.OnAmqpEvent): this;
+  on(event: SessionEvents, listener: OnAmqpEvent): this;
 }
 
 /**
@@ -42,6 +43,10 @@ export class Session extends EventEmitter {
 
   get outgoing(): any {
     return (this._session as any).outgoing;
+  }
+
+  get error(): AmqpError | Error | undefined {
+    return this._session.error;
   }
 
   /**
@@ -322,20 +327,20 @@ export class Session extends EventEmitter {
 
     for (const eventName in SessionEvents) {
       this._session.on(SessionEvents[eventName],
-        (...args) => this.emit(SessionEvents[eventName], ...args));
+        (context) => this.emit(SessionEvents[eventName], EventContext.translate(context, this)));
     }
 
     // Add event handlers for *_error and *_close events that can be propogated to the session
     // object, if they are not handled at their level. * denotes - Sender and Receiver.
     // Sender
     this._session.on(rhea.SenderEvents.senderError,
-      (...args) => this.emit(rhea.SenderEvents.senderError, ...args));
+      (context) => this.emit(rhea.SenderEvents.senderError, EventContext.translate(context, this)));
     this._session.on(rhea.SenderEvents.senderClose,
-      (...args) => this.emit(rhea.SenderEvents.senderClose, ...args));
+      (context) => this.emit(rhea.SenderEvents.senderClose, EventContext.translate(context, this)));
     // Receiver
     this._session.on(rhea.ReceiverEvents.receiverError,
-      (...args) => this.emit(rhea.ReceiverEvents.receiverError, ...args));
+      (context) => this.emit(rhea.ReceiverEvents.receiverError, EventContext.translate(context, this)));
     this._session.on(rhea.ReceiverEvents.receiverClose,
-      (...args) => this.emit(rhea.ReceiverEvents.receiverClose, ...args));
+      (context) => this.emit(rhea.ReceiverEvents.receiverClose, EventContext.translate(context, this)));
   }
 }

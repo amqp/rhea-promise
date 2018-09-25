@@ -72,7 +72,12 @@ export class Container extends EventEmitter {
   }
 
   createConnection(options?: ConnectionOptions): Connection {
-    return new Connection(options);
+    const rheaConnection = this._container.create_connection(options);
+    return new Connection({ rheaConnection: rheaConnection, container: this });
+  }
+
+  async connect(options?: ConnectionOptions): Promise<Connection> {
+    return await this.createConnection(options).open();
   }
 
   listen(options: ListenOptions | TlsOptions): Server | TlsServer {

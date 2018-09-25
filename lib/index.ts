@@ -2,7 +2,7 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 export {
-  Delivery, Message, OnAmqpEvent, MessageProperties, MessageHeader, EventContext,
+  Delivery, Message, MessageProperties, MessageHeader, EventContext as RheaEventContext,
   ConnectionOptions as ConnectionOptionsBase, AmqpError, Dictionary, types, message, filter, Filter,
   uuid_to_string, generate_uuid, string_to_uuid, LinkError, ProtocolError, LinkOptions,
   DeliveryAnnotations, MessageAnnotations, ReceiverEvents, SenderEvents, ConnectionEvents,
@@ -10,6 +10,7 @@ export {
   EndpointOptions, MessageUtil, TypeError, SimpleError, Source, ConnectionError
 } from "rhea";
 
+export { EventContext, OnAmqpEvent } from "./eventContext";
 export { Container, ContainerOptions } from "./container";
 export {
   Connection, ReqResLink, ConnectionOptions, ReceiverOptionsWithSession, SenderOptionsWithSession

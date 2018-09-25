@@ -1,3 +1,7 @@
+### 0.1.3 - 2018-09-25
+- Transform relevant objects in rhea EventContext to rhea-promise objects.
+- Ensure that `container.createConnection()` creates a connection on that container and not on the default container.
+
 ### 0.1.2 - 2018-09-20
 - TS target to ES2015. This should help us support node.js version 6.x and above.
 

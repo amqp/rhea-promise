@@ -16,6 +16,7 @@ import {
   ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, AmqpError, Dictionary,
   ConnectionError, EventContext as RheaEventContext
 } from "rhea";
+
 import { EventContext, OnAmqpEvent } from "./eventContext";
 
 /**
@@ -48,6 +49,34 @@ export interface ConnectionOptions extends RheaConnectionOptions {
    */
   operationTimeoutInSeconds?: number;
 }
+
+/**
+ * Describes the options that can be provided while creating a rhea-promise connection from an
+ * already created rhea connection object.
+ * @interface CreatedRheaConnectionOptions
+ */
+export interface CreatedRheaConnectionOptions {
+  /**
+   * @property {number} [operationTimeoutInSeconds] - The duration in which the promise should
+   * complete (resolve/reject). If it is not completed, then the Promise will be rejected after
+   * timeout occurs. Default: `60 seconds`.
+   */
+  operationTimeoutInSeconds?: number;
+  /**
+   * @property rheaConnection The connection object from rhea
+   */
+  rheaConnection: RheaConnection;
+  /**
+   * @property container The Container object from this (rhea-promise) library.
+   */
+  container: Container;
+}
+
+// Determines whether the given object is a CreatedRheConnectionOptions object.
+function isCreatedRheaConnectionOptions(obj: any): boolean {
+  return (obj && typeof obj.container === "object" && typeof obj.rheaConnection === "object");
+}
+
 /**
  * Provides a sender and a receiver link on the same session. It is useful while constructing a
  * request/response link.
@@ -103,15 +132,24 @@ export class Connection extends EventEmitter {
    * @constructor
    * @param {Connection} _connection The connection object from rhea library.
    */
-  constructor(options?: ConnectionOptions) {
+  constructor(options?: ConnectionOptions | CreatedRheaConnectionOptions) {
+    super();
     if (!options) options = {};
     if (options.operationTimeoutInSeconds == undefined) {
       options.operationTimeoutInSeconds = defaultOperationTimeoutInSeconds;
     }
-    super();
-    this.options = options;
-    this._connection = create_connection(options);
-    this.container = Container.copyFromContainerInstance(this._connection.container);
+
+    if (isCreatedRheaConnectionOptions(options)) {
+      this._connection = (options as CreatedRheaConnectionOptions).rheaConnection;
+      this.container = (options as CreatedRheaConnectionOptions).container;
+      this.options = this._connection.options;
+      this.options.operationTimeoutInSeconds = options.operationTimeoutInSeconds;
+    } else {
+      this.options = options;
+      this._connection = create_connection(options as ConnectionOptions);
+      this.container = Container.copyFromContainerInstance(this._connection.container);
+    }
+
     this._initializeEventListeners();
   }
 
@@ -476,3 +514,4 @@ export class Connection extends EventEmitter {
       (context) => this.emit(SessionEvents.sessionClose, EventContext.translate(context, this)));
   }
 }
+

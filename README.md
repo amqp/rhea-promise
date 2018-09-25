@@ -3,7 +3,9 @@
 A Promisified layer over rhea AMQP client.
 
 ## Pre-requisite ##
-- **Node.js version: 6.x or higher.** We would encourage you to install the latest available LTS version at any given time from https://nodejs.org. Please **do not** use older LTS versions of node.js.
+- **Node.js version: 6.x or higher.** 
+- We would **still encourage you** to install the latest available LTS version at any given time from https://nodejs.org. **It is a good practice to always install the latest available LTS version of node.js.**
+- Installing node.js on **Windows or macOS** is very simple with available installers on the [node.js website](https://nodejs.org). If you are using a **linux based OS**, then you can find easy to follow, one step installation instructions over [here](https://nodejs.org/en/download/package-manager/).
 
 ## Installation ##
 ```bash

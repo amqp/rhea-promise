@@ -113,10 +113,10 @@ export declare interface Connection {
  */
 export class Connection extends EventEmitter {
   /**
-   * @property {ConnectionOptions} [options] Options that can be provided while creating the
+   * @property {ConnectionOptions} options Options that can be provided while creating the
    * connection.
    */
-  options?: ConnectionOptions;
+  options: ConnectionOptions;
   /**
    * @property {Container} container The underlying Container instance on which the connection exists.
    */
@@ -142,13 +142,13 @@ export class Connection extends EventEmitter {
     if (isCreatedRheaConnectionOptions(options)) {
       this._connection = (options as CreatedRheaConnectionOptions).rheaConnection;
       this.container = (options as CreatedRheaConnectionOptions).container;
-      this.options = this._connection.options;
-      this.options.operationTimeoutInSeconds = options.operationTimeoutInSeconds;
     } else {
-      this.options = options;
       this._connection = create_connection(options as ConnectionOptions);
       this.container = Container.copyFromContainerInstance(this._connection.container);
     }
+
+    this.options = this._connection.options;
+    this.options.operationTimeoutInSeconds = options.operationTimeoutInSeconds;
 
     this._initializeEventListeners();
   }

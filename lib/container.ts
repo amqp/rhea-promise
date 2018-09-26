@@ -25,9 +25,9 @@ export interface ContainerOptions extends ContainerOptionsBase {
  */
 export class Container extends EventEmitter {
   /**
-   * @property {options} [ContainerOptions] Container options.
+   * @property {options} ContainerOptions Container options.
    */
-  options?: ContainerOptions;
+  options: ContainerOptions;
   /**
    * @property {RheaContainer} _container The underlying container object from rhea.
    * @private

@@ -1,3 +1,6 @@
+### 0.1.4 - 2018-09-25
+- `options` is a required property of `Connection` and `Container`.
+
 ### 0.1.3 - 2018-09-25
 - Transform relevant objects in rhea EventContext to rhea-promise objects.
 - Ensure that `container.createConnection()` creates a connection on that container and not on the default container.

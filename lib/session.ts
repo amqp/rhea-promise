@@ -1,12 +1,14 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the Apache License. See License in the project root for license information.
 
-import * as rhea from "rhea";
 import * as log from "./log";
 import { Connection } from "./connection";
 import { Receiver, ReceiverOptions } from "./receiver";
 import { Sender, SenderOptions } from "./sender";
-import { SenderEvents, ReceiverEvents, SessionEvents, AmqpError } from "rhea";
+import {
+  SenderEvents, ReceiverEvents, SessionEvents, AmqpError, Session as RheaSession,
+  EventContext as RheaEventContext
+} from "rhea";
 import { Func } from "./util/utils";
 import { EventEmitter } from "events";
 import { EventContext, OnAmqpEvent } from './eventContext';
@@ -24,10 +26,10 @@ export declare interface Session {
  * @class Session
  */
 export class Session extends EventEmitter {
-  private _session: rhea.Session;
+  private _session: RheaSession;
   private _connection: Connection;
 
-  constructor(connection: Connection, session: rhea.Session) {
+  constructor(connection: Connection, session: RheaSession) {
     super();
     this._connection = connection;
     this._session = session;
@@ -83,7 +85,7 @@ export class Session extends EventEmitter {
 
   remove(): void {
     if (this._session) {
-      // Remove our listeners and listeners from rhea's session object.
+      // Remove our listeners and listeners from rhea's 'session' object.
       this.removeAllListeners();
       this._session.removeAllListeners();
       this._session.remove();
@@ -107,8 +109,8 @@ export class Session extends EventEmitter {
     return new Promise<void>((resolve, reject) => {
       log.error("[%s] The session is open ? -> %s", this.connection.id, this.isOpen());
       if (this.isOpen()) {
-        let onError: Func<rhea.EventContext, void>;
-        let onClose: Func<rhea.EventContext, void>;
+        let onError: Func<RheaEventContext, void>;
+        let onClose: Func<RheaEventContext, void>;
         let waitTimer: any;
 
         const removeListeners = () => {
@@ -117,16 +119,14 @@ export class Session extends EventEmitter {
           this._session.removeListener(SessionEvents.sessionClose, onClose);
         };
 
-        onClose = (context: rhea.EventContext) => {
+        onClose = (context: RheaEventContext) => {
           removeListeners();
-          setTimeout(() => {
-            log.session("[%s] Resolving the promise as the amqp session has been closed.",
-              this.connection.id);
-            resolve();
-          });
+          log.session("[%s] Resolving the promise as the amqp session has been closed.",
+            this.connection.id);
+          resolve();
         };
 
-        onError = (context: rhea.EventContext) => {
+        onError = (context: RheaEventContext) => {
           removeListeners();
           log.error("[%s] Error occurred while closing amqp session.",
             this.connection.id, context.session!.error);
@@ -175,24 +175,32 @@ export class Session extends EventEmitter {
       // to our (rhea-promise) object.
       if (options && options.onSessionError) {
         this.on(SessionEvents.sessionError, options.onSessionError);
+        log.eventHandler("[%s] Added event handler for event '%s'.",
+          this.connection.id, SessionEvents.sessionError);
       }
 
       if (options && options.onSessionClose) {
         this.on(SessionEvents.sessionClose, options.onSessionClose);
+        log.eventHandler("[%s] Added event handler for event '%s'.",
+          this.connection.id, SessionEvents.sessionClose);
       }
       const rheaReceiver = this._session.attach_receiver(options);
       const receiver = new Receiver(this, rheaReceiver, options);
-      let onOpen: Func<rhea.EventContext, void>;
-      let onClose: Func<rhea.EventContext, void>;
+      let onOpen: Func<RheaEventContext, void>;
+      let onClose: Func<RheaEventContext, void>;
       let waitTimer: any;
 
       if (handlersProvided) {
         receiver.on(ReceiverEvents.message, options!.onMessage!);
         receiver.on(ReceiverEvents.receiverError, options!.onError!);
+        log.eventHandler("[%s] Added event handler for events: '%s', '%s', on rhea-promise receiver.",
+          this.connection.id, ReceiverEvents.message, ReceiverEvents.receiverError);
       }
 
       if (options && options.onClose) {
         receiver.on(ReceiverEvents.receiverClose, options.onClose);
+        log.eventHandler("[%s] Added event handler for event '%s'.", this.connection.id,
+          ReceiverEvents.receiverClose);
       }
 
       const removeListeners = () => {
@@ -201,16 +209,14 @@ export class Session extends EventEmitter {
         rheaReceiver.removeListener(ReceiverEvents.receiverClose, onClose);
       };
 
-      onOpen = (context: rhea.EventContext) => {
+      onOpen = (context: RheaEventContext) => {
         removeListeners();
-        setTimeout(() => {
-          log.session("[%s] Resolving the promise with amqp receiver '%s'.",
-            this.connection.id, receiver.name);
-          resolve(receiver);
-        });
+        log.receiver("[%s] Resolving the promise with amqp receiver '%s'.",
+          this.connection.id, receiver.name);
+        resolve(receiver);
       };
 
-      onClose = (context: rhea.EventContext) => {
+      onClose = (context: RheaEventContext) => {
         removeListeners();
         log.error("[%s] Error occurred while creating a receiver over amqp connection: %O.",
           this.connection.id, context.receiver!.error);
@@ -253,8 +259,8 @@ export class Session extends EventEmitter {
 
       const rheaSender = this._session.attach_sender(options);
       const sender = new Sender(this, rheaSender, options);
-      let onSendable: Func<rhea.EventContext, void>;
-      let onClose: Func<rhea.EventContext, void>;
+      let onSendable: Func<RheaEventContext, void>;
+      let onClose: Func<RheaEventContext, void>;
       let waitTimer: any;
 
       // listeners provided by the user in the options object should be added
@@ -286,16 +292,14 @@ export class Session extends EventEmitter {
         rheaSender.removeListener(SenderEvents.senderClose, onClose);
       };
 
-      onSendable = (context: rhea.EventContext) => {
+      onSendable = (context: RheaEventContext) => {
         removeListeners();
-        setTimeout(() => {
-          log.session("[%s] Resolving the promise with amqp sender '%s'.",
-            this.connection.id, sender.name);
-          resolve(sender);
-        });
+        log.sender("[%s] Resolving the promise with amqp sender '%s'.",
+          this.connection.id, sender.name);
+        resolve(sender);
       };
 
-      onClose = (context: rhea.EventContext) => {
+      onClose = (context: RheaEventContext) => {
         removeListeners();
         log.error("[%s] Error occurred while creating a sender over amqp connection: %O.",
           this.connection.id, context.sender!.error);
@@ -327,20 +331,56 @@ export class Session extends EventEmitter {
 
     for (const eventName in SessionEvents) {
       this._session.on(SessionEvents[eventName],
-        (context) => this.emit(SessionEvents[eventName], EventContext.translate(context, this)));
+        (context) => {
+          log.eventHandler("[%s] session got event: '%s'. Re-emitting the translated context.",
+            this.connection.id, SessionEvents[eventName]);
+          this.emit(SessionEvents[eventName], EventContext.translate(context, this, SessionEvents[eventName]));
+        });
+      log.eventHandler("[%s] Added handler for event '%s' on rhea's 'session' object.",
+        this.connection.id, SessionEvents[eventName]);
     }
 
     // Add event handlers for *_error and *_close events that can be propogated to the session
     // object, if they are not handled at their level. * denotes - Sender and Receiver.
+
     // Sender
-    this._session.on(rhea.SenderEvents.senderError,
-      (context) => this.emit(rhea.SenderEvents.senderError, EventContext.translate(context, this)));
-    this._session.on(rhea.SenderEvents.senderClose,
-      (context) => this.emit(rhea.SenderEvents.senderClose, EventContext.translate(context, this)));
+    this._session.on(SenderEvents.senderError,
+      (context) => {
+        log.eventHandler("[%s] connection got event: '%s'. Re-emitting the translated context.",
+          this.connection.id, SenderEvents.senderError);
+        this.emit(SenderEvents.senderError,
+          EventContext.translate(context, this, SenderEvents.senderError));
+      });
+    log.session("[%s] Added handler for event '%s' on rhea's 'session' object.",
+      this.connection.id, SenderEvents.senderError);
+    this._session.on(SenderEvents.senderClose,
+      (context) => {
+        log.eventHandler("[%s] connection got event: '%s'. Re-emitting the translated context.",
+          this.connection.id, SenderEvents.senderClose);
+        this.emit(SenderEvents.senderClose,
+          EventContext.translate(context, this, SenderEvents.senderClose));
+      });
+    log.session("[%s] Added handler for event '%s' on rhea's 'session' object.",
+      this.connection.id, SenderEvents.senderClose);
+
     // Receiver
-    this._session.on(rhea.ReceiverEvents.receiverError,
-      (context) => this.emit(rhea.ReceiverEvents.receiverError, EventContext.translate(context, this)));
-    this._session.on(rhea.ReceiverEvents.receiverClose,
-      (context) => this.emit(rhea.ReceiverEvents.receiverClose, EventContext.translate(context, this)));
+    this._session.on(ReceiverEvents.receiverError,
+      (context) => {
+        log.eventHandler("[%s] connection got event: '%s'. Re-emitting the translated context.",
+          this.connection.id, ReceiverEvents.receiverError);
+        this.emit(ReceiverEvents.receiverError,
+          EventContext.translate(context, this, ReceiverEvents.receiverError));
+      });
+    log.session("[%s] Added handler for event '%s' on rhea's 'session' object.",
+      this.connection.id, ReceiverEvents.receiverError);
+    this._session.on(ReceiverEvents.receiverClose,
+      (context) => {
+        log.eventHandler("[%s] connection got event: '%s'. Re-emitting the translated context.",
+          this.connection.id, ReceiverEvents.receiverClose);
+        this.emit(ReceiverEvents.receiverClose,
+          EventContext.translate(context, this, ReceiverEvents.receiverClose));
+      });
+    log.session("[%s] Added handler for event '%s' on rhea's 'session' object.",
+      this.connection.id, ReceiverEvents.receiverClose);
   }
 }

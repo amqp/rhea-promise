@@ -32,3 +32,13 @@ export const receiver = debugModule("rhea-promise:receiver");
  * log statements for error
  */
 export const error = debugModule("rhea-promise:error");
+/**
+ * @ignore
+ * log statements for error
+ */
+export const eventHandler = debugModule("rhea-promise:eventhandler");
+/**
+ * @ignore
+ * log statements for error
+ */
+export const contextTranslator = debugModule("rhea-promise:translate");

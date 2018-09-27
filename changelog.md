@@ -1,3 +1,6 @@
+### 0.1.5 - 2018-09-27
+- Improved log statements for better debugging
+
 ### 0.1.4 - 2018-09-25
 - `options` is a required property of `Connection` and `Container`.
 

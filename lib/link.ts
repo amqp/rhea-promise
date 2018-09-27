@@ -235,11 +235,9 @@ export abstract class Link extends EventEmitter {
 
         onClose = (context: RheaEventContext) => {
           removeListeners();
-          setTimeout(() => {
-            log[this.type]("[%s] Resolving the promise as the amqp %s has been closed.",
-              this.connection.id, this.type);
-            resolve();
-          });
+          log[this.type]("[%s] Resolving the promise as the amqp %s has been closed.",
+            this.connection.id, this.type);
+          resolve();
         };
 
         onError = (context: RheaEventContext) => {
@@ -281,7 +279,18 @@ export abstract class Link extends EventEmitter {
     const events = this.type === LinkType.sender ? SenderEvents : ReceiverEvents;
     for (const eventName in events) {
       this._link.on(events[eventName],
-        (context: RheaEventContext) => this.emit(events[eventName], EventContext.translate(context, this)));
+        (context: RheaEventContext) => {
+          log.eventHandler("[%s] %s got event: '%s'. Re-emitting the translated context.",
+            this.connection.id, this.type, events[eventName]);
+          this.emit(events[eventName], EventContext.translate(context, this, events[eventName]));
+        });
+      log.eventHandler("[%s] Added handler for event '%s' on rhea's '%s' object during " +
+        "initialization.", this.connection.id, events[eventName], this.type);
     }
+    log.eventHandler("[%s] rhea-promise '%s' object is listening for events: %o " +
+      "emitted by rhea's '%s' object.", this.connection.id, this.type,
+      this._link.eventNames(), this.type);
+    log.eventHandler("[%s] ListenerCount for event '%s_error' on rhea's '%s' object is: %d.",
+      this.connection.id, this.type, this.type, this._link.listenerCount(`${this.type}_error`));
   }
 }

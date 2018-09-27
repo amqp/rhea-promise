@@ -1,9 +1,10 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the Apache License. See License in the project root for license information.
 
-import * as rhea from "rhea";
 import { Session } from "./session";
-import { ReceiverEvents, Receiver as RheaReceiver } from "rhea";
+import {
+  ReceiverEvents, Receiver as RheaReceiver, ReceiverOptions as RheaReceiverOptions
+} from "rhea";
 import { Link, LinkType } from "./link";
 import { OnAmqpEvent } from "./eventContext";
 
@@ -11,7 +12,7 @@ import { OnAmqpEvent } from "./eventContext";
  * Descibes the options that can be provided while creating an AMQP sender.
  * @interface ReceiverOptions
  */
-export interface ReceiverOptions extends rhea.ReceiverOptions {
+export interface ReceiverOptions extends RheaReceiverOptions {
   /**
    * @property {OnAmqpEvent} [onMessage] The handler that can be provided for receiving the
    * "message" event when a message is received on the underling rhea receiver.
@@ -52,7 +53,7 @@ export declare interface Receiver {
  * @class Receiver.
  */
 export class Receiver extends Link {
-  constructor(session: Session, receiver: rhea.Receiver, options?: ReceiverOptions) {
+  constructor(session: Session, receiver: RheaReceiver, options?: ReceiverOptions) {
     super(LinkType.receiver, session, receiver, options);
   }
 

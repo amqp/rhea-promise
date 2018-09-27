@@ -1,6 +1,13 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the Apache License. See License in the project root for license information.
 
+import { EventContext as RheaEventContext } from "rhea";
+import { Link } from "../link";
+import { Session } from "../session";
+import { Connection } from "../connection";
+import * as log from "../log";
+import { EventContext } from '../eventContext';
+
 /**
  * Defines a mapping for Http like response status codes for different status-code values
  * provided by an AMQP broker.
@@ -148,4 +155,42 @@ export function parseConnectionString<T>(connectionString: string, options?: Con
       [part.substring(0, splitIndex)]: part.substring(splitIndex + 1)
     };
   }, {} as any);
+}
+
+/**
+ * @ignore
+ * Describes the parameters to be provided to the function `emitEvent()`.
+ * @interface EmitParameters
+ */
+export interface EmitParameters {
+  rheaContext: RheaEventContext;
+  emitter: Link | Session | Connection;
+  eventName: string;
+  connectionId: string;
+  emitterType: "sender" | "receiver" | "session" | "connection";
+}
+
+/**
+ * @ignore
+ * Emits an event.
+ * @param params parameters needed to emit an event from one of the rhea-promise objects.
+ * @returns void
+ */
+export function emitEvent(params: EmitParameters): void {
+  const emit = () => {
+    log[params.emitterType]("[%s] %s got event: '%s'. Re-emitting the translated context.",
+      params.connectionId, params.emitterType, params.eventName);
+    params.emitter.emit(params.eventName,
+      EventContext.translate(params.rheaContext, params.emitter, params.eventName));
+  };
+  if (params.eventName.indexOf("error") !== -1) {
+    log[params.emitterType]("[%s] %s got event: '%s'. Will re-emit in the next tick.",
+      params.connectionId, params.emitterType, params.eventName);
+    // setTimeout() without any time is equivalent to process.nextTick() and works in node.js and
+    // browsers. We wait for a tick to emit error events in general. This should give enough
+    // time for promises to resolve on *_open (create) and *_close (close).
+    setTimeout(() => { return emit(); });
+  } else {
+    emit();
+  }
 }

@@ -9,8 +9,7 @@ import {
 import { EventEmitter } from "events";
 import { Session } from "./session";
 import { Connection } from "./connection";
-import { Func } from './util/utils';
-import { EventContext } from "./eventContext";
+import { Func, emitEvent, EmitParameters } from './util/utils';
 
 export enum LinkType {
   sender = "sender",
@@ -280,12 +279,15 @@ export abstract class Link extends EventEmitter {
     for (const eventName in events) {
       this._link.on(events[eventName],
         (context: RheaEventContext) => {
-          log.eventHandler("[%s] %s got event: '%s'. Re-emitting the translated context.",
-            this.connection.id, this.type, events[eventName]);
-          this.emit(events[eventName], EventContext.translate(context, this, events[eventName]));
+          const params: EmitParameters = {
+            rheaContext: context,
+            emitter: this,
+            eventName: events[eventName],
+            emitterType: this.type,
+            connectionId: this.connection.id
+          };
+          emitEvent(params);
         });
-      log.eventHandler("[%s] Added handler for event '%s' on rhea's '%s' object during " +
-        "initialization.", this.connection.id, events[eventName], this.type);
     }
     log.eventHandler("[%s] rhea-promise '%s' object is listening for events: %o " +
       "emitted by rhea's '%s' object.", this.connection.id, this.type,

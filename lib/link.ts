@@ -6,19 +6,20 @@ import {
   link, LinkOptions, AmqpError, Dictionary, Source, TerminusOptions, SenderEvents, ReceiverEvents,
   EventContext as RheaEventContext
 } from "rhea";
-import { EventEmitter } from "events";
 import { Session } from "./session";
 import { Connection } from "./connection";
 import { Func, emitEvent, EmitParameters } from './util/utils';
+import { Entity } from "./entity";
 
 export enum LinkType {
   sender = "sender",
   receiver = "receiver"
 }
 
-export abstract class Link extends EventEmitter {
+export abstract class Link extends Entity {
   linkOptions?: LinkOptions;
   type: LinkType;
+  isBeingCreated: boolean = false;
   protected _link: link;
   protected _session: Session;
   constructor(type: LinkType, session: Session, link: link, options?: LinkOptions) {

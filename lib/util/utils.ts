@@ -183,7 +183,7 @@ export function emitEvent(params: EmitParameters): void {
     params.emitter.emit(params.eventName,
       EventContext.translate(params.rheaContext, params.emitter, params.eventName));
   };
-  if (params.eventName.indexOf("error") !== -1) {
+  if (params.eventName.indexOf("error") !== -1 && params.emitter.isBeingCreated) {
     log[params.emitterType]("[%s] %s got event: '%s'. Will re-emit in the next tick.",
       params.connectionId, params.emitterType, params.eventName);
     // setTimeout() without any time is equivalent to process.nextTick() and works in node.js and

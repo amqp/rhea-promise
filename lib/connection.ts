@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the Apache License. See License in the project root for license information.
 
-import { EventEmitter } from "events";
 import { PeerCertificate } from "tls";
 import { Socket } from "net";
 import * as log from "./log";
@@ -18,6 +17,7 @@ import {
 } from "rhea";
 
 import { OnAmqpEvent } from "./eventContext";
+import { Entity } from "./entity";
 
 /**
  * Describes the options that can be provided while creating an AMQP sender. One can also provide
@@ -111,7 +111,7 @@ export declare interface Connection {
  * Descibes the AQMP Connection.
  * @class Connection
  */
-export class Connection extends EventEmitter {
+export class Connection extends Entity {
   /**
    * @property {ConnectionOptions} options Options that can be provided while creating the
    * connection.
@@ -227,6 +227,7 @@ export class Connection extends EventEmitter {
 
         const removeListeners: Function = () => {
           clearTimeout(waitTimer);
+          this.isBeingCreated = false;
           this._connection.removeListener(ConnectionEvents.connectionOpen, onOpen);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onClose);
@@ -260,6 +261,7 @@ export class Connection extends EventEmitter {
         waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
         log.connection("[%s] Trying to create a new amqp connection.", this.id);
         this._connection.connect();
+        this.isBeingCreated = true;
       } else {
         resolve(this);
       }
@@ -383,12 +385,14 @@ export class Connection extends EventEmitter {
     return new Promise((resolve, reject) => {
       const rheaSession = this._connection.create_session();
       const session = new Session(this, rheaSession);
+      session.isBeingCreated = true;
       let onOpen: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
       let waitTimer: any;
 
       const removeListeners = () => {
         clearTimeout(waitTimer);
+        session.isBeingCreated = false;
         rheaSession.removeListener(SessionEvents.sessionOpen, onOpen);
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
       };

@@ -10,8 +10,8 @@ import {
   EventContext as RheaEventContext
 } from "rhea";
 import { Func, EmitParameters, emitEvent } from "./util/utils";
-import { EventEmitter } from "events";
-import { OnAmqpEvent } from './eventContext';
+import { OnAmqpEvent } from "./eventContext";
+import { Entity } from "./entity";
 
 /**
  * Describes the event listeners that can be added to the Session.
@@ -25,7 +25,7 @@ export declare interface Session {
  * Describes the session that wraps the rhea session.
  * @class Session
  */
-export class Session extends EventEmitter {
+export class Session extends Entity {
   private _session: RheaSession;
   private _connection: Connection;
 
@@ -115,6 +115,7 @@ export class Session extends EventEmitter {
 
         const removeListeners = () => {
           clearTimeout(waitTimer);
+          this.actionInitiated--;
           this._session.removeListener(SessionEvents.sessionError, onError);
           this._session.removeListener(SessionEvents.sessionClose, onClose);
         };
@@ -146,6 +147,7 @@ export class Session extends EventEmitter {
         log.session("[%s] Calling session.close()", this.connection.id);
         waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._session.close();
+        this.actionInitiated++;
       } else {
         resolve();
       }
@@ -186,6 +188,7 @@ export class Session extends EventEmitter {
       }
       const rheaReceiver = this._session.attach_receiver(options);
       const receiver = new Receiver(this, rheaReceiver, options);
+      receiver.actionInitiated++;
       let onOpen: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
       let waitTimer: any;
@@ -205,6 +208,7 @@ export class Session extends EventEmitter {
 
       const removeListeners = () => {
         clearTimeout(waitTimer);
+        receiver.actionInitiated--;
         rheaReceiver.removeListener(ReceiverEvents.receiverOpen, onOpen);
         rheaReceiver.removeListener(ReceiverEvents.receiverClose, onClose);
       };
@@ -263,6 +267,7 @@ export class Session extends EventEmitter {
 
       const rheaSender = this._session.attach_sender(options);
       const sender = new Sender(this, rheaSender, options);
+      sender.actionInitiated++;
       let onSendable: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
       let waitTimer: any;
@@ -292,6 +297,7 @@ export class Session extends EventEmitter {
 
       const removeListeners = () => {
         clearTimeout(waitTimer);
+        sender.actionInitiated--;
         rheaSender.removeListener(SenderEvents.senderOpen, onSendable);
         rheaSender.removeListener(SenderEvents.senderClose, onClose);
       };

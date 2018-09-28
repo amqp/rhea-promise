@@ -26,7 +26,8 @@ async function main(): Promise<void> {
   };
   const connection: Connection = new Connection(connectionOptions);
   const receiverName = "receiver-1";
-  const filterClause = `amqp.annotation.x-opt-enqueued-time > '${Date.now()}'`;
+  // receive messages from the past one hour
+  const filterClause = `amqp.annotation.x-opt-enqueued-time > '${Date.now() - 3600 * 1000}'`;
   const receiverOptions: ReceiverOptions = {
     name: receiverName,
     source: {

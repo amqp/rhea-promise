@@ -6,17 +6,17 @@ import {
   link, LinkOptions, AmqpError, Dictionary, Source, TerminusOptions, SenderEvents, ReceiverEvents,
   EventContext as RheaEventContext
 } from "rhea";
-import { EventEmitter } from "events";
 import { Session } from "./session";
 import { Connection } from "./connection";
 import { Func, emitEvent, EmitParameters } from './util/utils';
+import { Entity } from "./entity";
 
 export enum LinkType {
   sender = "sender",
   receiver = "receiver"
 }
 
-export abstract class Link extends EventEmitter {
+export abstract class Link extends Entity {
   linkOptions?: LinkOptions;
   type: LinkType;
   protected _link: link;
@@ -228,6 +228,7 @@ export abstract class Link extends EventEmitter {
 
         const removeListeners = () => {
           clearTimeout(waitTimer);
+          this.actionInitiated--;
           this._link.removeListener(errorEvent, onError);
           this._link.removeListener(closeEvent, onClose);
         };
@@ -259,6 +260,7 @@ export abstract class Link extends EventEmitter {
         waitTimer = setTimeout(actionAfterTimeout,
           this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._link.close();
+        this.actionInitiated++;
       } else {
         resolve();
       }

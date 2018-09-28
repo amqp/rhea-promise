@@ -183,9 +183,10 @@ export function emitEvent(params: EmitParameters): void {
     params.emitter.emit(params.eventName,
       EventContext.translate(params.rheaContext, params.emitter, params.eventName));
   };
-  if (params.eventName.indexOf("error") !== -1) {
-    log[params.emitterType]("[%s] %s got event: '%s'. Will re-emit in the next tick.",
-      params.connectionId, params.emitterType, params.eventName);
+  if (params.eventName.indexOf("error") !== -1 && params.emitter.actionInitiated > 0) {
+    log[params.emitterType]("[%s] %s got event: '%s'. Will re-emit in the next tick, since " +
+      "this happened before the promise for create/close was resolved.", params.connectionId,
+      params.emitterType, params.eventName);
     // setTimeout() without any time is equivalent to process.nextTick() and works in node.js and
     // browsers. We wait for a tick to emit error events in general. This should give enough
     // time for promises to resolve on *_open (create) and *_close (close).

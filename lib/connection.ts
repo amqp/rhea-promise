@@ -227,7 +227,7 @@ export class Connection extends Entity {
 
         const removeListeners: Function = () => {
           clearTimeout(waitTimer);
-          this.actionInitiated = false;
+          this.actionInitiated--;
           this._connection.removeListener(ConnectionEvents.connectionOpen, onOpen);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onClose);
@@ -261,7 +261,7 @@ export class Connection extends Entity {
         waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
         log.connection("[%s] Trying to create a new amqp connection.", this.id);
         this._connection.connect();
-        this.actionInitiated = true;
+        this.actionInitiated++;
       } else {
         resolve(this);
       }
@@ -285,7 +285,7 @@ export class Connection extends Entity {
         let waitTimer: any;
         const removeListeners = () => {
           clearTimeout(waitTimer);
-          this.actionInitiated = false;
+          this.actionInitiated--;
           this._connection.removeListener(ConnectionEvents.connectionError, onError);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
         };
@@ -316,7 +316,7 @@ export class Connection extends Entity {
         this._connection.once(ConnectionEvents.connectionError, onError);
         waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
         this._connection.close();
-        this.actionInitiated = true;
+        this.actionInitiated++;
       } else {
         resolve();
       }
@@ -387,14 +387,14 @@ export class Connection extends Entity {
     return new Promise((resolve, reject) => {
       const rheaSession = this._connection.create_session();
       const session = new Session(this, rheaSession);
-      session.actionInitiated = true;
+      session.actionInitiated++;
       let onOpen: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
       let waitTimer: any;
 
       const removeListeners = () => {
         clearTimeout(waitTimer);
-        session.actionInitiated = false;
+        session.actionInitiated--;
         rheaSession.removeListener(SessionEvents.sessionOpen, onOpen);
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
       };

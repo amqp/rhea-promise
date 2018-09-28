@@ -19,7 +19,6 @@ export enum LinkType {
 export abstract class Link extends Entity {
   linkOptions?: LinkOptions;
   type: LinkType;
-  actionInitiated: boolean = false;
   protected _link: link;
   protected _session: Session;
   constructor(type: LinkType, session: Session, link: link, options?: LinkOptions) {
@@ -229,7 +228,7 @@ export abstract class Link extends Entity {
 
         const removeListeners = () => {
           clearTimeout(waitTimer);
-          this.actionInitiated = false;
+          this.actionInitiated--;
           this._link.removeListener(errorEvent, onError);
           this._link.removeListener(closeEvent, onClose);
         };
@@ -261,7 +260,7 @@ export abstract class Link extends Entity {
         waitTimer = setTimeout(actionAfterTimeout,
           this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._link.close();
-        this.actionInitiated = true;
+        this.actionInitiated++;
       } else {
         resolve();
       }

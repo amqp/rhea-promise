@@ -11,9 +11,11 @@ import { EventEmitter } from "events";
 export abstract class Entity extends EventEmitter {
   /**
    * @property actionInitiated Indicates whether the action of creating or closing an entity has
-   * been initiated. Default value: `false`.
+   * been initiated. Whenever an action has been initiated, the count will be incremented by 1.
+   * Whenever the action completes (succeeds/fails) the count will be decremented by 1.
+   * Default value: `0`.
    */
-  actionInitiated: boolean = false;
+  actionInitiated: number = 0;
   constructor() {
     super();
   }

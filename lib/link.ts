@@ -9,8 +9,7 @@ import {
 import { EventEmitter } from "events";
 import { Session } from "./session";
 import { Connection } from "./connection";
-import { Func } from './util/utils';
-import { EventContext } from "./eventContext";
+import { Func, emitEvent, EmitParameters } from './util/utils';
 
 export enum LinkType {
   sender = "sender",
@@ -235,11 +234,9 @@ export abstract class Link extends EventEmitter {
 
         onClose = (context: RheaEventContext) => {
           removeListeners();
-          setTimeout(() => {
-            log[this.type]("[%s] Resolving the promise as the amqp %s has been closed.",
-              this.connection.id, this.type);
-            resolve();
-          });
+          log[this.type]("[%s] Resolving the promise as the amqp %s has been closed.",
+            this.connection.id, this.type);
+          resolve();
         };
 
         onError = (context: RheaEventContext) => {
@@ -281,7 +278,21 @@ export abstract class Link extends EventEmitter {
     const events = this.type === LinkType.sender ? SenderEvents : ReceiverEvents;
     for (const eventName in events) {
       this._link.on(events[eventName],
-        (context: RheaEventContext) => this.emit(events[eventName], EventContext.translate(context, this)));
+        (context: RheaEventContext) => {
+          const params: EmitParameters = {
+            rheaContext: context,
+            emitter: this,
+            eventName: events[eventName],
+            emitterType: this.type,
+            connectionId: this.connection.id
+          };
+          emitEvent(params);
+        });
     }
+    log.eventHandler("[%s] rhea-promise '%s' object is listening for events: %o " +
+      "emitted by rhea's '%s' object.", this.connection.id, this.type,
+      this._link.eventNames(), this.type);
+    log.eventHandler("[%s] ListenerCount for event '%s_error' on rhea's '%s' object is: %d.",
+      this.connection.id, this.type, this.type, this._link.listenerCount(`${this.type}_error`));
   }
 }

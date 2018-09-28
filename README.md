@@ -16,13 +16,17 @@ npm install rhea-promise
 
 You can set the following environment variable to get the debug logs.
 
-- Getting debug logs from the library
+- Getting debug logs from this library
+```bash
+export DEBUG=rhea-promise*
+```
+- Getting debug logs from this and the rhea library
 ```bash
 export DEBUG=rhea*
 ```
 - If you are **not interested in viewing the message transformation** (which consumes lot of console/disk space) then you can set the `DEBUG` environment variable as follows:
 ```bash
-export DEBUG=rhea*,-rhea:raw,-rhea:message
+export DEBUG=rhea*,-rhea:raw,-rhea:message,-rhea-promise:eventhandler,-rhea-promise:translate
 ```
 
 #### Logging to a file

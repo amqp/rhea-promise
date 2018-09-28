@@ -2,7 +2,7 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import {
-  Connection, Receiver, EventContext, ConnectionOptions, ReceiverOptions, delay, ReceiverEvents
+  Connection, Receiver, EventContext, ConnectionOptions, ReceiverOptions, delay, ReceiverEvents, types
 } from "../lib";
 
 import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
@@ -26,10 +26,14 @@ async function main(): Promise<void> {
   };
   const connection: Connection = new Connection(connectionOptions);
   const receiverName = "receiver-1";
+  const filterClause = `amqp.annotation.x-opt-enqueued-time > '${Date.now()}'`;
   const receiverOptions: ReceiverOptions = {
     name: receiverName,
     source: {
-      address: receiverAddress
+      address: receiverAddress,
+      filter: {
+        "apache.org:selector-filter:string": types.wrap_described(filterClause, 0x468C00000004)
+      }
     },
     onSessionError: (context: EventContext) => {
       const sessionError = context.session && context.session.error;

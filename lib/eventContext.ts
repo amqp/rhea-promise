@@ -10,6 +10,7 @@ import {
 import { Receiver } from "./receiver";
 import { Sender } from "./sender";
 import { Link, LinkType } from './link';
+import * as log from "./log";
 
 /**
  * Describes the signature of the event handler for any event emitted by rhea-promise.
@@ -84,9 +85,17 @@ export module EventContext {
   /**
    * Translates rhea's EventContext into rhea-promise EventContext
    * @param rheaContext The received context from rhea's event emitter
-   * @param emitter Teh rhea-promise equivalent object that is supposed emit the same event.
+   * @param emitter The rhea-promise equivalent object that is supposed emit the same event
+   * @param eventName The name of the event for which the context will be translated
+   *
+   * @returns EventContext The translated EventContext.
    */
-  export function translate(rheaContext: RheaEventContext, emitter: Link | Session | Connection): EventContext {
+  export function translate(
+    rheaContext: RheaEventContext,
+    emitter: Link | Session | Connection,
+    eventName: string): EventContext {
+    const connectionId = rheaContext.connection.options.id || "";
+    log.contextTranslator("[%s] Translating the context for event: '%s'.", connectionId, eventName);
     // initialize the result
     const result: EventContext = {
       _context: rheaContext,

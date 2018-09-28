@@ -115,6 +115,7 @@ export class Session extends Entity {
 
         const removeListeners = () => {
           clearTimeout(waitTimer);
+          this.actionInitiated = false;
           this._session.removeListener(SessionEvents.sessionError, onError);
           this._session.removeListener(SessionEvents.sessionClose, onClose);
         };
@@ -146,6 +147,7 @@ export class Session extends Entity {
         log.session("[%s] Calling session.close()", this.connection.id);
         waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._session.close();
+        this.actionInitiated = true;
       } else {
         resolve();
       }
@@ -186,7 +188,7 @@ export class Session extends Entity {
       }
       const rheaReceiver = this._session.attach_receiver(options);
       const receiver = new Receiver(this, rheaReceiver, options);
-      receiver.isBeingCreated = true;
+      receiver.actionInitiated = true;
       let onOpen: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
       let waitTimer: any;
@@ -206,7 +208,7 @@ export class Session extends Entity {
 
       const removeListeners = () => {
         clearTimeout(waitTimer);
-        receiver.isBeingCreated = false;
+        receiver.actionInitiated = false;
         rheaReceiver.removeListener(ReceiverEvents.receiverOpen, onOpen);
         rheaReceiver.removeListener(ReceiverEvents.receiverClose, onClose);
       };
@@ -265,7 +267,7 @@ export class Session extends Entity {
 
       const rheaSender = this._session.attach_sender(options);
       const sender = new Sender(this, rheaSender, options);
-      sender.isBeingCreated = true;
+      sender.actionInitiated = true;
       let onSendable: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
       let waitTimer: any;
@@ -295,7 +297,7 @@ export class Session extends Entity {
 
       const removeListeners = () => {
         clearTimeout(waitTimer);
-        sender.isBeingCreated = false;
+        sender.actionInitiated = false;
         rheaSender.removeListener(SenderEvents.senderOpen, onSendable);
         rheaSender.removeListener(SenderEvents.senderClose, onClose);
       };

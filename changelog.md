@@ -1,6 +1,7 @@
 ### 0.1.5 - 2018-09-27
 - Improved log statements for better debugging.
 - Any type of `error` event will be emitted with a tick delay. This would give enough time for the `create()` methods to resolve the promise.
+- Added a new `boolean` property `actionInitiated` which indicates whether the `create`, `close` action on an entity is under process.
 
 ### 0.1.4 - 2018-09-25
 - `options` is a required property of `Connection` and `Container`.

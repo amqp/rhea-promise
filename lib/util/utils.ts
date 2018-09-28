@@ -189,7 +189,7 @@ export function emitEvent(params: EmitParameters): void {
     // setTimeout() without any time is equivalent to process.nextTick() and works in node.js and
     // browsers. We wait for a tick to emit error events in general. This should give enough
     // time for promises to resolve on *_open (create) and *_close (close).
-    setTimeout(() => { return emit(); });
+    setTimeout(emit);
   } else {
     emit();
   }

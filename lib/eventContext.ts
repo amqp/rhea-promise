@@ -94,7 +94,7 @@ export module EventContext {
     rheaContext: RheaEventContext,
     emitter: Link | Session | Connection,
     eventName: string): EventContext {
-    const connectionId = rheaContext.connection.options.id || "";
+    const connectionId = (rheaContext.connection && rheaContext.connection.options) ? rheaContext.connection.options.id : "";
     log.contextTranslator("[%s] Translating the context for event: '%s'.", connectionId, eventName);
     // initialize the result
     const result: EventContext = {

@@ -1,3 +1,6 @@
+### 0.1.7 - 2018-10-19
+- Fixed a bug while populating the connectionId [PR](https://github.com/amqp/rhea-promise/pull/11).
+
 ### 0.1.6 - 2018-09-28
 - property `actionInitiated` is now of type `number` which is incremented when the `create`, `close` 
 action on an entity is under process and decremented when the action completes (succeeeded or failed).

@@ -1,3 +1,6 @@
+### 0.1.8 - 2018-10-22
+- Allow setting drain property on the receiver [PR](https://github.com/amqp/rhea-promise/pull/14).
+
 ### 0.1.7 - 2018-10-19
 - Fixed a bug while populating the connectionId [PR](https://github.com/amqp/rhea-promise/pull/11).
 

@@ -61,6 +61,10 @@ export class Receiver extends Link {
     return (this._link as RheaReceiver).drain;
   }
 
+  set drain(value: boolean) {
+    (this._link as RheaReceiver).drain = value;
+  }
+
   addCredit(credit: number): void {
     (this._link as RheaReceiver).add_credit(credit);
   }

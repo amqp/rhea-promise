@@ -77,7 +77,7 @@ export class Container extends EventEmitter {
   }
 
   async connect(options?: ConnectionOptions): Promise<Connection> {
-    return await this.createConnection(options).open();
+    return this.createConnection(options).open();
   }
 
   listen(options: ListenOptions | TlsOptions): Server | TlsServer {

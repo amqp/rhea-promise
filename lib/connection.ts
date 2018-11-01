@@ -435,10 +435,10 @@ export class Connection extends Entity {
    */
   async createSender(options?: SenderOptionsWithSession): Promise<Sender> {
     if (options && options.session && options.session.createSender) {
-      return await options.session.createSender(options);
+      return options.session.createSender(options);
     }
     const session = await this.createSession();
-    return await session.createSender(options);
+    return session.createSender(options);
   }
 
   /**
@@ -448,10 +448,10 @@ export class Connection extends Entity {
    */
   async createReceiver(options?: ReceiverOptionsWithSession): Promise<Receiver> {
     if (options && options.session && options.session.createReceiver) {
-      return await options.session.createReceiver(options);
+      return options.session.createReceiver(options);
     }
     const session = await this.createSession();
-    return await session.createReceiver(options);
+    return session.createReceiver(options);
   }
 
   /**

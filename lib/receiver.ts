@@ -14,6 +14,11 @@ import { OnAmqpEvent } from "./eventContext";
  */
 export interface ReceiverOptions extends RheaReceiverOptions {
   /**
+   * @property {OnAmqpEvent} [onSettled] The handler that can be provided for receiving the
+   * "settled" event when a message is received on the underling rhea receiver.
+   */
+  onSettled?: OnAmqpEvent;
+  /**
    * @property {OnAmqpEvent} [onMessage] The handler that can be provided for receiving the
    * "message" event when a message is received on the underling rhea receiver.
    */

@@ -206,6 +206,12 @@ export class Session extends Entity {
           this.connection.id, ReceiverEvents.receiverClose);
       }
 
+      if (options && options.onSettled) {
+        receiver.on(ReceiverEvents.settled, options.onSettled);
+        log.receiver("[%s] Added event handler for event '%s' on rhea-promise 'receiver'.",
+          this.connection.id, ReceiverEvents.settled);
+      }
+
       const removeListeners = () => {
         clearTimeout(waitTimer);
         receiver.actionInitiated--;

@@ -1,3 +1,6 @@
+### 0.1.10 - 2018-11-01
+- Provided an option to add an event handler for "settled" event on the Receiver.
+
 ### 0.1.9 - 2018-10-24
 - With the usage of `importHelpers`, the tslib will be needed in package.json for installers using older versions of npm (or using yarn). [PR](https://github.com/amqp/rhea-promise/pull/16).
 

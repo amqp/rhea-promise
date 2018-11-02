@@ -267,7 +267,7 @@ export abstract class Link extends Entity {
     });
     log[this.type]("[%s] %s has been closed, now closing it's session.",
       this.connection.id, this.type);
-    return await this._session.close();
+    return this._session.close();
   }
 
   /**

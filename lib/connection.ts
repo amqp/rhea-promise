@@ -575,7 +575,9 @@ export class Connection extends Entity {
       emitEvent(params);
     });
 
-    log.eventHandler("[%s] rhea-promise 'connection' object is listening for events: %o " +
-      "emitted by rhea's 'connection' object.", this.id, this._connection.eventNames());
+    if (typeof this._connection.eventNames === "function") {
+      log.eventHandler("[%s] rhea-promise 'connection' object is listening for events: %o " +
+        "emitted by rhea's 'connection' object.", this.id, this._connection.eventNames());
+    }
   }
 }

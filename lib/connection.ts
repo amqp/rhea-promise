@@ -236,7 +236,7 @@ export class Connection extends Entity {
         onOpen = (context: RheaEventContext) => {
           removeListeners();
           log.connection("[%s] Resolving the promise with amqp connection.", this.id);
-          resolve(this);
+          return resolve(this);
         };
 
         onClose = (context: RheaEventContext) => {
@@ -244,14 +244,14 @@ export class Connection extends Entity {
           const err = context.error || context.connection.error;
           log.error("[%s] Error occurred while establishing amqp connection: %O",
             this.id, err);
-          reject(err);
+          return reject(err);
         };
 
         const actionAfterTimeout = () => {
           removeListeners();
           const msg: string = `Unable to open the amqp connection "${this.id}" due to operation timeout.`;
           log.error("[%s] %s", this.id, msg);
-          reject(new Error(msg));
+          return reject(new Error(msg));
         };
 
         // listeners that we add for completing the operation are added directly to rhea's objects.
@@ -263,7 +263,7 @@ export class Connection extends Entity {
         this._connection.connect();
         this.actionInitiated++;
       } else {
-        resolve(this);
+        return resolve(this);
       }
     });
   }
@@ -294,21 +294,21 @@ export class Connection extends Entity {
           removeListeners();
           log.connection("[%s] Resolving the promise as the connection has been successfully closed.",
             this.id);
-          resolve();
+          return resolve();
         };
 
         onError = (context: RheaEventContext) => {
           removeListeners();
           log.error("[%s] Error occurred while closing amqp connection: %O.",
             this.id, context.connection.error);
-          reject(context.connection.error);
+          return reject(context.connection.error);
         };
 
         const actionAfterTimeout = () => {
           removeListeners();
           const msg: string = `Unable to close the amqp connection "${this.id}" due to operation timeout.`;
           log.error("[%s] %s", this.id, msg);
-          reject(new Error(msg));
+          return reject(new Error(msg));
         };
 
         // listeners that we add for completing the operation are added directly to rhea's objects.
@@ -318,7 +318,7 @@ export class Connection extends Entity {
         this._connection.close();
         this.actionInitiated++;
       } else {
-        resolve();
+        return resolve();
       }
     });
   }
@@ -402,21 +402,21 @@ export class Connection extends Entity {
       onOpen = (context: RheaEventContext) => {
         removeListeners();
         log.session("[%s] Resolving the promise with amqp session.", this.id);
-        resolve(session);
+        return resolve(session);
       };
 
       onClose = (context: RheaEventContext) => {
         removeListeners();
         log.error("[%s] Error occurred while establishing a session over amqp connection: %O.",
           this.id, context.session!.error);
-        reject(context.session!.error);
+        return reject(context.session!.error);
       };
 
       const actionAfterTimeout = () => {
         removeListeners();
         const msg: string = `Unable to create the amqp session due to operation timeout.`;
         log.error("[%s] %s", this.id, msg);
-        reject(new Error(msg));
+        return reject(new Error(msg));
       };
 
       // listeners that we add for completing the operation are added directly to rhea's objects.
@@ -574,8 +574,9 @@ export class Connection extends Entity {
       };
       emitEvent(params);
     });
-
-    log.eventHandler("[%s] rhea-promise 'connection' object is listening for events: %o " +
-      "emitted by rhea's 'connection' object.", this.id, this._connection.eventNames());
+    if (typeof this._connection.eventNames === "function") {
+      log.eventHandler("[%s] rhea-promise 'connection' object is listening for events: %o " +
+        "emitted by rhea's 'connection' object.", this.id, this._connection.eventNames());
+    }
   }
 }

@@ -237,21 +237,21 @@ export abstract class Link extends Entity {
           removeListeners();
           log[this.type]("[%s] Resolving the promise as the amqp %s has been closed.",
             this.connection.id, this.type);
-          resolve();
+          return resolve();
         };
 
         onError = (context: RheaEventContext) => {
           removeListeners();
           log.error("[%s] Error occurred while closing amqp %s: %O.",
             this.connection.id, this.type, context.session!.error);
-          reject(context.session!.error);
+          return reject(context.session!.error);
         };
 
         const actionAfterTimeout = () => {
           removeListeners();
           const msg: string = `Unable to close the amqp %s ${this.name} due to operation timeout.`;
           log.error("[%s] %s", this.connection.id, this.type, msg);
-          reject(new Error(msg));
+          return reject(new Error(msg));
         };
 
         // listeners that we add for completing the operation are added directly to rhea's objects.
@@ -262,7 +262,7 @@ export abstract class Link extends Entity {
         this._link.close();
         this.actionInitiated++;
       } else {
-        resolve();
+        return resolve();
       }
     });
     log[this.type]("[%s] %s has been closed, now closing it's session.",
@@ -291,10 +291,14 @@ export abstract class Link extends Entity {
           emitEvent(params);
         });
     }
-    log.eventHandler("[%s] rhea-promise '%s' object is listening for events: %o " +
-      "emitted by rhea's '%s' object.", this.connection.id, this.type,
-      this._link.eventNames(), this.type);
-    log.eventHandler("[%s] ListenerCount for event '%s_error' on rhea's '%s' object is: %d.",
-      this.connection.id, this.type, this.type, this._link.listenerCount(`${this.type}_error`));
+    if (typeof this._link.eventNames === "function") {
+      log.eventHandler("[%s] rhea-promise '%s' object is listening for events: %o " +
+        "emitted by rhea's '%s' object.", this.connection.id, this.type,
+        this._link.eventNames(), this.type);
+    }
+    if (typeof this._link.listenerCount === "function") {
+      log.eventHandler("[%s] ListenerCount for event '%s_error' on rhea's '%s' object is: %d.",
+        this.connection.id, this.type, this.type, this._link.listenerCount(`${this.type}_error`));
+    }
   }
 }

@@ -167,8 +167,21 @@ export class Session extends Entity {
     return new Promise((resolve, reject) => {
       if (options &&
         ((options.onMessage && !options.onError) || (options.onError && !options.onMessage))) {
-        return reject(new Error("Both onMessage and onError handlers must be provided if one of " +
-          "them is provided."));
+        if (options.credit_window !== 0) {
+          // - If the 'onMessage' handler is not provided and the credit_window is not set to 0,
+          // then messages may be lost between the receiver link getting created and the message
+          // handler being attached.
+          // - It can be possible for a service to initially accept the link attach, which would
+          // cause the promise to resolve. However, moments later the service may send a detach
+          // due to some internal or configuration issue. If no error handler is attached, then
+          // the error may fall through.
+          // - Hence it is advised to either provide both 'onMessage' and 'onError' handlers, or
+          // please set the credit_window to `0`, if you want to provide only the 'onError' handler.
+          return reject(new Error("Either provide both 'onMessage' and 'onError' handlers, or pl" +
+            "ease set the credit_window to 0, if you want to provide only the 'onError' " +
+            "handler. This ensures no messages are lost between the receiver getting created " +
+            " and the 'onMessage' handler being added."));
+        }
       }
 
       const handlersProvided = options && options.onMessage ? true : false;

@@ -1,3 +1,8 @@
+### 0.1.11 - 2018-11-15
+- Added checks for some event handler methods to exist before logging information that uses node's
+event handlers inbuilt functions.
+- Improved error checking while creating the receiver.
+
 ### 0.1.10 - 2018-11-01
 - Provided an option to add an event handler for "settled" event on the Receiver.
 

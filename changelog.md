@@ -1,3 +1,6 @@
+### 0.1.12 - 2018-11-16
+- Fix a minor bug in receiver creation.
+
 ### 0.1.11 - 2018-11-15
 - Added checks for some event handler methods to exist before logging information that uses node's
 event handlers inbuilt functions.

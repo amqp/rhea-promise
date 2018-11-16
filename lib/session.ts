@@ -184,7 +184,6 @@ export class Session extends Entity {
         }
       }
 
-      const handlersProvided = options && options.onMessage ? true : false;
       // Register session handlers for session_error and session_close if provided.
       // listeners provided by the user in the options object should be added
       // to our (rhea-promise) object.
@@ -206,11 +205,15 @@ export class Session extends Entity {
       let onClose: Func<RheaEventContext, void>;
       let waitTimer: any;
 
-      if (handlersProvided) {
-        receiver.on(ReceiverEvents.message, options!.onMessage!);
-        receiver.on(ReceiverEvents.receiverError, options!.onError!);
-        log.receiver("[%s] Added event handler for events: '%s', '%s', on rhea-promise 'receiver'.",
-          this.connection.id, ReceiverEvents.message, ReceiverEvents.receiverError);
+      if (options && options.onMessage) {
+        receiver.on(ReceiverEvents.message, options.onMessage);
+        log.receiver("[%s] Added event handler for event '%s' on rhea-promise 'receiver'.",
+          this.connection.id, ReceiverEvents.message);
+      }
+      if (options && options.onError) {
+        receiver.on(ReceiverEvents.receiverError, options.onError);
+        log.receiver("[%s] Added event handler for event '%s' on rhea-promise 'receiver'.",
+          this.connection.id, ReceiverEvents.receiverError);
       }
 
       if (options && options.onClose) {

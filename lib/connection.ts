@@ -18,6 +18,7 @@ import {
 
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
+import { OperationTimeoutError } from "./operationTimeoutError";
 
 /**
  * Describes the options that can be provided while creating an AMQP sender. One can also provide
@@ -416,7 +417,7 @@ export class Connection extends Entity {
         removeListeners();
         const msg: string = `Unable to create the amqp session due to operation timeout.`;
         log.error("[%s] %s", this.id, msg);
-        return reject(new Error(msg));
+        return reject(new OperationTimeoutError(msg));
       };
 
       // listeners that we add for completing the operation are added directly to rhea's objects.

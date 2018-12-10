@@ -10,6 +10,7 @@ import { Session } from "./session";
 import { Connection } from "./connection";
 import { Func, emitEvent, EmitParameters } from './util/utils';
 import { Entity } from "./entity";
+import { OperationTimeoutError } from "./operationTimeoutError";
 
 export enum LinkType {
   sender = "sender",
@@ -251,7 +252,7 @@ export abstract class Link extends Entity {
           removeListeners();
           const msg: string = `Unable to close the amqp %s ${this.name} due to operation timeout.`;
           log.error("[%s] %s", this.connection.id, this.type, msg);
-          return reject(new Error(msg));
+          return reject(new OperationTimeoutError(msg));
         };
 
         // listeners that we add for completing the operation are added directly to rhea's objects.

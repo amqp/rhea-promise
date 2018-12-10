@@ -12,6 +12,7 @@ import {
 import { Func, EmitParameters, emitEvent } from "./util/utils";
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
+import { OperationTimeoutError } from "./operationTimeoutError";
 
 /**
  * Describes the event listeners that can be added to the Session.
@@ -138,7 +139,7 @@ export class Session extends Entity {
           removeListeners();
           const msg: string = `Unable to close the amqp session due to operation timeout.`;
           log.error("[%s] %s", this.connection.id, msg);
-          reject(new Error(msg));
+          reject(new OperationTimeoutError(msg));
         };
 
         // listeners that we add for completing the operation are added directly to rhea's objects.
@@ -254,7 +255,7 @@ export class Session extends Entity {
         const msg: string = `Unable to create the amqp receiver ${receiver.name} due to ` +
           `operation timeout.`;
         log.error("[%s] %s", this.connection.id, msg);
-        return reject(new Error(msg));
+        return reject(new OperationTimeoutError(msg));
       };
 
       // listeners that we add for completing the operation are added directly to rhea's objects.
@@ -343,7 +344,7 @@ export class Session extends Entity {
         const msg: string = `Unable to create the amqp sender ${sender.name} due to ` +
           `operation timeout.`;
         log.error("[%s] %s", this.connection.id, msg);
-        return reject(new Error(msg));
+        return reject(new OperationTimeoutError(msg));
       };
 
       // listeners that we add for completing the operation are added directly to rhea's objects.

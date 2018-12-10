@@ -1,3 +1,6 @@
+### 0.1.13 - 2018-12-11
+- Throw `OperationTimeoutError` when a Promise to create/close an entity is rejected.
+
 ### 0.1.12 - 2018-11-16
 - Fix a minor bug in receiver creation.
 

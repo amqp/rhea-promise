@@ -11,7 +11,7 @@ import { Container } from "./container";
 import { defaultOperationTimeoutInSeconds } from "./util/constants";
 import { Func, EmitParameters, emitEvent } from "./util/utils";
 import {
-  ConnectionEvents, SessionEvents, SenderEvents, ReceiverEvents, create_connection,
+  ConnectionEvents, SessionEvents, SenderEvents, ReceiverEvents, create_connection, websocket_connect,
   ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, AmqpError, Dictionary,
   ConnectionError, EventContext as RheaEventContext
 } from "rhea";
@@ -49,7 +49,39 @@ export interface ConnectionOptions extends RheaConnectionOptions {
    * timeout occurs. Default: `60 seconds`.
    */
   operationTimeoutInSeconds?: number;
+
+  /**
+   * @property {Object} [webSocketOptions] - Options that include a web socket constructor along
+   * with arguments to be passed to the function returned by rhea.websocket_connect()
+   * This is required when the connection needs to use web sockets but is being created without
+   * creating a container first. If a container is already available, use `websocket_connect` on it
+   * directly instead.
+   */
+  webSocketOptions?: {
+    /**
+     * @property {any} [webSocket] - The WebSocket constructor used to create an AMQP
+     * connection over a WebSocket.
+     */
+    webSocket: any;
+    /**
+     * @property {string} [url] - Websocket url which will be passed to the function returned by
+     * rhea.websocket_connect()
+     */
+    url: string;
+    /**
+     * @property {string[]} {protocol} - Websocket SubProtocol to be passed to the function
+     * returned by rhea.websocket_connect()
+     */
+    protocol: string[],
+    /***
+     * @property {any} {options} - Options to be passed to the function returned by
+     * rhea.websocket_connect()
+     */
+    options?: any
+  };
 }
+
+
 
 /**
  * Describes the options that can be provided while creating a rhea-promise connection from an
@@ -145,7 +177,15 @@ export class Connection extends Entity {
       this._connection = (options as CreatedRheaConnectionOptions).rheaConnection;
       this.container = (options as CreatedRheaConnectionOptions).container;
     } else {
-      this._connection = create_connection(options as ConnectionOptions);
+      const connectionOptions = options as ConnectionOptions;
+      if (connectionOptions.webSocketOptions) {
+        const ws = websocket_connect(connectionOptions.webSocketOptions.webSocket);
+        (connectionOptions.connection_details as any) = ws(
+          connectionOptions.webSocketOptions.url,
+          connectionOptions.webSocketOptions.protocol,
+          connectionOptions.webSocketOptions.options);
+      }
+      this._connection = create_connection(connectionOptions);
       this.container = Container.copyFromContainerInstance(this._connection.container);
     }
 

@@ -380,7 +380,9 @@ export class Connection extends Entity {
    * Remove all the sessions from the internal map.
    */
   removeAllSessions(): void {
-    return this._connection.remove_all_sessions();
+    if (this._connection) {
+      this._connection.remove_all_sessions();
+    }
   }
 
   /**

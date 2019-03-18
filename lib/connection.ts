@@ -377,6 +377,15 @@ export class Connection extends Entity {
   }
 
   /**
+   * Remove all the sessions from the internal map.
+   */
+  removeAllSessions(): void {
+    if (this._connection) {
+      this._connection.remove_all_sessions();
+    }
+  }
+
+  /**
    * Determines whether the remote end of the connection is open.
    * @returns {boolean} result `true` - is open; `false` otherwise.
    */

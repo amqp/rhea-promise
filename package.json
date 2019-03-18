@@ -7,7 +7,7 @@
   "types": "./typings/lib/index.d.ts",
   "dependencies": {
     "debug": "^3.1.0",
-    "rhea": "^1.0.0",
+    "rhea": "^1.0.2",
     "tslib": "^1.9.3"
   },
   "keywords": [

@@ -84,6 +84,10 @@ export class Session extends Entity {
     return this._session.is_itself_closed();
   }
 
+  /**
+   * Removes the underlying amqp session from the internal map in rhea.
+   * Also removes all the event handlers added in the rhea-promise library on the session.
+   */
   remove(): void {
     if (this._session) {
       // Remove our listeners and listeners from rhea's 'session' object.
@@ -100,13 +104,15 @@ export class Session extends Entity {
   }
 
   /**
-   * Closes the amqp session.
+   * Closes the underlying amqp session in rhea if open. Also removes all the event
+   * handlers added in the rhea-promise library on the session
    * @return {Promise<void>} Promise<void>
    * - **Resolves** the promise when rhea emits the "session_close" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "session_error" event while trying
    * to close an amqp session.
    */
   close(): Promise<void> {
+    this.removeAllListeners();
     return new Promise<void>((resolve, reject) => {
       log.error("[%s] The session is open ? -> %s", this.connection.id, this.isOpen());
       if (this.isOpen()) {

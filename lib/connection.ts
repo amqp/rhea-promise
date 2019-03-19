@@ -244,7 +244,8 @@ export class Connection extends Entity {
   }
 
   /**
-   * Removes the provided session from the internal map.
+   * Removes the provided session from the internal map in rhea.
+   * Also removes all the event handlers added in the rhea-promise library on the provided session.
    * @param {Session} session The session to be removed.
    */
   removeSession(session: Session): void {
@@ -377,7 +378,9 @@ export class Connection extends Entity {
   }
 
   /**
-   * Remove all the sessions from the internal map.
+   * Clears all the amqp sessions from the internal map maintained in rhea. This does not remove any
+   * of the event handlers added in the rhea-promise library. To clear such event handlers, either
+   * call remove() or close() on each session
    */
   removeAllSessions(): void {
     if (this._connection) {

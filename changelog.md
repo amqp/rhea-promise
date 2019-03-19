@@ -1,3 +1,9 @@
+### 0.1.14 - 2019-03-19
+- Allow websockets usage on a connection without creating a container first. [PR](https://github.com/amqp/rhea-promise/pull/32).
+- New function `removeAllSessions()` on the connection to clear the internal map in rhea to ensure 
+sessions are not reconnected on the next `connection.open()` call. [PR](https://github.com/amqp/rhea-promise/pull/33).
+- Remove all event listeners on link and session objects when `close()` is called on them. [PR](https://github.com/amqp/rhea-promise/pull/34)
+
 ### 0.1.13 - 2018-12-11
 - Throw `OperationTimeoutError` when a Promise to create/close an entity is rejected.
 

@@ -191,7 +191,8 @@ export abstract class Link extends Entity {
   }
 
   /**
-   * Removes the sender/receiver and it's underlying session from the internal map.
+   * Removes the underlying amqp link and it's session from the internal map in rhea. Also removes
+   * all the event handlers added in the rhea-promise library on the link and it's session.
    * @returns {void} void
    */
   remove(): void {
@@ -207,13 +208,15 @@ export abstract class Link extends Entity {
   }
 
   /**
-   * Closes the amqp link.
+   * Closes the underlying amqp link and session in rhea if open. Also removes all the event
+   * handlers added in the rhea-promise library on the link and it's session
    * @return {Promise<void>} Promise<void>
    * - **Resolves** the promise when rhea emits the "sender_close" | "receiver_close" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the
    * "sender_error" | "receiver_error" event while trying to close the amqp link.
    */
   async close(): Promise<void> {
+    this.removeAllListeners();
     await new Promise<void>((resolve, reject) => {
       log.error("[%s] The %s is open ? -> %s", this.connection.id, this.type, this.isOpen());
       if (this.isOpen()) {

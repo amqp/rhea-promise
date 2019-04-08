@@ -22,3 +22,4 @@ export {
   Func, AmqpResponseStatusCode, isAmqpError, ConnectionStringParseOptions, delay, messageHeader,
   messageProperties, parseConnectionString, ParsedOutput
 } from "./util/utils";
+export { Typed } from "rhea/typings/types";

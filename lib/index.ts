@@ -7,7 +7,7 @@ export {
   uuid_to_string, generate_uuid, string_to_uuid, LinkError, ProtocolError, LinkOptions,
   DeliveryAnnotations, MessageAnnotations, ReceiverEvents, SenderEvents, ConnectionEvents,
   SessionEvents, ContainerOptions as ContainerOptionsBase, TerminusOptions, Types, Sasl,
-  EndpointOptions, MessageUtil, TypeError, SimpleError, Source, ConnectionError
+  EndpointOptions, MessageUtil, TypeError, SimpleError, Source, ConnectionError, Typed
 } from "rhea";
 
 export { EventContext, OnAmqpEvent } from "./eventContext";

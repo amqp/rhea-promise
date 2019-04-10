@@ -101,7 +101,7 @@ export abstract class Link extends Entity {
    */
   isOpen(): boolean {
     let result = false;
-    if (this._session.isOpen() && this._link.is_open()) {
+    if (!this.isClosed && this._session.isOpen() && this._link.is_open()) {
       result = true;
     }
     return result;

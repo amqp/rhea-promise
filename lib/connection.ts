@@ -283,7 +283,7 @@ export class Connection extends Entity {
 
         onClose = (context: RheaEventContext) => {
           removeListeners();
-          const err = context.error || context.connection.error;
+          const err = context.error || context.connection.error || Error('Failed to connect');
           log.error("[%s] Error occurred while establishing amqp connection: %O",
             this.id, err);
           return reject(err);

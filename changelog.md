@@ -1,3 +1,8 @@
+### 0.1.15 - 2019-04-10
+- Export rhea types for `Typed`. [PR](https://github.com/amqp/rhea-promise/pull/36).
+- Export rhea types for `WebSocketImpl` and `WebSocketInstance`.  [PR](https://github.com/amqp/rhea-promise/pull/38).
+- When opening a connection fails with no error, use standard error message. [PR](https://github.com/amqp/rhea-promise/pull/27).
+
 ### 0.1.14 - 2019-03-19
 - Allow websockets usage on a connection without creating a container first. [PR](https://github.com/amqp/rhea-promise/pull/32).
 - New function `removeAllSessions()` on the connection to clear the internal map in rhea to ensure 

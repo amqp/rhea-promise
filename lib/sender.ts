@@ -89,9 +89,11 @@ export class Sender extends Link {
 
   /**
    * Sends the message
-   * @param {Message | Buffer} msg The AMQP message to be sent.
-   * @param {Buffer | string} [tag] The optional tag that can be sent
-   * @param {number} [format] The format in which the message needs to be sent.
+   * @param {Message | Buffer} msg The message to be sent. For default AMQP format msg parameter
+   * should be of type Message interface. For a custom format, the msg parameter should be a Buffer.
+   * @param {Buffer | string} [tag] The message tag if any.
+   * @param {number} [format] The message format. Usually it is zero. Specify this
+   * if a message with custom format needs to be sent.
    * @returns {Delivery} Delivery The delivery information about the sent message.
    */
   send(msg: Message | Buffer, tag?: Buffer | string, format?: number): Delivery {

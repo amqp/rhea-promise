@@ -12,7 +12,7 @@ export class OperationTimeoutError extends Error {
   /**
    * Provides a logical amqp error condition.
    */
-  readonly condition: string = "amqp:operation-timeout";
+  readonly condition: string = "rhea-promise:operation-timeout";
   /**
    * Provides a short description about the error.
    */

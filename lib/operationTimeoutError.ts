@@ -9,17 +9,8 @@ export class OperationTimeoutError extends Error {
    * Describes the name of the error.
    */
   readonly name: string = "OperationTimeoutError";
-  /**
-   * Provides a logical amqp error condition.
-   */
-  readonly condition: string = "rhea-promise:operation-timeout";
-  /**
-   * Provides a short description about the error.
-   */
-  description: string;
 
   constructor(message: string) {
     super(message);
-    this.description = message;
   }
 }

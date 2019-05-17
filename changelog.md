@@ -1,5 +1,5 @@
-### 0.2.0 - 2019-05-14
-- Updated the condition for `OperationTimeoutError` from `amqp:operation-timeout` to `rhea-promise:operation-timeout` as pointed out in https://github.com/amqp/rhea-promise/issues/42. Fixed in [PR](https://github.com/amqp/rhea-promise/pull/43).
+### 0.2.0 - 2019-05-17
+- Updated `OperationTimeoutError` to be a non-AMQP Error as pointed out in [#42](https://github.com/amqp/rhea-promise/issues/42). Fixed in [PR](https://github.com/amqp/rhea-promise/pull/43).
 
 ### 0.1.15 - 2019-04-10
 - Export rhea types for `Typed`. [PR](https://github.com/amqp/rhea-promise/pull/36).

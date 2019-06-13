@@ -218,7 +218,8 @@ export abstract class Link extends Entity {
   async close(): Promise<void> {
     this.removeAllListeners();
     await new Promise<void>((resolve, reject) => {
-      log.error("[%s] The %s is open ? -> %s", this.connection.id, this.type, this.isOpen());
+      log.error("[%s] The %s '%s' on amqp session '%s' is open ? -> %s",
+        this.connection.id, this.type, this.name, this.session.id, this.isOpen());
       if (this.isOpen()) {
         const errorEvent = this.type === LinkType.sender
           ? SenderEvents.senderError
@@ -239,22 +240,23 @@ export abstract class Link extends Entity {
 
         onClose = (context: RheaEventContext) => {
           removeListeners();
-          log[this.type]("[%s] Resolving the promise as the amqp %s has been closed.",
-            this.connection.id, this.type);
+          log[this.type]("[%s] Resolving the promise as the %s '%s' on amqp session '%s' " +
+            "has been closed.", this.connection.id, this.type, this.name, this.session.id);
           return resolve();
         };
 
         onError = (context: RheaEventContext) => {
           removeListeners();
-          log.error("[%s] Error occurred while closing amqp %s: %O.",
-            this.connection.id, this.type, context.session!.error);
+          log.error("[%s] Error occurred while closing %s '%s' on amqp session '%s': %O.",
+            this.connection.id, this.type, this.name, this.session.id, context.session!.error);
           return reject(context.session!.error);
         };
 
         const actionAfterTimeout = () => {
           removeListeners();
-          const msg: string = `Unable to close the amqp %s ${this.name} due to operation timeout.`;
-          log.error("[%s] %s", this.connection.id, this.type, msg);
+          const msg: string = `Unable to close the ${this.type} '${this.name}' ` +
+            `on amqp session '${this.session.id}' due to operation timeout.`;
+          log.error("[%s] %s", this.connection.id, msg);
           return reject(new OperationTimeoutError(msg));
         };
 
@@ -269,8 +271,8 @@ export abstract class Link extends Entity {
         return resolve();
       }
     });
-    log[this.type]("[%s] %s has been closed, now closing it's session.",
-      this.connection.id, this.type);
+    log[this.type]("[%s] %s '%s' has been closed, now closing it's amqp session '%s'.",
+      this.connection.id, this.type, this.name, this.session.id);
     return this._session.close();
   }
 

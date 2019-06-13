@@ -1,3 +1,7 @@
+### 0.2.1 - 2019-06-13
+- Added a read only property id to the Session object. The id property is created by concatenating session's local channel, remote channel and the connection id `"local_<number>-remote_<number>-<connection-id>"`, thus making it unique for that connection.
+- Improved log statements by adding the session id and the sender, receiver names to help while debugging applications.
+
 ### 0.2.0 - 2019-05-17
 - Updated `OperationTimeoutError` to be a non-AMQP Error as pointed out in [#42](https://github.com/amqp/rhea-promise/issues/42). Fixed in [PR](https://github.com/amqp/rhea-promise/pull/43).
 

@@ -53,6 +53,29 @@ export class Session extends Entity {
   }
 
   /**
+   * Returns the unique identifier for the session in the format:
+   * "local_<number>-remote_<number>-<connection-id>" or an empty string if the local channel or
+   * remote channel are not yet defined.
+   */
+  get id(): string {
+    let result: string = "";
+    const session: any = this._session;
+    if (session.local && session.local.channel) {
+      result += `local_${session.local.channel}-`;
+    }
+
+    if (session.remote && session.remote.channel) {
+      result += `remote_${session.remote.channel}-`;
+    }
+
+    if (result) {
+      result += `${this._connection.id}`;
+    }
+
+    return result;
+  }
+
+  /**
    * Determines whether the session and the underlying connection is open.
    * @returns {boolean} result `true` - is open; `false` otherwise.
    */
@@ -114,7 +137,7 @@ export class Session extends Entity {
   close(): Promise<void> {
     this.removeAllListeners();
     return new Promise<void>((resolve, reject) => {
-      log.error("[%s] The session is open ? -> %s", this.connection.id, this.isOpen());
+      log.error("[%s] The amqp session '%s' is open ? -> %s", this.connection.id, this.id, this.isOpen());
       if (this.isOpen()) {
         let onError: Func<RheaEventContext, void>;
         let onClose: Func<RheaEventContext, void>;
@@ -129,21 +152,21 @@ export class Session extends Entity {
 
         onClose = (context: RheaEventContext) => {
           removeListeners();
-          log.session("[%s] Resolving the promise as the amqp session has been closed.",
-            this.connection.id);
+          log.session("[%s] Resolving the promise as the amqp session '%s' has been closed.",
+            this.connection.id, this.id);
           return resolve();
         };
 
         onError = (context: RheaEventContext) => {
           removeListeners();
-          log.error("[%s] Error occurred while closing amqp session.",
-            this.connection.id, context.session!.error);
+          log.error("[%s] Error occurred while closing amqp session '%s'.",
+            this.connection.id, this.id, context.session!.error);
           reject(context.session!.error);
         };
 
         const actionAfterTimeout = () => {
           removeListeners();
-          const msg: string = `Unable to close the amqp session due to operation timeout.`;
+          const msg: string = `Unable to close the amqp session ${this.id} due to operation timeout.`;
           log.error("[%s] %s", this.connection.id, msg);
           reject(new OperationTimeoutError(msg));
         };
@@ -151,7 +174,7 @@ export class Session extends Entity {
         // listeners that we add for completing the operation are added directly to rhea's objects.
         this._session.once(SessionEvents.sessionClose, onClose);
         this._session.once(SessionEvents.sessionError, onError);
-        log.session("[%s] Calling session.close()", this.connection.id);
+        log.session("[%s] Calling session.close() for amqp session '%s'.", this.connection.id, this.id);
         waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._session.close();
         this.actionInitiated++;
@@ -196,14 +219,14 @@ export class Session extends Entity {
       // to our (rhea-promise) object.
       if (options && options.onSessionError) {
         this.on(SessionEvents.sessionError, options.onSessionError);
-        log.session("[%s] Added event handler for event '%s' on rhea-promise 'session', " +
-          "while creating the 'receiver'.", this.connection.id, SessionEvents.sessionError);
+        log.session("[%s] Added event handler for event '%s' on rhea-promise 'session: %s', " +
+          "while creating the 'receiver'.", this.connection.id, SessionEvents.sessionError, this.id);
       }
 
       if (options && options.onSessionClose) {
         this.on(SessionEvents.sessionClose, options.onSessionClose);
-        log.session("[%s] Added event handler for event '%s' on rhea-promise 'session', " +
-          " while creating the 'receiver'.", this.connection.id, SessionEvents.sessionClose);
+        log.session("[%s] Added event handler for event '%s' on rhea-promise 'session: %s', " +
+          " while creating the 'receiver'.", this.connection.id, SessionEvents.sessionClose, this.id);
       }
       const rheaReceiver = this._session.attach_receiver(options);
       const receiver = new Receiver(this, rheaReceiver, options);
@@ -244,22 +267,23 @@ export class Session extends Entity {
 
       onOpen = (context: RheaEventContext) => {
         removeListeners();
-        log.receiver("[%s] Resolving the promise with amqp receiver '%s'.",
-          this.connection.id, receiver.name);
+        log.receiver("[%s] Resolving the promise with amqp receiver '%s' on amqp session '%s'.",
+          this.connection.id, receiver.name, this.id);
         return resolve(receiver);
       };
 
       onClose = (context: RheaEventContext) => {
         removeListeners();
-        log.error("[%s] Error occurred while creating a receiver over amqp connection: %O.",
-          this.connection.id, context.receiver!.error);
+        log.error("[%s] Error occurred while creating the amqp receiver '%s' on amqp session " +
+          "'%s' over amqp connection: %O.",
+          this.connection.id, receiver.name, this.id, context.receiver!.error);
         return reject(context.receiver!.error);
       };
 
       const actionAfterTimeout = () => {
         removeListeners();
-        const msg: string = `Unable to create the amqp receiver ${receiver.name} due to ` +
-          `operation timeout.`;
+        const msg: string = `Unable to create the amqp receiver '${receiver.name}' on amqp ` +
+          `session '${this.id}' due to operation timeout.`;
         log.error("[%s] %s", this.connection.id, msg);
         return reject(new OperationTimeoutError(msg));
       };
@@ -284,14 +308,14 @@ export class Session extends Entity {
       // Register session handlers for session_error and session_close if provided.
       if (options && options.onSessionError) {
         this.on(SessionEvents.sessionError, options.onSessionError);
-        log.session("[%s] Added event handler for event '%s' on rhea-promise 'session', " +
-          "while creating the sender.", this.connection.id, SessionEvents.sessionError);
+        log.session("[%s] Added event handler for event '%s' on rhea-promise 'session: %s', " +
+          "while creating the sender.", this.connection.id, SessionEvents.sessionError, this.id);
       }
 
       if (options && options.onSessionClose) {
         this.on(SessionEvents.sessionClose, options.onSessionClose);
-        log.session("[%s] Added event handler for event '%s' on rhea-promise 'session', " +
-          "while creating the sender.", this.connection.id, SessionEvents.sessionClose);
+        log.session("[%s] Added event handler for event '%s' on rhea-promise 'session: %s', " +
+          "while creating the sender.", this.connection.id, SessionEvents.sessionClose, this.id);
       }
 
       const rheaSender = this._session.attach_sender(options);
@@ -333,22 +357,23 @@ export class Session extends Entity {
 
       onSendable = (context: RheaEventContext) => {
         removeListeners();
-        log.sender("[%s] Resolving the promise with amqp sender '%s'.",
-          this.connection.id, sender.name);
+        log.sender("[%s] Resolving the promise with amqp sender '%s' on amqp session '%s'.",
+          this.connection.id, sender.name, this.id);
         return resolve(sender);
       };
 
       onClose = (context: RheaEventContext) => {
         removeListeners();
-        log.error("[%s] Error occurred while creating a sender over amqp connection: %O.",
-          this.connection.id, context.sender!.error);
+        log.error("[%s] Error occurred while creating the amqp sender '%s' on amqp session '%s' " +
+          "over amqp connection: %O.",
+          this.connection.id, sender.name, this.id, context.sender!.error);
         return reject(context.sender!.error);
       };
 
       const actionAfterTimeout = () => {
         removeListeners();
-        const msg: string = `Unable to create the amqp sender ${sender.name} due to ` +
-          `operation timeout.`;
+        const msg: string = `Unable to create the amqp sender '${sender.name}' on amqp session ` +
+          `'${this.id}' due to operation timeout.`;
         log.error("[%s] %s", this.connection.id, msg);
         return reject(new OperationTimeoutError(msg));
       };
@@ -429,8 +454,9 @@ export class Session extends Entity {
       emitEvent(params);
     });
     if (typeof this._session.eventNames === "function") {
-      log.eventHandler("[%s] rhea-promise 'session' object is listening for events: %o " +
-        "emitted by rhea's 'session' object.", this.connection.id, this._session.eventNames());
+      log.eventHandler("[%s] rhea-promise 'session' object '%s' is listening for events: %o " +
+        "emitted by rhea's 'session' object.",
+        this.connection.id, this.id, this._session.eventNames());
     }
   }
 }

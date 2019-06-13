@@ -454,7 +454,7 @@ export class Connection extends Entity {
 
       onOpen = (context: RheaEventContext) => {
         removeListeners();
-        log.session("[%s] Resolving the promise with amqp session.", this.id);
+        log.session("[%s] Resolving the promise with amqp session '%s'.", this.id, session.id);
         return resolve(session);
       };
 
@@ -530,8 +530,8 @@ export class Connection extends Entity {
       session.createSender(senderOptions),
       session.createReceiver(receiverOptions)
     ]);
-    log.connection("[%s] Successfully created the sender and receiver links on the same session.",
-      this.id);
+    log.connection("[%s] Successfully created the sender '%s' and receiver '%s' on the same " +
+      "amqp session '%s'.", this.id, sender.name, receiver.name, session.id);
     return {
       session: session,
       sender: sender,

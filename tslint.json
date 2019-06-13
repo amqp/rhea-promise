@@ -41,7 +41,6 @@
     "no-unsafe-finally": true,
     "no-unused-expression": true,
     "no-unused-variable": false,
-    "no-use-before-declare": true,
     "no-var-keyword": true,
     "no-floating-promises": true,
     "no-return-await": true,

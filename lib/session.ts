@@ -53,6 +53,29 @@ export class Session extends Entity {
   }
 
   /**
+   * Returns the unique identifier for the session in the format:
+   * "local_<number>-remote_<number>-<connection-id>" or an empty string if the local channel or
+   * remote channel are not yet defined.
+   */
+  get id(): string {
+    let result: string = "";
+    const session: any = this._session;
+    if (session.local && session.local.channel) {
+      result += `local_${session.local.channel}-`;
+    }
+
+    if (session.remote && session.remote.channel) {
+      result += `remote_${session.remote.channel}-`;
+    }
+
+    if (result) {
+      result += `${this._connection.id}`;
+    }
+
+    return result;
+  }
+
+  /**
    * Determines whether the session and the underlying connection is open.
    * @returns {boolean} result `true` - is open; `false` otherwise.
    */

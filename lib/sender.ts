@@ -7,7 +7,10 @@ import {
 import { Session } from "./session";
 import { SenderEvents } from "rhea";
 import { Link, LinkType } from './link';
-import { OnAmqpEvent } from "./eventContext";
+import { OnAmqpEvent, EventContext } from "./eventContext";
+import * as log from "./log";
+import { Func } from "./util/utils";
+import { OperationTimeoutError } from "./operationTimeoutError";
 
 /**
  * Descibes the options that can be provided while creating an AMQP sender.
@@ -100,5 +103,142 @@ export class Sender extends Link {
    */
   send(msg: Message | Buffer, tag?: Buffer | string, format?: number): Delivery {
     return (this._link as RheaSender).send(msg, tag, format);
+  }
+
+  /**
+   * Async send that returns a Promise<Delivery> after a message has been sent successfully else
+   * rejects the promise with an error.
+   *
+   * @param msg The message to be sent. For default AMQP format msg parameter
+   * should be of type Message interface. For a custom format, the msg parameter should be a Buffer
+   * and a valid value should be passed to the `format` argument.
+   * @param tag The message tag if any.
+   * @param format The message format. Specify this if a message with custom format needs
+   * to be sent. `0` implies the standard AMQP 1.0 defined format. If no value is provided, then the
+   * given message is assumed to be of type Message interface and encoded appropriately.
+   *
+   * @returns Promise<Delivery>
+   */
+  sendAsync(msg: Message | Buffer, tag?: Buffer | string, format?: number): Promise<Delivery> {
+    return new Promise<Delivery>((resolve, reject) => {
+      let waitTimer: any;
+      log.sender(
+        "[%s] Sender '%s', credit: %d available: %d",
+        this.connection.id,
+        this.name,
+        this.credit,
+        this.session.outgoing.available()
+      );
+      if (this.sendable()) {
+        let onRejected: Func<EventContext, void>;
+        let onReleased: Func<EventContext, void>;
+        let onModified: Func<EventContext, void>;
+        let onAccepted: Func<EventContext, void>;
+        const removeListeners = (): void => {
+          clearTimeout(waitTimer);
+          this.removeListener(SenderEvents.rejected, onRejected);
+          this.removeListener(SenderEvents.accepted, onAccepted);
+          this.removeListener(SenderEvents.released, onReleased);
+          this.removeListener(SenderEvents.modified, onModified);
+        };
+
+        onAccepted = (context: EventContext) => {
+          // Since we will be adding listener for accepted and rejected event every time
+          // we send a message, we need to remove listener for both the events.
+          // This will ensure duplicate listeners are not added for the same event.
+          removeListeners();
+          log.sender(
+            "[%s] Sender '%s', got event accepted.",
+            this.connection.id,
+            this.name
+          );
+          resolve();
+        };
+        onRejected = (context: EventContext) => {
+          removeListeners();
+          log.error(
+            "[%s] Sender '%s', got event rejected.",
+            this.connection.id,
+            this.name
+          );
+          const err = context!.delivery!.remote_state!.error;
+          reject(err);
+        };
+        onReleased = (context: EventContext) => {
+          removeListeners();
+          log.error(
+            "[%s] Sender '%s', got event released.",
+            this.connection.id,
+            this.name
+          );
+          let err: Error;
+          if (context!.delivery!.remote_state!.error) {
+            err = context!.delivery!.remote_state!.error;
+          } else {
+            err = new Error(
+              `[${this.connection.id}]Sender '${this.name}', ` +
+              `received a release disposition.Hence we are rejecting the promise.`
+            );
+          }
+          reject(err);
+        };
+        onModified = (context: EventContext) => {
+          removeListeners();
+          log.error(
+            "[%s] Sender '%s', got event modified.",
+            this.connection.id,
+            this.name
+          );
+          let err: Error;
+          if (context!.delivery!.remote_state!.error) {
+            err = context!.delivery!.remote_state!.error;
+          } else {
+            err = new Error(
+              `[${this.connection.id}] Sender "${this.name}", ` +
+              `received a modified disposition. Hence we are rejecting the promise.`
+            );
+          }
+          reject(err);
+        };
+
+        const actionAfterTimeout = () => {
+          removeListeners();
+          const desc: string =
+            `[${this.connection.id}] Sender "${this.name}" on amqp session "${this.session.id}"` +
+            `with address "${this.address}", was not able to send the message right now, due ` +
+            `to operation timeout.`;
+          log.error(desc);
+          return reject(new OperationTimeoutError(desc));
+        };
+
+        this.on(SenderEvents.accepted, onAccepted);
+        this.on(SenderEvents.rejected, onRejected);
+        this.on(SenderEvents.modified, onModified);
+        this.on(SenderEvents.released, onReleased);
+        waitTimer = setTimeout(
+          actionAfterTimeout,
+          this.connection.options!.operationTimeoutInSeconds! * 1000
+        );
+        try {
+          const delivery = this.send(msg, tag, format);
+          log.sender(
+            "[%s] Sender '%s', sent message with delivery id: %d",
+            this.connection.id,
+            this.name,
+            delivery.id
+          );
+        } catch (error) {
+          removeListeners();
+          return reject(error);
+        }
+      } else {
+        // let us retry to send the message after some time.
+        const msg =
+          `[${this.connection.id}] Sender "${this.name}" on amqp session "${this.session.id}", ` +
+          `cannot send the message right now as it does not have enough credit. Please try later.`;
+        log.error(msg);
+        reject(new Error(msg));
+      }
+    });
   }
 }

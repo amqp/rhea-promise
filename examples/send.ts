@@ -54,7 +54,7 @@ async function main(): Promise<void> {
     message_id: "12343434343434"
   };
 
-  const delivery: Delivery = await sender.send(message);
+  const delivery: Delivery = sender.send(message);
   console.log(">>>>>[%s] Delivery id: ", connection.id, delivery.id);
 
   await sender.close();

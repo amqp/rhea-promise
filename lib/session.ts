@@ -190,43 +190,9 @@ export class Session extends Entity {
    *
    * Closes the underlying amqp session in rhea if open. Also removes all the event
    * handlers added in the rhea-promise library on the session
-   * @return Promise<void>
-   * - **Resolves** the promise when rhea emits the "session_close" event.
-   * - **Rejects** the promise with an AmqpError when rhea emits the "session_error" event while trying
-   * to close an amqp session.
    */
   closeSync(): void {
-    this.removeAllListeners();
-    log.error("[%s] The amqp session '%s' is open ? -> %s", this.connection.id, this.id, this.isOpen());
-    if (this.isOpen()) {
-      let onError: Func<RheaEventContext, void>;
-      let onClose: Func<RheaEventContext, void>;
-
-      const removeListeners = () => {
-        this.actionInitiated--;
-        this._session.removeListener(SessionEvents.sessionError, onError);
-        this._session.removeListener(SessionEvents.sessionClose, onClose);
-      };
-
-      onClose = (context: RheaEventContext) => {
-        removeListeners();
-        log.session("[%s] Resolving the promise as the amqp session '%s' has been closed.",
-          this.connection.id, this.id);
-      };
-
-      onError = (context: RheaEventContext) => {
-        removeListeners();
-        log.error("[%s] Error occurred while closing amqp session '%s'.",
-          this.connection.id, this.id, context.session!.error);
-      };
-
-      // listeners that we add for completing the operation are added directly to rhea's objects.
-      this._session.once(SessionEvents.sessionClose, onClose);
-      this._session.once(SessionEvents.sessionError, onError);
-      log.session("[%s] Calling session.close() for amqp session '%s'.", this.connection.id, this.id);
-      this._session.close();
-      this.actionInitiated++;
-    }
+    this.close().catch(() => { /** do nothing */ });
   }
 
   /**

@@ -303,50 +303,7 @@ export abstract class Link extends Entity {
    * and optionally it's session.
    */
   closeSync(options?: LinkCloseOptions): void {
-    if (!options) options = {};
-    if (options.closeSession == undefined) options.closeSession = true;
-    log.error("[%s] The %s '%s' on amqp session '%s' is open ? -> %s",
-      this.connection.id, this.type, this.name, this.session.id, this.isOpen());
-    if (this.isOpen()) {
-      const errorEvent = this.type === LinkType.sender
-        ? SenderEvents.senderError
-        : ReceiverEvents.receiverError;
-      const closeEvent = this.type === LinkType.sender
-        ? SenderEvents.senderClose
-        : ReceiverEvents.receiverClose;
-      let onError: Func<RheaEventContext, void>;
-      let onClose: Func<RheaEventContext, void>;
-
-      const removeListeners = () => {
-        this.actionInitiated--;
-        this._link.removeListener(errorEvent, onError);
-        this._link.removeListener(closeEvent, onClose);
-      };
-
-      onClose = (context: RheaEventContext) => {
-        removeListeners();
-        log[this.type]("[%s] Resolving the promise as the %s '%s' on amqp session '%s' " +
-          "has been closed.", this.connection.id, this.type, this.name, this.session.id);
-      };
-
-      onError = (context: RheaEventContext) => {
-        removeListeners();
-        log.error("[%s] Error occurred while closing %s '%s' on amqp session '%s': %O.",
-          this.connection.id, this.type, this.name, this.session.id, context.session!.error);
-      };
-
-      // listeners that we add for completing the operation are added directly to rhea's objects.
-      this._link.once(closeEvent, onClose);
-      this._link.once(errorEvent, onError);
-      this._link.close();
-      this.actionInitiated++;
-    }
-
-    if (options.closeSession) {
-      log[this.type]("[%s] %s '%s' has been closed, now closing it's amqp session '%s'.",
-        this.connection.id, this.type, this.name, this.session.id);
-      this._session.closeSync();
-    }
+    this.close(options).catch(() => { /** do nothing */});
   }
 
   /**

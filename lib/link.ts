@@ -17,6 +17,18 @@ export enum LinkType {
   receiver = "receiver"
 }
 
+/**
+ * @interface LinkCloseOptions
+ * Describes the options that can be provided while closing the link.
+ */
+export interface LinkCloseOptions {
+  /**
+   * Indicates whether the underlying amqp session should also be closed when the
+   * link is being closed.
+   */
+  closeSession?: boolean;
+}
+
 export abstract class Link extends Entity {
   linkOptions?: LinkOptions;
   type: LinkType;
@@ -208,14 +220,17 @@ export abstract class Link extends Entity {
   }
 
   /**
-   * Closes the underlying amqp link and session in rhea if open. Also removes all the event
-   * handlers added in the rhea-promise library on the link and it's session
-   * @return {Promise<void>} Promise<void>
+   * Closes the underlying amqp link and optionally the session as well in rhea if open.
+   * Also removes all the event handlers added in the rhea-promise library on the link
+   * and optionally it's session.
+   * @returns Promise<void>
    * - **Resolves** the promise when rhea emits the "sender_close" | "receiver_close" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the
    * "sender_error" | "receiver_error" event while trying to close the amqp link.
    */
-  async close(): Promise<void> {
+  async close(options?: LinkCloseOptions): Promise<void> {
+    if (!options) options = {};
+    if (options.closeSession == undefined) options.closeSession = true;
     this.removeAllListeners();
     await new Promise<void>((resolve, reject) => {
       log.error("[%s] The %s '%s' on amqp session '%s' is open ? -> %s",
@@ -271,9 +286,67 @@ export abstract class Link extends Entity {
         return resolve();
       }
     });
-    log[this.type]("[%s] %s '%s' has been closed, now closing it's amqp session '%s'.",
-      this.connection.id, this.type, this.name, this.session.id);
-    return this._session.close();
+
+    if (options.closeSession) {
+      log[this.type]("[%s] %s '%s' has been closed, now closing it's amqp session '%s'.",
+        this.connection.id, this.type, this.name, this.session.id);
+      return this._session.close();
+    }
+  }
+
+  /**
+   * **It is the synchronous version of `close` where the user can call `closeSync` and not**
+   * **worry about errors caused while closing the link (fire and forget).**
+   *
+   * Closes the underlying amqp link and optionally the session as well in rhea if open.
+   * Also removes all the event handlers added in the rhea-promise library on the link
+   * and optionally it's session.
+   */
+  closeSync(options?: LinkCloseOptions): void {
+    if (!options) options = {};
+    if (options.closeSession == undefined) options.closeSession = true;
+    log.error("[%s] The %s '%s' on amqp session '%s' is open ? -> %s",
+      this.connection.id, this.type, this.name, this.session.id, this.isOpen());
+    if (this.isOpen()) {
+      const errorEvent = this.type === LinkType.sender
+        ? SenderEvents.senderError
+        : ReceiverEvents.receiverError;
+      const closeEvent = this.type === LinkType.sender
+        ? SenderEvents.senderClose
+        : ReceiverEvents.receiverClose;
+      let onError: Func<RheaEventContext, void>;
+      let onClose: Func<RheaEventContext, void>;
+
+      const removeListeners = () => {
+        this.actionInitiated--;
+        this._link.removeListener(errorEvent, onError);
+        this._link.removeListener(closeEvent, onClose);
+      };
+
+      onClose = (context: RheaEventContext) => {
+        removeListeners();
+        log[this.type]("[%s] Resolving the promise as the %s '%s' on amqp session '%s' " +
+          "has been closed.", this.connection.id, this.type, this.name, this.session.id);
+      };
+
+      onError = (context: RheaEventContext) => {
+        removeListeners();
+        log.error("[%s] Error occurred while closing %s '%s' on amqp session '%s': %O.",
+          this.connection.id, this.type, this.name, this.session.id, context.session!.error);
+      };
+
+      // listeners that we add for completing the operation are added directly to rhea's objects.
+      this._link.once(closeEvent, onClose);
+      this._link.once(errorEvent, onError);
+      this._link.close();
+      this.actionInitiated++;
+    }
+
+    if (options.closeSession) {
+      log[this.type]("[%s] %s '%s' has been closed, now closing it's amqp session '%s'.",
+        this.connection.id, this.type, this.name, this.session.id);
+      this._session.closeSync();
+    }
   }
 
   /**

@@ -178,8 +178,10 @@ export interface EmitParameters {
  */
 export function emitEvent(params: EmitParameters): void {
   const emit = () => {
-    log[params.emitterType]("[%s] %s got event: '%s'. Re-emitting the translated context.",
-      params.connectionId, params.emitterType, params.eventName);
+    const id = params.emitter &&
+      ((params.emitter as Connection | Session).id || (params.emitter as Link).name);
+    log[params.emitterType]("[%s] %s '%s' got event: '%s'. Re-emitting the translated context.",
+      params.connectionId, params.emitterType, id, params.eventName);
     params.emitter.emit(params.eventName,
       EventContext.translate(params.rheaContext, params.emitter, params.eventName));
   };

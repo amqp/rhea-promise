@@ -185,10 +185,55 @@ export class Session extends Entity {
   }
 
   /**
+   * **It is the synchronous version of `close` where the user can call `closeSync` and not**
+   * **worry about errors caused while closing the link (fire and forget).**
+   *
+   * Closes the underlying amqp session in rhea if open. Also removes all the event
+   * handlers added in the rhea-promise library on the session
+   * @return Promise<void>
+   * - **Resolves** the promise when rhea emits the "session_close" event.
+   * - **Rejects** the promise with an AmqpError when rhea emits the "session_error" event while trying
+   * to close an amqp session.
+   */
+  closeSync(): void {
+    this.removeAllListeners();
+    log.error("[%s] The amqp session '%s' is open ? -> %s", this.connection.id, this.id, this.isOpen());
+    if (this.isOpen()) {
+      let onError: Func<RheaEventContext, void>;
+      let onClose: Func<RheaEventContext, void>;
+
+      const removeListeners = () => {
+        this.actionInitiated--;
+        this._session.removeListener(SessionEvents.sessionError, onError);
+        this._session.removeListener(SessionEvents.sessionClose, onClose);
+      };
+
+      onClose = (context: RheaEventContext) => {
+        removeListeners();
+        log.session("[%s] Resolving the promise as the amqp session '%s' has been closed.",
+          this.connection.id, this.id);
+      };
+
+      onError = (context: RheaEventContext) => {
+        removeListeners();
+        log.error("[%s] Error occurred while closing amqp session '%s'.",
+          this.connection.id, this.id, context.session!.error);
+      };
+
+      // listeners that we add for completing the operation are added directly to rhea's objects.
+      this._session.once(SessionEvents.sessionClose, onClose);
+      this._session.once(SessionEvents.sessionError, onError);
+      log.session("[%s] Calling session.close() for amqp session '%s'.", this.connection.id, this.id);
+      this._session.close();
+      this.actionInitiated++;
+    }
+  }
+
+  /**
    * Creates an amqp receiver on this session.
-   * @param {Session} session The amqp session object on which the receiver link needs to be established.
-   * @param {ReceiverOptions} [options] Options that can be provided while creating an amqp receiver.
-   * @return {Promise<Receiver>} Promise<Receiver>
+   * @param session The amqp session object on which the receiver link needs to be established.
+   * @param options Options that can be provided while creating an amqp receiver.
+   * @return Promise<Receiver>
    * - **Resolves** the promise with the Receiver object when rhea emits the "receiver_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "receiver_close" event while trying
    * to create an amqp receiver or the operation timeout occurs.
@@ -297,8 +342,8 @@ export class Session extends Entity {
 
   /**
    * Creates an amqp sender on this session.
-   * @param {SenderOptions} [options] Options that can be provided while creating an amqp sender.
-   * @return {Promise<Sender>} Promise<Sender>
+   * @param options Options that can be provided while creating an amqp sender.
+   * @return Promise<Sender>
    * - **Resolves** the promise with the Sender object when rhea emits the "sender_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "sender_close" event while trying
    * to create an amqp sender or the operation timeout occurs.

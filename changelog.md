@@ -1,6 +1,9 @@
 ### 0.2.1 - 2019-06-13
 - Added a read only property id to the Session object. The id property is created by concatenating session's local channel, remote channel and the connection id `"local_<number>-remote_<number>-<connection-id>"`, thus making it unique for that connection.
 - Improved log statements by adding the session id and the sender, receiver names to help while debugging applications.
+- Added `closeSync()` method on `Link` and `Session`.
+- Added `options` to `Link.close({closeSession: true | false})`, thus the user can specify whether the underlying session
+should be closed while closing the `Sender|Receiver`. Default is `true`.
 
 ### 0.2.0 - 2019-05-17
 - Updated `OperationTimeoutError` to be a non-AMQP Error as pointed out in [#42](https://github.com/amqp/rhea-promise/issues/42). Fixed in [PR](https://github.com/amqp/rhea-promise/pull/43).

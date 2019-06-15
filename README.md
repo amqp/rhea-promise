@@ -1,6 +1,6 @@
 # rhea-promise
 
-A Promisified layer over rhea AMQP client.
+A Promisified layer over [rhea](https://githhub.com/amqp/rhea) AMQP client.
 
 ## Pre-requisite ##
 - **Node.js version: 6.x or higher.** 
@@ -130,7 +130,7 @@ async function main(): Promise<void> {
     message_id: "12343434343434"
   };
 
-  const delivery: Delivery = await sender.send(message);
+  const delivery: Delivery = sender.send(message);
   console.log(">>>>>[%s] Delivery id: ", connection.id, delivery.id);
 
   await sender.close();
@@ -222,3 +222,7 @@ npm i
 ```
 npm run build
 ```
+
+
+## AMQP Protocol specification
+Amqp protocol specification can be found [here](http://www.amqp.org/sites/amqp.org/files/amqp.pdf).

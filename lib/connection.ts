@@ -324,12 +324,14 @@ export class Connection extends Entity {
       if (this.isOpen()) {
         let onClose: Func<RheaEventContext, void>;
         let onError: Func<RheaEventContext, void>;
+        let onDisconnected: Func<RheaEventContext, void>;
         let waitTimer: any;
         const removeListeners = () => {
           clearTimeout(waitTimer);
           this.actionInitiated--;
           this._connection.removeListener(ConnectionEvents.connectionError, onError);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
+          this._connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
         };
 
         onClose = (context: RheaEventContext) => {
@@ -346,6 +348,14 @@ export class Connection extends Entity {
           return reject(context.connection.error);
         };
 
+        onDisconnected = (context: RheaEventContext) => {
+          removeListeners();
+          const error = context.connection && context.connection.error
+            ? context.connection.error
+            : context.error;
+          log.error("[%s] Connection got disconnected while closing itself: %O.", this.id, error);
+        };
+
         const actionAfterTimeout = () => {
           removeListeners();
           const msg: string = `Unable to close the amqp connection "${this.id}" due to operation timeout.`;
@@ -356,6 +366,7 @@ export class Connection extends Entity {
         // listeners that we add for completing the operation are added directly to rhea's objects.
         this._connection.once(ConnectionEvents.connectionClose, onClose);
         this._connection.once(ConnectionEvents.connectionError, onError);
+        this._connection.once(ConnectionEvents.disconnected, onDisconnected);
         waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
         this._connection.close();
         this.actionInitiated++;
@@ -363,6 +374,15 @@ export class Connection extends Entity {
         return resolve();
       }
     });
+  }
+
+  /**
+   * **It is the synchronous version of `close` where the user can call `closeSync` and not**
+   * **worry about errors caused while closing the connection (fire and forget).**
+   * Closes the amqp connection.
+   */
+  closeSync(): void {
+    this.close().catch(() => { /** */ });
   }
 
   /**

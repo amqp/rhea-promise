@@ -7,7 +7,7 @@ import { Receiver, ReceiverOptions } from "./receiver";
 import { Sender, SenderOptions } from "./sender";
 import {
   SenderEvents, ReceiverEvents, SessionEvents, AmqpError, Session as RheaSession,
-  EventContext as RheaEventContext
+  EventContext as RheaEventContext, ConnectionEvents
 } from "rhea";
 import { Func, EmitParameters, emitEvent } from "./util/utils";
 import { OnAmqpEvent } from "./eventContext";
@@ -141,6 +141,7 @@ export class Session extends Entity {
       if (this.isOpen()) {
         let onError: Func<RheaEventContext, void>;
         let onClose: Func<RheaEventContext, void>;
+        let onDisconnected: Func<RheaEventContext, void>;
         let waitTimer: any;
 
         const removeListeners = () => {
@@ -148,6 +149,7 @@ export class Session extends Entity {
           this.actionInitiated--;
           this._session.removeListener(SessionEvents.sessionError, onError);
           this._session.removeListener(SessionEvents.sessionClose, onClose);
+          this._session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
         };
 
         onClose = (context: RheaEventContext) => {
@@ -164,6 +166,15 @@ export class Session extends Entity {
           reject(context.session!.error);
         };
 
+        onDisconnected = (context: RheaEventContext) => {
+          removeListeners();
+          const error = context.connection && context.connection.error
+            ? context.connection.error
+            : context.error;
+          log.error("[%s] Connection got disconnected while closing amqp session '%s': %O.",
+            this.connection.id, this.id, error);
+        };
+
         const actionAfterTimeout = () => {
           removeListeners();
           const msg: string = `Unable to close the amqp session ${this.id} due to operation timeout.`;
@@ -174,6 +185,7 @@ export class Session extends Entity {
         // listeners that we add for completing the operation are added directly to rhea's objects.
         this._session.once(SessionEvents.sessionClose, onClose);
         this._session.once(SessionEvents.sessionError, onError);
+        this._session.connection.once(ConnectionEvents.disconnected, onDisconnected);
         log.session("[%s] Calling session.close() for amqp session '%s'.", this.connection.id, this.id);
         waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._session.close();
@@ -186,7 +198,7 @@ export class Session extends Entity {
 
   /**
    * **It is the synchronous version of `close` where the user can call `closeSync` and not**
-   * **worry about errors caused while closing the link (fire and forget).**
+   * **worry about errors caused while closing the session (fire and forget).**
    *
    * Closes the underlying amqp session in rhea if open. Also removes all the event
    * handlers added in the rhea-promise library on the session

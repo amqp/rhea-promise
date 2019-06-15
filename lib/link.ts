@@ -4,7 +4,7 @@
 import * as log from "./log";
 import {
   link, LinkOptions, AmqpError, Dictionary, Source, TerminusOptions, SenderEvents, ReceiverEvents,
-  EventContext as RheaEventContext
+  EventContext as RheaEventContext, ConnectionEvents
 } from "rhea";
 import { Session } from "./session";
 import { Connection } from "./connection";
@@ -244,6 +244,7 @@ export abstract class Link extends Entity {
           : ReceiverEvents.receiverClose;
         let onError: Func<RheaEventContext, void>;
         let onClose: Func<RheaEventContext, void>;
+        let onDisconnected: Func<RheaEventContext, void>;
         let waitTimer: any;
 
         const removeListeners = () => {
@@ -251,6 +252,7 @@ export abstract class Link extends Entity {
           this.actionInitiated--;
           this._link.removeListener(errorEvent, onError);
           this._link.removeListener(closeEvent, onClose);
+          this._link.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
         };
 
         onClose = (context: RheaEventContext) => {
@@ -267,6 +269,15 @@ export abstract class Link extends Entity {
           return reject(context.session!.error);
         };
 
+        onDisconnected = (context: RheaEventContext) => {
+          removeListeners();
+          const error = context.connection && context.connection.error
+            ? context.connection.error
+            : context.error;
+          log.error("[%s] Connection got disconnected while closing amqp %s '%s' on amqp " +
+            "session '%s': %O.", this.connection.id, this.type, this.name, this.session.id, error);
+        };
+
         const actionAfterTimeout = () => {
           removeListeners();
           const msg: string = `Unable to close the ${this.type} '${this.name}' ` +
@@ -278,6 +289,7 @@ export abstract class Link extends Entity {
         // listeners that we add for completing the operation are added directly to rhea's objects.
         this._link.once(closeEvent, onClose);
         this._link.once(errorEvent, onError);
+        this._link.connection.once(ConnectionEvents.disconnected, onDisconnected);
         waitTimer = setTimeout(actionAfterTimeout,
           this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._link.close();
@@ -303,7 +315,7 @@ export abstract class Link extends Entity {
    * and optionally it's session.
    */
   closeSync(options?: LinkCloseOptions): void {
-    this.close(options).catch(() => { /** do nothing */});
+    this.close(options).catch(() => { /** do nothing */ });
   }
 
   /**

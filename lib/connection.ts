@@ -19,6 +19,7 @@ import {
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
 import { OperationTimeoutError } from "./operationTimeoutError";
+import { AsynchronousSender } from "./asynchronousSender";
 
 /**
  * Describes the options that can be provided while creating an AMQP sender. One can also provide
@@ -26,6 +27,15 @@ import { OperationTimeoutError } from "./operationTimeoutError";
  * @interface SenderOptionsWithSession
  */
 export interface SenderOptionsWithSession extends SenderOptions {
+  session?: Session;
+}
+
+/**
+ * Describes the options that can be provided while creating an asynchronous AMQP sender.
+ * One can also provide a session if it was already created.
+ * @interface AsynchronousSenderOptionsWithSession
+ */
+export interface AsynchronousSenderOptionsWithSession extends SenderOptions {
   session?: Session;
 }
 
@@ -525,6 +535,19 @@ export class Connection extends Entity {
     }
     const session = await this.createSession();
     return session.createSender(options);
+  }
+
+  /**
+   * Creates an asynchronous amqp sender. It either uses the provided session or creates a new one.
+   * @param {SenderOptionsWithSession} options Optional parameters to create a sender link.
+   * @return {Promise<Sender>} Promise<Sender>.
+   */
+  async createAsynchronousSender(options?: AsynchronousSenderOptionsWithSession): Promise<AsynchronousSender> {
+    if (options && options.session && options.session.createSender) {
+      return options.session.createAsynchronousSender(options);
+    }
+    const session = await this.createSession();
+    return session.createAsynchronousSender(options);
   }
 
   /**

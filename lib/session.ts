@@ -13,6 +13,7 @@ import { Func, EmitParameters, emitEvent } from "./util/utils";
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
 import { OperationTimeoutError } from "./operationTimeoutError";
+import { AsynchronousSender, AsynchronousSenderOptions } from "./asynchronousSender";
 
 /**
  * Describes the event listeners that can be added to the Session.
@@ -20,6 +21,14 @@ import { OperationTimeoutError } from "./operationTimeoutError";
  */
 export declare interface Session {
   on(event: SessionEvents, listener: OnAmqpEvent): this;
+}
+
+/**
+ * @internal
+ */
+enum SenderType {
+  sender = "sender",
+  asynchronousSender = "asynchronousSender"
 }
 
 /**
@@ -340,6 +349,24 @@ export class Session extends Entity {
    * to create an amqp sender or the operation timeout occurs.
    */
   createSender(options?: SenderOptions): Promise<Sender> {
+    return this._createSender(SenderType.sender, options) as Promise<Sender>;
+  }
+
+  /**
+   * Creates an asynchronous amqp sender on this session.
+   * @param options Options that can be provided while creating an amqp sender.
+   * @return Promise<Sender>
+   * - **Resolves** the promise with the Sender object when rhea emits the "sender_open" event.
+   * - **Rejects** the promise with an AmqpError when rhea emits the "sender_close" event while trying
+   * to create an amqp sender or the operation timeout occurs.
+   */
+  createAsynchronousSender(options?: AsynchronousSenderOptions): Promise<AsynchronousSender> {
+    return this._createSender(SenderType.asynchronousSender, options) as Promise<AsynchronousSender>;
+  }
+
+  private _createSender(
+    type: SenderType,
+    options?: SenderOptions | AsynchronousSenderOptions): Promise<Sender | AsynchronousSender> {
     return new Promise((resolve, reject) => {
       // Register session handlers for session_error and session_close if provided.
       if (options && options.onSessionError) {
@@ -355,7 +382,12 @@ export class Session extends Entity {
       }
 
       const rheaSender = this._session.attach_sender(options);
-      const sender = new Sender(this, rheaSender, options);
+      let sender: Sender | AsynchronousSender;
+      if (type === SenderType.sender) {
+        sender = new Sender(this, rheaSender, options);
+      } else {
+        sender = new AsynchronousSender(this, rheaSender, options);
+      }
       sender.actionInitiated++;
       let onSendable: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
@@ -371,18 +403,20 @@ export class Session extends Entity {
         if (options.onClose) {
           sender.on(SenderEvents.senderClose, options.onClose);
         }
-        if (options.onAccepted) {
-          sender.on(SenderEvents.accepted, options.onAccepted);
-        }
-        if (options.onRejected) {
-          sender.on(SenderEvents.rejected, options.onRejected);
-        }
-        if (options.onReleased) {
-          sender.on(SenderEvents.released, options.onReleased);
-        }
-        if (options.onModified) {
-          sender.on(SenderEvents.modified, options.onModified);
-        }
+        if (type === SenderType.sender) {
+          if ((options as SenderOptions).onAccepted) {
+            sender.on(SenderEvents.accepted, (options as SenderOptions).onAccepted!);
+          }
+          if ((options as SenderOptions).onRejected) {
+            sender.on(SenderEvents.rejected, (options as SenderOptions).onRejected!);
+          }
+          if ((options as SenderOptions).onReleased) {
+            sender.on(SenderEvents.released, (options as SenderOptions).onReleased!);
+          }
+          if ((options as SenderOptions).onModified) {
+            sender.on(SenderEvents.modified, (options as SenderOptions).onModified!);
+          }
+       }
       }
 
       const removeListeners = () => {

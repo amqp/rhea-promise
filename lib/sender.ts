@@ -10,30 +10,10 @@ import { Link, LinkType } from './link';
 import { OnAmqpEvent } from "./eventContext";
 
 /**
- * Descibes the options that can be provided while creating an AMQP sender.
- * @interface SenderOptions
+ * Descibes the basic options that can be provided while creating an AMQP sender.
+ * @interface SenderOptionsBase
  */
-export interface SenderOptions extends RheaSenderOptions {
-  /**
-   * @property {OnAmqpEvent} [onAccepted] The handler that can be provided for receiving the
-   * "accepted" event after a message is sent from the underlying rhea sender.
-   */
-  onAccepted?: OnAmqpEvent;
-  /**
-   * @property {OnAmqpEvent} [onRejected] The handler that can be provided for receiving the
-   * "rejected" event after a message is sent from the underlying rhea sender.
-   */
-  onRejected?: OnAmqpEvent;
-  /**
-   * @property {OnAmqpEvent} [onReleased] The handler that can be provided for receiving the
-   * "released" event after a message is sent from the underlying rhea sender.
-   */
-  onReleased?: OnAmqpEvent;
-  /**
-   * @property {OnAmqpEvent} [onModified] The handler that can be provided for receiving the
-   * "modified" event after a message is sent from the underlying rhea sender.
-   */
-  onModified?: OnAmqpEvent;
+export interface SenderOptionsBase {
   /**
    * @property {OnAmqpEvent} [onError] The handler that can be provided for receiving any
    * errors that occur on the "sender_error" event.
@@ -54,6 +34,33 @@ export interface SenderOptions extends RheaSenderOptions {
    * "session_close" event that occurs on the underlying session.
    */
   onSessionClose?: OnAmqpEvent;
+}
+
+/**
+ * Descibes the options that can be provided while creating an AMQP sender.
+ * @interface SenderOptions
+ */
+export interface SenderOptions extends SenderOptionsBase, RheaSenderOptions {
+  /**
+   * @property {OnAmqpEvent} [onAccepted] The handler that can be provided for receiving the
+   * "accepted" event after a message is sent from the underlying rhea sender.
+   */
+  onAccepted?: OnAmqpEvent;
+  /**
+   * @property {OnAmqpEvent} [onRejected] The handler that can be provided for receiving the
+   * "rejected" event after a message is sent from the underlying rhea sender.
+   */
+  onRejected?: OnAmqpEvent;
+  /**
+   * @property {OnAmqpEvent} [onReleased] The handler that can be provided for receiving the
+   * "released" event after a message is sent from the underlying rhea sender.
+   */
+  onReleased?: OnAmqpEvent;
+  /**
+   * @property {OnAmqpEvent} [onModified] The handler that can be provided for receiving the
+   * "modified" event after a message is sent from the underlying rhea sender.
+   */
+  onModified?: OnAmqpEvent;
 }
 
 /**

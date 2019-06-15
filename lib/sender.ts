@@ -10,10 +10,10 @@ import { Link, LinkType } from './link';
 import { OnAmqpEvent } from "./eventContext";
 
 /**
- * Descibes the basic options that can be provided while creating an AMQP sender.
- * @interface SenderOptionsBase
+ * Descibes the options that can be provided while creating an AMQP Basesender.
+ * @interface BaseSenderOptions
  */
-export interface SenderOptionsBase {
+export interface BaseSenderOptions extends RheaSenderOptions {
   /**
    * @property {OnAmqpEvent} [onError] The handler that can be provided for receiving any
    * errors that occur on the "sender_error" event.
@@ -40,7 +40,7 @@ export interface SenderOptionsBase {
  * Descibes the options that can be provided while creating an AMQP sender.
  * @interface SenderOptions
  */
-export interface SenderOptions extends SenderOptionsBase, RheaSenderOptions {
+export interface SenderOptions extends BaseSenderOptions {
   /**
    * @property {OnAmqpEvent} [onAccepted] The handler that can be provided for receiving the
    * "accepted" event after a message is sent from the underlying rhea sender.
@@ -72,13 +72,12 @@ export declare interface Sender {
 }
 
 /**
- * Describes the sender that wraps the rhea sender.
- * @class Sender
+ * Describes the base sender that wraps the rhea sender.
+ * @class BaseSender
  */
-export class Sender extends Link {
-  senderOptions?: SenderOptions;
+export class BaseSender extends Link {
 
-  constructor(session: Session, sender: RheaSender, options?: SenderOptions) {
+  constructor(session: Session, sender: RheaSender, options?: BaseSenderOptions) {
     super(LinkType.sender, session, sender, options);
   }
 
@@ -92,6 +91,17 @@ export class Sender extends Link {
    */
   sendable(): boolean {
     return (this._link as RheaSender).sendable();
+  }
+}
+
+/**
+ * Describes the AMQP Sender.
+ * @class Sender
+ */
+export class Sender extends BaseSender {
+
+  constructor(session: Session, sender: RheaSender, options?: SenderOptions) {
+    super(session, sender, options);
   }
 
   /**

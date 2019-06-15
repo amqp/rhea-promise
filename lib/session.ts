@@ -69,12 +69,12 @@ export class Session extends Entity {
   get id(): string {
     let result: string = "";
     const session: any = this._session;
-    if (session.local && session.local.channel) {
-      result += `local_${session.local.channel}-`;
+    if (session.local) {
+      result += `local-${session.local.channel}_`;
     }
 
-    if (session.remote && session.remote.channel) {
-      result += `remote_${session.remote.channel}-`;
+    if (session.remote) {
+      result += `remote-${session.remote.channel}_`;
     }
 
     if (result) {
@@ -364,6 +364,12 @@ export class Session extends Entity {
     return this._createSender(SenderType.asynchronousSender, options) as Promise<AsynchronousSender>;
   }
 
+  /**
+   * Creates the Sender based on the provided type.
+   * @internal
+   * @param type The type of sender
+   * @param options Options to be provided while creating the sender.
+   */
   private _createSender(
     type: SenderType,
     options?: SenderOptions | AsynchronousSenderOptions): Promise<Sender | AsynchronousSender> {

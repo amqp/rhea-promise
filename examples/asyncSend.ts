@@ -2,11 +2,15 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import {
-  Connection, Message, ConnectionOptions, Delivery, SenderOptions
+  Connection,
+  Message,
+  ConnectionOptions,
+  Delivery,
+  AsynchronousSenderOptions,
+  AsynchronousSender
 } from "../lib";
 
 import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
-import { AsynchronousSender } from "../lib/asynchronousSender";
 dotenv.config();
 
 const host = process.env.AMQP_HOST || "host";
@@ -27,26 +31,34 @@ async function main(): Promise<void> {
   };
   const connection: Connection = new Connection(connectionOptions);
   const senderName = "sender-1";
-  const senderOptions: SenderOptions = {
+  const senderOptions: AsynchronousSenderOptions = {
     name: senderName,
     target: {
       address: senderAddress
-    }
+    },
+    messageTimeoutInSeconds: 10
   };
 
   await connection.open();
-  const sender: AsynchronousSender = await connection.createAsynchronousSender(senderOptions);
-  const message: Message = {
-    body: "Hello World!!",
-    message_id: "12343434343434"
-  };
+  const sender: AsynchronousSender = await connection.createAsynchronousSender(
+    senderOptions
+  );
 
-  const delivery: Delivery = await sender.sendMessage(message);
-  console.log(">>>>>[%s] await sendMessage -> Delivery id: %d, settled: %s",
-    connection.id, delivery.id, delivery.settled);
-  const delivery2: Delivery = sender.send(message);
-  console.log(">>>>>[%s] send -> Delivery id: %d, settled: %s",
-    connection.id, delivery2.id, delivery2.settled);
+  for (let i = 0; i < 10; i++) {
+    const message: Message = {
+      body: `Hello World - ${i}`,
+      message_id: i
+    };
+    // Please, note that we are awaiting on sender.send() to complete.
+    // You will notice that `delivery.settled` will be `true`, irrespective of whether the promise resolves or rejects.
+    const delivery: Delivery = await sender.send(message);
+    console.log(
+      "[%s] await sendMessage -> Delivery id: %d, settled: %s",
+      connection.id,
+      delivery.id,
+      delivery.settled
+    );
+  }
 
   await sender.close();
   await connection.close();

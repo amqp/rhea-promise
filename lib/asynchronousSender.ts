@@ -5,7 +5,7 @@ import {
    Delivery, Message, Sender as RheaSender, SessionEvents
 } from "rhea";
 import * as log from "./log";
-import { Sender, SenderOptionsBase } from "./sender";
+import { BaseSender, BaseSenderOptions } from "./sender";
 import { SenderEvents } from "rhea";
 import { OnAmqpEvent, EventContext } from "./eventContext";
 import { Session } from "./session";
@@ -28,7 +28,7 @@ export declare interface AsynchronousSender {
   on(event: SenderEvents, listener: OnAmqpEvent): this;
 }
 
-export interface AsynchronousSenderOptions extends SenderOptionsBase {
+export interface AsynchronousSenderOptions extends BaseSenderOptions {
   /**
    * The duration in which the promise to send the message should complete (resolve/reject).
    * If it is not completed, then the Promise will be rejected after timeout occurs.
@@ -41,11 +41,7 @@ export interface AsynchronousSenderOptions extends SenderOptionsBase {
  * Describes the async version of the sender where one can await on the message being sent.
  * @class AsynchronousSender
  */
-export class AsynchronousSender extends Sender {
-  /**
-   * Options that can be provided to the asynchronous sender.
-   */
-  asyncSenderOptions?: AsynchronousSenderOptions;
+export class AsynchronousSender extends BaseSender {
   /**
    * The duration in which the promise to send the message should complete (resolve/reject).
    * If it is not completed, then the Promise will be rejected after timeout occurs.
@@ -98,9 +94,10 @@ export class AsynchronousSender extends Sender {
           " map of sender '%s' on amqp session '%s' and cleared the timer: %s.",
           this.connection.id, eventName, id, this.name, this.session.id, deleteResult
         );
-        const msg = `Sender '${this.name}' on amqp session ${this.session.id}, received a ` +
-          `${eventName} disposition. Hence we are rejecting the promise.`;
+        const msg = `Sender '${this.name}' on amqp session '${this.session.id}', received a ` +
+          `'${eventName}' disposition. Hence we are rejecting the promise.`;
         const err = error || new Error(msg);
+        log.sender("[%s] %s", this.connection.id, msg);
         return promise.reject(err);
       }
     };
@@ -121,6 +118,13 @@ export class AsynchronousSender extends Sender {
     this.on(SenderEvents.modified, (context: EventContext) => {
       onFailure(SenderEvents.modified, context.delivery!.id, context!.delivery!.remote_state!.error);
     });
+
+    // The user may have it's custom reconnect logic for bringing the sender link back online and
+    // retry logic for sending messages on failures hence they can provide their error handlers
+    // for sender_error and session_error.
+    // If the user did not provide their error handler for sender_error and session_error, then we
+    // add our handlers and make sure we clear the timer and reject the promise for sending
+    // messages with appropriate Error.
     if (!options.onError) {
       this.on(SenderEvents.senderError, (context: EventContext) => {
         onError(SenderEvents.senderError, context.sender!.error as Error);
@@ -145,7 +149,7 @@ export class AsynchronousSender extends Sender {
    * given message is assumed to be of type Message interface and encoded appropriately.
    * @returns {Promise<Delivery>} Promise<Delivery> The delivery information about the sent message.
    */
-  sendMessage(msg: Message | Buffer, tag?: Buffer | string, format?: number): Promise<Delivery> {
+  send(msg: Message | Buffer, tag?: Buffer | string, format?: number): Promise<Delivery> {
     return new Promise<Delivery>((resolve, reject) => {
       if (this.sendable()) {
         const timer = setTimeout(() => {
@@ -157,7 +161,7 @@ export class AsynchronousSender extends Sender {
           return reject(new OperationTimeoutError(message));
         }, this.messageTimeoutInSeconds * 1000);
 
-        const delivery = super.send(msg, tag, format);
+        const delivery = (this._link as RheaSender).send(msg, tag, format);
         this.deliveryDispositionMap.set(delivery.id, {
           resolve: resolve,
           reject: reject,

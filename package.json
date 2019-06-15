@@ -1,6 +1,6 @@
 {
   "name": "rhea-promise",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "description": "A Promisified layer over rhea AMQP client",
   "license": "Apache-2.0",
   "main": "./dist/lib/index.js",

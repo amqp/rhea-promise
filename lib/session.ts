@@ -256,6 +256,7 @@ export class Session extends Entity {
       receiver.actionInitiated++;
       let onOpen: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
+      let onDisconnected: Func<RheaEventContext, void>;
       let waitTimer: any;
 
       if (options && options.onMessage) {
@@ -286,6 +287,7 @@ export class Session extends Entity {
         receiver.actionInitiated--;
         rheaReceiver.removeListener(ReceiverEvents.receiverOpen, onOpen);
         rheaReceiver.removeListener(ReceiverEvents.receiverClose, onClose);
+        rheaReceiver.session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
       };
 
       onOpen = (context: RheaEventContext) => {
@@ -303,6 +305,16 @@ export class Session extends Entity {
         return reject(context.receiver!.error);
       };
 
+      onDisconnected = (context: RheaEventContext) => {
+        removeListeners();
+        const error = context.connection && context.connection.error
+          ? context.connection.error
+          : context.error;
+        log.error("[%s] Connection got disconnected while closing amqp receiver '%s' on amqp " +
+          "session '%s': %O.", this.connection.id, receiver.name, this.id, error);
+        return reject(error);
+      };
+
       const actionAfterTimeout = () => {
         removeListeners();
         const msg: string = `Unable to create the amqp receiver '${receiver.name}' on amqp ` +
@@ -314,6 +326,7 @@ export class Session extends Entity {
       // listeners that we add for completing the operation are added directly to rhea's objects.
       rheaReceiver.once(ReceiverEvents.receiverOpen, onOpen);
       rheaReceiver.once(ReceiverEvents.receiverClose, onClose);
+      rheaReceiver.session.connection.on(ConnectionEvents.disconnected, onDisconnected);
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
     });
   }
@@ -346,6 +359,7 @@ export class Session extends Entity {
       sender.actionInitiated++;
       let onSendable: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
+      let onDisconnected: Func<RheaEventContext, void>;
       let waitTimer: any;
 
       // listeners provided by the user in the options object should be added
@@ -376,6 +390,7 @@ export class Session extends Entity {
         sender.actionInitiated--;
         rheaSender.removeListener(SenderEvents.senderOpen, onSendable);
         rheaSender.removeListener(SenderEvents.senderClose, onClose);
+        rheaSender.session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
       };
 
       onSendable = (context: RheaEventContext) => {
@@ -393,6 +408,16 @@ export class Session extends Entity {
         return reject(context.sender!.error);
       };
 
+      onDisconnected = (context: RheaEventContext) => {
+        removeListeners();
+        const error = context.connection && context.connection.error
+          ? context.connection.error
+          : context.error;
+        log.error("[%s] Connection got disconnected while closing amqp sender '%s' on amqp " +
+          "session '%s': %O.", this.connection.id, sender.name, this.id, error);
+        return reject(error);
+      };
+
       const actionAfterTimeout = () => {
         removeListeners();
         const msg: string = `Unable to create the amqp sender '${sender.name}' on amqp session ` +
@@ -404,6 +429,7 @@ export class Session extends Entity {
       // listeners that we add for completing the operation are added directly to rhea's objects.
       rheaSender.once(SenderEvents.sendable, onSendable);
       rheaSender.once(SenderEvents.senderClose, onClose);
+      rheaSender.session.connection.on(ConnectionEvents.disconnected, onDisconnected);
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
     });
   }

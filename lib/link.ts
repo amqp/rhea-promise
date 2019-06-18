@@ -307,18 +307,6 @@ export abstract class Link extends Entity {
   }
 
   /**
-   * **It is the synchronous version of `close` where the user can call `closeSync` and not**
-   * **worry about errors caused while closing the link (fire and forget).**
-   *
-   * Closes the underlying amqp link and optionally the session as well in rhea if open.
-   * Also removes all the event handlers added in the rhea-promise library on the link
-   * and optionally it's session.
-   */
-  closeSync(options?: LinkCloseOptions): void {
-    this.close(options).catch(() => { /** do nothing */ });
-  }
-
-  /**
    * Adds event listeners for the possible events that can occur on the link object and
    * re-emits the same event back with the received arguments from rhea's event emitter.
    * @private

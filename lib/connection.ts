@@ -387,15 +387,6 @@ export class Connection extends Entity {
   }
 
   /**
-   * **It is the synchronous version of `close` where the user can call `closeSync` and not**
-   * **worry about errors caused while closing the connection (fire and forget).**
-   * Closes the amqp connection.
-   */
-  closeSync(): void {
-    this.close().catch(() => { /** */ });
-  }
-
-  /**
    * Determines whether the connection is open.
    * @returns {boolean} result `true` - is open; `false` otherwise.
    */

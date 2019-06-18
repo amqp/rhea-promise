@@ -206,17 +206,6 @@ export class Session extends Entity {
   }
 
   /**
-   * **It is the synchronous version of `close` where the user can call `closeSync` and not**
-   * **worry about errors caused while closing the session (fire and forget).**
-   *
-   * Closes the underlying amqp session in rhea if open. Also removes all the event
-   * handlers added in the rhea-promise library on the session
-   */
-  closeSync(): void {
-    this.close().catch(() => { /** do nothing */ });
-  }
-
-  /**
    * Creates an amqp receiver on this session.
    * @param session The amqp session object on which the receiver link needs to be established.
    * @param options Options that can be provided while creating an amqp receiver.

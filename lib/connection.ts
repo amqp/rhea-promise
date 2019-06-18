@@ -19,7 +19,7 @@ import {
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
 import { OperationTimeoutError } from "./operationTimeoutError";
-import { AsynchronousSender } from "./asynchronousSender";
+import { AsyncSender, AsyncSenderOptions } from "./asyncSender";
 
 /**
  * Describes the options that can be provided while creating an AMQP sender. One can also provide
@@ -31,11 +31,11 @@ export interface SenderOptionsWithSession extends SenderOptions {
 }
 
 /**
- * Describes the options that can be provided while creating an asynchronous AMQP sender.
+ * Describes the options that can be provided while creating an Async AMQP sender.
  * One can also provide a session if it was already created.
- * @interface AsynchronousSenderOptionsWithSession
+ * @interface AsyncSenderOptionsWithSession
  */
-export interface AsynchronousSenderOptionsWithSession extends SenderOptions {
+export interface AsyncSenderOptionsWithSession extends AsyncSenderOptions {
   session?: Session;
 }
 
@@ -538,16 +538,16 @@ export class Connection extends Entity {
   }
 
   /**
-   * Creates an asynchronous amqp sender. It either uses the provided session or creates a new one.
+   * Creates an async amqp sender. It either uses the provided session or creates a new one.
    * @param {SenderOptionsWithSession} options Optional parameters to create a sender link.
-   * @return {Promise<Sender>} Promise<Sender>.
+   * @return {Promise<AsyncSender>} Promise<AsyncSender>.
    */
-  async createAsynchronousSender(options?: AsynchronousSenderOptionsWithSession): Promise<AsynchronousSender> {
-    if (options && options.session && options.session.createSender) {
-      return options.session.createAsynchronousSender(options);
+  async createAsyncSender(options?: AsyncSenderOptionsWithSession): Promise<AsyncSender> {
+    if (options && options.session && options.session.createAsyncSender) {
+      return options.session.createAsyncSender(options);
     }
     const session = await this.createSession();
-    return session.createAsynchronousSender(options);
+    return session.createAsyncSender(options);
   }
 
   /**

@@ -6,8 +6,8 @@ import {
   Message,
   ConnectionOptions,
   Delivery,
-  AsynchronousSenderOptions,
-  AsynchronousSender
+  AsyncSenderOptions,
+  AsyncSender
 } from "../lib";
 
 import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
@@ -31,7 +31,7 @@ async function main(): Promise<void> {
   };
   const connection: Connection = new Connection(connectionOptions);
   const senderName = "sender-1";
-  const senderOptions: AsynchronousSenderOptions = {
+  const senderOptions: AsyncSenderOptions = {
     name: senderName,
     target: {
       address: senderAddress
@@ -40,7 +40,7 @@ async function main(): Promise<void> {
   };
 
   await connection.open();
-  const sender: AsynchronousSender = await connection.createAsynchronousSender(
+  const sender: AsyncSender = await connection.createAsyncSender(
     senderOptions
   );
 

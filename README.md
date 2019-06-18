@@ -145,11 +145,11 @@ async function main(): Promise<void> {
 main().catch((err) => console.log(err));
 ```
 
-### Sending a message via `AsynchronousSender`
+### Sending a message via `AsyncSender`
 
 ```typescript
 import {
-  Connection, Message, ConnectionOptions, Delivery, AsynchronousSenderOptions, AsynchronousSender
+  Connection, Message, ConnectionOptions, Delivery, AsyncSenderOptions, AsyncSender
 } from "rhea-promise";
 
 import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
@@ -173,7 +173,7 @@ async function main(): Promise<void> {
   };
   const connection: Connection = new Connection(connectionOptions);
   const senderName = "sender-1";
-  const asyncSenderOptions: AsynchronousSenderOptions = {
+  const asyncSenderOptions: AsyncSenderOptions = {
     name: senderName,
     target: {
       address: senderAddress
@@ -182,7 +182,7 @@ async function main(): Promise<void> {
   };
 
   await connection.open();
-  const sender: AsynchronousSender = await connection.createAsynchronousSender(
+  const sender: AsyncSender = await connection.createAsyncSender(
     asyncSenderOptions
   );
 

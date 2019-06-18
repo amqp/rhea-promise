@@ -21,14 +21,14 @@ export interface PromiseLike {
 }
 
 /**
- * Describes the event listeners that can be added to the AsynchronousSender.
+ * Describes the event listeners that can be added to the AsyncSender.
  * @interface Sender
  */
-export declare interface AsynchronousSender {
+export declare interface AsyncSender {
   on(event: SenderEvents, listener: OnAmqpEvent): this;
 }
 
-export interface AsynchronousSenderOptions extends BaseSenderOptions {
+export interface AsyncSenderOptions extends BaseSenderOptions {
   /**
    * The duration in which the promise to send the message should complete (resolve/reject).
    * If it is not completed, then the Promise will be rejected after timeout occurs.
@@ -39,9 +39,9 @@ export interface AsynchronousSenderOptions extends BaseSenderOptions {
 
 /**
  * Describes the async version of the sender where one can await on the message being sent.
- * @class AsynchronousSender
+ * @class AsyncSender
  */
-export class AsynchronousSender extends BaseSender {
+export class AsyncSender extends BaseSender {
   /**
    * The duration in which the promise to send the message should complete (resolve/reject).
    * If it is not completed, then the Promise will be rejected after timeout occurs.
@@ -55,7 +55,7 @@ export class AsynchronousSender extends BaseSender {
    */
   deliveryDispositionMap: Map<number, PromiseLike> = new Map<number, PromiseLike>();
 
-  constructor(session: Session, sender: RheaSender, options: AsynchronousSenderOptions = {}) {
+  constructor(session: Session, sender: RheaSender, options: AsyncSenderOptions = {}) {
     super(session, sender, options);
     this.messageTimeoutInSeconds = options.messageTimeoutInSeconds || 20;
 

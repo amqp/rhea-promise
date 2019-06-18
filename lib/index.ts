@@ -19,7 +19,7 @@ export {
 export { Session } from "./session";
 export { Receiver, ReceiverOptions } from "./receiver";
 export { Sender, SenderOptions } from "./sender";
-export { AsynchronousSenderOptions, AsynchronousSender } from "./asynchronousSender";
+export { AsyncSenderOptions, AsyncSender } from "./asyncSender";
 export { LinkCloseOptions } from "./link";
 export {
   Func, AmqpResponseStatusCode, isAmqpError, ConnectionStringParseOptions, delay, messageHeader,

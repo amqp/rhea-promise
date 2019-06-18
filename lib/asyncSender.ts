@@ -2,14 +2,16 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import {
-   Delivery, Message, Sender as RheaSender, SessionEvents
+  Delivery, Message, Sender as RheaSender, SessionEvents
 } from "rhea";
 import * as log from "./log";
 import { BaseSender, BaseSenderOptions } from "./sender";
 import { SenderEvents } from "rhea";
 import { OnAmqpEvent, EventContext } from "./eventContext";
 import { Session } from "./session";
-import { OperationTimeoutError } from "./operationTimeoutError";
+import {
+  OperationTimeoutError, InsufficientCreditError, SendOperationFailedError
+} from "./errorDefinitions";
 
 /**
  * @internal
@@ -34,7 +36,7 @@ export interface AsyncSenderOptions extends BaseSenderOptions {
    * If it is not completed, then the Promise will be rejected after timeout occurs.
    * Default: `20 seconds`.
    */
-  messageTimeoutInSeconds?: number;
+  sendTimeoutInSeconds?: number;
 }
 
 /**
@@ -47,7 +49,7 @@ export class AsyncSender extends BaseSender {
    * If it is not completed, then the Promise will be rejected after timeout occurs.
    * Default: `20 seconds`.
    */
-  messageTimeoutInSeconds: number;
+  sendTimeoutInSeconds: number;
   /**
    * @property {Map<number, PromiseLike} deliveryDispositionMap Maintains a map of delivery of
    * messages that are being sent. It acts as a store for correlating the dispositions received
@@ -57,35 +59,25 @@ export class AsyncSender extends BaseSender {
 
   constructor(session: Session, sender: RheaSender, options: AsyncSenderOptions = {}) {
     super(session, sender, options);
-    this.messageTimeoutInSeconds = options.messageTimeoutInSeconds || 20;
+    this.sendTimeoutInSeconds = options.sendTimeoutInSeconds || 20;
 
-    const onSuccess = (context: EventContext) => {
-      const id = context.delivery!.id;
-      if (this.deliveryDispositionMap.has(context.delivery!.id)) {
+    const onSuccess = (delivery: Delivery) => {
+      const id = delivery.id;
+      if (this.deliveryDispositionMap.has(delivery.id)) {
         const promise = this.deliveryDispositionMap.get(id) as PromiseLike;
         clearTimeout(promise.timer);
-        log.sender(
-          "[%s] Event: 'Accepted', Found the delivery with id %d in the map of " +
-          "sender '%s' on amqp session '%s' and cleared the timer.",
-          this.connection.id, id, this.name, this.session.id
-        );
         const deleteResult = this.deliveryDispositionMap.delete(id);
         log.sender(
           "[%s] Event: 'Accepted', Successfully deleted the delivery with id %d from " +
           "the map of sender '%s' on amqp session '%s' and cleared the timer: %s.",
           this.connection.id, id, this.name, this.session.id, deleteResult
         );
-        return promise.resolve(context.delivery);
+        return promise.resolve(delivery);
       }
     };
 
     const onFailure = (eventName: string, id: number, error?: Error) => {
       if (this.deliveryDispositionMap.has(id)) {
-        log.sender(
-          "[%s] Event: '%s', Found the delivery with id %d in the map of " +
-          "sender '%s' on amqp session '%s' and cleared the timer.",
-          this.connection.id, eventName, id, this.name, this.session.id
-        );
         const promise = this.deliveryDispositionMap.get(id) as PromiseLike;
         clearTimeout(promise.timer);
         const deleteResult = this.deliveryDispositionMap.delete(id);
@@ -96,8 +88,8 @@ export class AsyncSender extends BaseSender {
         );
         const msg = `Sender '${this.name}' on amqp session '${this.session.id}', received a ` +
           `'${eventName}' disposition. Hence we are rejecting the promise.`;
-        const err = error || new Error(msg);
-        log.sender("[%s] %s", this.connection.id, msg);
+        const err = new SendOperationFailedError(msg, error);
+        log.error("[%s] %s", this.connection.id, msg);
         return promise.reject(err);
       }
     };
@@ -108,15 +100,20 @@ export class AsyncSender extends BaseSender {
       }
     };
 
-    this.on(SenderEvents.accepted, onSuccess);
+    this.on(SenderEvents.accepted, (context: EventContext) => {
+      onSuccess(context.delivery!);
+    });
     this.on(SenderEvents.rejected, (context: EventContext) => {
-      onFailure(SenderEvents.rejected, context.delivery!.id, context!.delivery!.remote_state!.error);
+      const delivery = context.delivery!;
+      onFailure(SenderEvents.rejected, delivery.id, delivery.remote_state && delivery.remote_state.error);
     });
     this.on(SenderEvents.released, (context: EventContext) => {
-      onFailure(SenderEvents.released, context.delivery!.id, context!.delivery!.remote_state!.error);
+      const delivery = context.delivery!;
+      onFailure(SenderEvents.released, delivery.id, delivery.remote_state && delivery.remote_state.error);
     });
     this.on(SenderEvents.modified, (context: EventContext) => {
-      onFailure(SenderEvents.modified, context.delivery!.id, context!.delivery!.remote_state!.error);
+      const delivery = context.delivery!;
+      onFailure(SenderEvents.modified, delivery.id, delivery.remote_state && delivery.remote_state.error);
     });
 
     // The user may have it's custom reconnect logic for bringing the sender link back online and
@@ -132,7 +129,7 @@ export class AsyncSender extends BaseSender {
     }
     if (!options.onSessionError) {
       this.session.on(SessionEvents.sessionError, (context: EventContext) => {
-        onError(SessionEvents.sessionError, context.sender!.error as Error);
+        onError(SessionEvents.sessionError, context.session!.error as Error);
       });
     }
   }
@@ -159,7 +156,7 @@ export class AsyncSender extends BaseSender {
             `message with delivery id ${delivery.id} right now, due to operation timeout.`;
           log.sender(message);
           return reject(new OperationTimeoutError(message));
-        }, this.messageTimeoutInSeconds * 1000);
+        }, this.sendTimeoutInSeconds * 1000);
 
         const delivery = (this._link as RheaSender).send(msg, tag, format);
         this.deliveryDispositionMap.set(delivery.id, {
@@ -170,11 +167,11 @@ export class AsyncSender extends BaseSender {
       } else {
         // Please send the message after some time.
         const msg =
-          `[${this.connection.id}] Sender "${this.name}" on amqp session "${this.session.id}", ` +
-          `with address ${this.address} cannot send the message right now as it does not have ` +
+          `Sender "${this.name}" on amqp session "${this.session.id}", with address ` +
+          `${this.address} cannot send the message right now as it does not have ` +
           `enough credit. Please try later.`;
-        log.error(msg);
-        reject(new Error(msg));
+        log.error("[%s] %s", this.connection.id, msg);
+        reject(new InsufficientCreditError(msg));
       }
     });
   }

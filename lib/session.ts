@@ -12,7 +12,7 @@ import {
 import { Func, EmitParameters, emitEvent } from "./util/utils";
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
-import { OperationTimeoutError } from "./operationTimeoutError";
+import { OperationTimeoutError } from "./errorDefinitions";
 import { AsyncSender, AsyncSenderOptions } from "./asyncSender";
 
 /**

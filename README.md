@@ -178,7 +178,7 @@ async function main(): Promise<void> {
     target: {
       address: senderAddress
     },
-    messageTimeoutInSeconds: 10
+    sendTimeoutInSeconds: 10
   };
 
   await connection.open();

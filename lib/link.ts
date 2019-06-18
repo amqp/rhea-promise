@@ -10,7 +10,7 @@ import { Session } from "./session";
 import { Connection } from "./connection";
 import { Func, emitEvent, EmitParameters } from './util/utils';
 import { Entity } from "./entity";
-import { OperationTimeoutError } from "./operationTimeoutError";
+import { OperationTimeoutError } from "./errorDefinitions";
 
 export enum LinkType {
   sender = "sender",

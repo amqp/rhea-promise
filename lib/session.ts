@@ -308,7 +308,7 @@ export class Session extends Entity {
         const error = context.connection && context.connection.error
           ? context.connection.error
           : context.error;
-        log.error("[%s] Connection got disconnected while closing amqp receiver '%s' on amqp " +
+        log.error("[%s] Connection got disconnected while creating amqp receiver '%s' on amqp " +
           "session '%s': %O.", this.connection.id, receiver.name, this.id, error);
         return reject(error);
       };
@@ -442,7 +442,7 @@ export class Session extends Entity {
         const error = context.connection && context.connection.error
           ? context.connection.error
           : context.error;
-        log.error("[%s] Connection got disconnected while closing amqp sender '%s' on amqp " +
+        log.error("[%s] Connection got disconnected while creating amqp sender '%s' on amqp " +
           "session '%s': %O.", this.connection.id, sender.name, this.id, error);
         return reject(error);
       };

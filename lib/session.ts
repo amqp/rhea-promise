@@ -13,7 +13,7 @@ import { Func, EmitParameters, emitEvent } from "./util/utils";
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
 import { OperationTimeoutError } from "./errorDefinitions";
-import { AwaitableSender, AwaitableSenderOptions } from "./AwaitableSender";
+import { AwaitableSender, AwaitableSenderOptions } from "./awaitableSender";
 
 /**
  * Describes the event listeners that can be added to the Session.

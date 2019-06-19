@@ -145,11 +145,12 @@ async function main(): Promise<void> {
 main().catch((err) => console.log(err));
 ```
 
-### Sending a message via `AsyncSender`
+### Sending a message via `AwaitableSender`
+- Running the example from terminal: `> ts-node ./examples/awaitableSend.ts`.
 
 ```typescript
 import {
-  Connection, Message, ConnectionOptions, Delivery, AsyncSenderOptions, AsyncSender
+  Connection, Message, ConnectionOptions, Delivery, AwaitableSenderOptions, AwaitableSender
 } from "rhea-promise";
 
 import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
@@ -173,7 +174,7 @@ async function main(): Promise<void> {
   };
   const connection: Connection = new Connection(connectionOptions);
   const senderName = "sender-1";
-  const asyncSenderOptions: AsyncSenderOptions = {
+  const awaitableSenderOptions: AwaitableSenderOptions = {
     name: senderName,
     target: {
       address: senderAddress
@@ -182,8 +183,9 @@ async function main(): Promise<void> {
   };
 
   await connection.open();
-  const sender: AsyncSender = await connection.createAsyncSender(
-    asyncSenderOptions
+  // Notice that we are awaiting on the message being sent.
+  const sender: AwaitableSender = await connection.createAwaitableSender(
+    awaitableSenderOptions
   );
 
   for (let i = 0; i < 10; i++) {

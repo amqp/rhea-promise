@@ -4,7 +4,7 @@
 - Added `options` to `Link.close({closeSession: true | false})`, thus the user can specify whether the underlying session should be closed while closing the `Sender|Receiver`. Default is `true`.
 - Improved `open` and `close` operations on `Connection`, `Session` and `Link` by cleating timer in case the connection gets disconnected. Fixes [#44](https://github.com/amqp/rhea-promise/issues/44).
 - The current `Sender` does not have a provision of `awaiting` on sending a message. The user needs to add handlers on the `Sender` for `accepted`, `rejected`, `released`, `modified` to ensure whether the message was successfully sent.
-Now, we have added a new `AsyncSender` which adds the handlers internally and provides an **awaitable** `send()` operation to the customer. Fixes [#45](https://github.com/amqp/rhea-promise/issues/45).
+Now, we have added a new `AwaitableSender` which adds the handlers internally and provides an **awaitable** `send()` operation to the customer. Fixes [#45](https://github.com/amqp/rhea-promise/issues/45).
 
 ### 0.2.0 - 2019-05-17
 - Updated `OperationTimeoutError` to be a non-AMQP Error as pointed out in [#42](https://github.com/amqp/rhea-promise/issues/42). Fixed in [PR](https://github.com/amqp/rhea-promise/pull/43).

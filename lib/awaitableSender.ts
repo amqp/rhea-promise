@@ -23,14 +23,14 @@ export interface PromiseLike {
 }
 
 /**
- * Describes the event listeners that can be added to the AsyncSender.
+ * Describes the event listeners that can be added to the AwaitableSender.
  * @interface Sender
  */
-export declare interface AsyncSender {
+export declare interface AwaitableSender {
   on(event: SenderEvents, listener: OnAmqpEvent): this;
 }
 
-export interface AsyncSenderOptions extends BaseSenderOptions {
+export interface AwaitableSenderOptions extends BaseSenderOptions {
   /**
    * The duration in which the promise to send the message should complete (resolve/reject).
    * If it is not completed, then the Promise will be rejected after timeout occurs.
@@ -41,9 +41,9 @@ export interface AsyncSenderOptions extends BaseSenderOptions {
 
 /**
  * Describes the async version of the sender where one can await on the message being sent.
- * @class AsyncSender
+ * @class AwaitableSender
  */
-export class AsyncSender extends BaseSender {
+export class AwaitableSender extends BaseSender {
   /**
    * The duration in which the promise to send the message should complete (resolve/reject).
    * If it is not completed, then the Promise will be rejected after timeout occurs.
@@ -57,7 +57,7 @@ export class AsyncSender extends BaseSender {
    */
   deliveryDispositionMap: Map<number, PromiseLike> = new Map<number, PromiseLike>();
 
-  constructor(session: Session, sender: RheaSender, options: AsyncSenderOptions = {}) {
+  constructor(session: Session, sender: RheaSender, options: AwaitableSenderOptions = {}) {
     super(session, sender, options);
     this.sendTimeoutInSeconds = options.sendTimeoutInSeconds || 20;
 
@@ -151,10 +151,10 @@ export class AsyncSender extends BaseSender {
       if (this.sendable()) {
         const timer = setTimeout(() => {
           this.deliveryDispositionMap.delete(delivery.id);
-          const message = `[${this.connection.id}] Sender '${this.name}' on amqp session ` +
+          const message = `Sender '${this.name}' on amqp session ` +
             `'${this.session.id}', with address '${this.address}' was not able to send the ` +
             `message with delivery id ${delivery.id} right now, due to operation timeout.`;
-          log.sender(message);
+          log.error("[%s] %s", this.connection.id, message);
           return reject(new OperationTimeoutError(message));
         }, this.sendTimeoutInSeconds * 1000);
 

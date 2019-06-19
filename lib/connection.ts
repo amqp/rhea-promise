@@ -19,7 +19,7 @@ import {
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
 import { OperationTimeoutError } from "./errorDefinitions";
-import { AsyncSender, AsyncSenderOptions } from "./asyncSender";
+import { AwaitableSender, AwaitableSenderOptions } from "./awaitableSender";
 
 /**
  * Describes the options that can be provided while creating an AMQP sender. One can also provide
@@ -33,9 +33,9 @@ export interface SenderOptionsWithSession extends SenderOptions {
 /**
  * Describes the options that can be provided while creating an Async AMQP sender.
  * One can also provide a session if it was already created.
- * @interface AsyncSenderOptionsWithSession
+ * @interface AwaitableSenderOptionsWithSession
  */
-export interface AsyncSenderOptionsWithSession extends AsyncSenderOptions {
+export interface AwaitableSenderOptionsWithSession extends AwaitableSenderOptions {
   session?: Session;
 }
 
@@ -529,16 +529,16 @@ export class Connection extends Entity {
   }
 
   /**
-   * Creates an async amqp sender. It either uses the provided session or creates a new one.
+   * Creates an awaitable amqp sender. It either uses the provided session or creates a new one.
    * @param {SenderOptionsWithSession} options Optional parameters to create a sender link.
-   * @return {Promise<AsyncSender>} Promise<AsyncSender>.
+   * @return {Promise<AwaitableSender>} Promise<AwaitableSender>.
    */
-  async createAsyncSender(options?: AsyncSenderOptionsWithSession): Promise<AsyncSender> {
-    if (options && options.session && options.session.createAsyncSender) {
-      return options.session.createAsyncSender(options);
+  async createAwaitableSender(options?: AwaitableSenderOptionsWithSession): Promise<AwaitableSender> {
+    if (options && options.session && options.session.createAwaitableSender) {
+      return options.session.createAwaitableSender(options);
     }
     const session = await this.createSession();
-    return session.createAsyncSender(options);
+    return session.createAwaitableSender(options);
   }
 
   /**

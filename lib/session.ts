@@ -13,7 +13,7 @@ import { Func, EmitParameters, emitEvent } from "./util/utils";
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
 import { OperationTimeoutError } from "./errorDefinitions";
-import { AsyncSender, AsyncSenderOptions } from "./asyncSender";
+import { AwaitableSender, AwaitableSenderOptions } from "./AwaitableSender";
 
 /**
  * Describes the event listeners that can be added to the Session.
@@ -28,7 +28,7 @@ export declare interface Session {
  */
 enum SenderType {
   sender = "sender",
-  asyncSender = "asyncSender"
+  AwaitableSender = "AwaitableSender"
 }
 
 /**
@@ -342,15 +342,15 @@ export class Session extends Entity {
   }
 
   /**
-   * Creates an async amqp sender on this session.
+   * Creates an awaitable amqp sender on this session.
    * @param options Options that can be provided while creating an async amqp sender.
-   * @return Promise<AsyncSender>
+   * @return Promise<AwaitableSender>
    * - **Resolves** the promise with the Sender object when rhea emits the "sender_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "sender_close" event while trying
    * to create an amqp sender or the operation timeout occurs.
    */
-  createAsyncSender(options?: AsyncSenderOptions): Promise<AsyncSender> {
-    return this._createSender(SenderType.asyncSender, options) as Promise<AsyncSender>;
+  createAwaitableSender(options?: AwaitableSenderOptions): Promise<AwaitableSender> {
+    return this._createSender(SenderType.AwaitableSender, options) as Promise<AwaitableSender>;
   }
 
   /**
@@ -361,7 +361,7 @@ export class Session extends Entity {
    */
   private _createSender(
     type: SenderType,
-    options?: SenderOptions | AsyncSenderOptions): Promise<Sender | AsyncSender> {
+    options?: SenderOptions | AwaitableSenderOptions): Promise<Sender | AwaitableSender> {
     return new Promise((resolve, reject) => {
       // Register session handlers for session_error and session_close if provided.
       if (options && options.onSessionError) {
@@ -377,11 +377,11 @@ export class Session extends Entity {
       }
 
       const rheaSender = this._session.attach_sender(options);
-      let sender: Sender | AsyncSender;
+      let sender: Sender | AwaitableSender;
       if (type === SenderType.sender) {
         sender = new Sender(this, rheaSender, options);
       } else {
-        sender = new AsyncSender(this, rheaSender, options);
+        sender = new AwaitableSender(this, rheaSender, options);
       }
       sender.actionInitiated++;
       let onSendable: Func<RheaEventContext, void>;
@@ -411,7 +411,7 @@ export class Session extends Entity {
           if ((options as SenderOptions).onModified) {
             sender.on(SenderEvents.modified, (options as SenderOptions).onModified!);
           }
-       }
+        }
       }
 
       const removeListeners = () => {

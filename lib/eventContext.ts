@@ -5,7 +5,7 @@ import { Connection } from "./connection";
 import { Container } from "./container";
 import { Session } from "./session";
 import {
-  Delivery, Message, ConnectionError, EventContext as RheaEventContext, ConnectionEvents
+  Delivery, Message, ConnectionError, EventContext as RheaEventContext
 } from "rhea";
 import { Receiver } from "./receiver";
 import { Sender } from "./sender";
@@ -99,9 +99,6 @@ export module EventContext {
       : (emitter as Link | Session).connection;
 
     log.contextTranslator("[%s] Translating the context for event: '%s'.", connection.id, eventName);
-    if (eventName === ConnectionEvents.protocolError) {
-      log.contextTranslator("[%s] ProtocolError is: %O.", connection.id, rheaContext);
-    }
 
     // initialize the result
     const result: EventContext = {

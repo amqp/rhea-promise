@@ -14,7 +14,9 @@ import {
 } from "./errorDefinitions";
 
 /**
- * @internal
+ * Describes the interface for the send operation Promise which contains a reference to resolve,
+ * reject functions and the timer for that Promise.
+ * @interface PromiseLike
  */
 export interface PromiseLike {
   resolve: (value?: any) => void;
@@ -40,7 +42,7 @@ export interface AwaitableSenderOptions extends BaseSenderOptions {
 }
 
 /**
- * Describes the async version of the sender where one can await on the message being sent.
+ * Describes the sender where one can await on the message being sent.
  * @class AwaitableSender
  */
 export class AwaitableSender extends BaseSender {
@@ -60,8 +62,13 @@ export class AwaitableSender extends BaseSender {
   constructor(session: Session, sender: RheaSender, options: AwaitableSenderOptions = {}) {
     super(session, sender, options);
     this.sendTimeoutInSeconds = options.sendTimeoutInSeconds || 20;
-
-    const onSuccess = (delivery: Delivery) => {
+    /**
+     * The handler that will be added on the Sender for `accepted` event. If the delivery id is
+     * present in the disposition map then it will clear the timer and resolve the promise with the
+     * delivery.
+     * @param delivery Delivery associated with message that was sent.
+     */
+    const onSendSuccess = (delivery: Delivery) => {
       const id = delivery.id;
       if (this.deliveryDispositionMap.has(delivery.id)) {
         const promise = this.deliveryDispositionMap.get(id) as PromiseLike;
@@ -76,7 +83,18 @@ export class AwaitableSender extends BaseSender {
       }
     };
 
-    const onFailure = (eventName: string, id: number, error?: Error) => {
+    /**
+     * The handler is added on the Sender for `rejected`, `released` and `modified` events.
+     * If the delivery is found in the disposition map then the timer will be cleared and the
+     * promise will be rejected with an appropriate error message.
+     * @param eventName Name of the event that was raised.
+     * @param id Delivery id.
+     * @param error Error from the context if any.
+     */
+    const onSendFailure = (
+      eventName: "rejected" | "released" | "modified" | "sender_error" | "session_error",
+      id: number,
+      error?: Error) => {
       if (this.deliveryDispositionMap.has(id)) {
         const promise = this.deliveryDispositionMap.get(id) as PromiseLike;
         clearTimeout(promise.timer);
@@ -88,39 +106,47 @@ export class AwaitableSender extends BaseSender {
         );
         const msg = `Sender '${this.name}' on amqp session '${this.session.id}', received a ` +
           `'${eventName}' disposition. Hence we are rejecting the promise.`;
-        const err = new SendOperationFailedError(msg, error);
+        const err = new SendOperationFailedError(msg, eventName, error);
         log.error("[%s] %s", this.connection.id, msg);
         return promise.reject(err);
       }
     };
 
-    const onError = (eventName: string, error?: Error) => {
+    /**
+     * The handler that will be added on the Sender link for `sender_error` and on it's underlying
+     * session for `session_error` event. These events are raised when the sender link or it's
+     * underlying session get disconnected.
+     * The handler will clear the timer and reject the promise for every pending send in the map.
+     * @param eventName Name of the event that was raised.
+     * @param error Error from the context if any
+     */
+    const onError = (eventName: "sender_error" | "session_error", error?: Error) => {
       for (const id of this.deliveryDispositionMap.keys()) {
-        onFailure(eventName, id, error);
+        onSendFailure(eventName, id, error);
       }
     };
 
     this.on(SenderEvents.accepted, (context: EventContext) => {
-      onSuccess(context.delivery!);
+      onSendSuccess(context.delivery!);
     });
     this.on(SenderEvents.rejected, (context: EventContext) => {
       const delivery = context.delivery!;
-      onFailure(SenderEvents.rejected, delivery.id, delivery.remote_state && delivery.remote_state.error);
+      onSendFailure(SenderEvents.rejected, delivery.id, delivery.remote_state && delivery.remote_state.error);
     });
     this.on(SenderEvents.released, (context: EventContext) => {
       const delivery = context.delivery!;
-      onFailure(SenderEvents.released, delivery.id, delivery.remote_state && delivery.remote_state.error);
+      onSendFailure(SenderEvents.released, delivery.id, delivery.remote_state && delivery.remote_state.error);
     });
     this.on(SenderEvents.modified, (context: EventContext) => {
       const delivery = context.delivery!;
-      onFailure(SenderEvents.modified, delivery.id, delivery.remote_state && delivery.remote_state.error);
+      onSendFailure(SenderEvents.modified, delivery.id, delivery.remote_state && delivery.remote_state.error);
     });
 
     // The user may have it's custom reconnect logic for bringing the sender link back online and
     // retry logic for sending messages on failures hence they can provide their error handlers
-    // for sender_error and session_error.
-    // If the user did not provide their error handler for sender_error and session_error, then we
-    // add our handlers and make sure we clear the timer and reject the promise for sending
+    // for `sender_error` and `session_error`.
+    // If the user did not provide its error handler for `sender_error` and `session_error`,
+    // then we add our handlers and make sure we clear the timer and reject the promise for sending
     // messages with appropriate Error.
     if (!options.onError) {
       this.on(SenderEvents.senderError, (context: EventContext) => {

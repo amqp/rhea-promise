@@ -25,6 +25,7 @@ export interface LinkCloseOptions {
   /**
    * Indicates whether the underlying amqp session should also be closed when the
    * link is being closed.
+   * - **Default: `true`**.
    */
   closeSession?: boolean;
 }

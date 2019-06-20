@@ -344,6 +344,13 @@ export class Session extends Entity {
   /**
    * Creates an awaitable amqp sender on this session.
    * @param options Options that can be provided while creating an async amqp sender.
+   * - If `onError` and `onSessionError` handlers are not provided then the `AwaitableSender` will
+   * clear the timer and reject the Promise for all the entries of inflight send operation in its
+   * `deliveryDispositionMap`.
+   * - If the user is handling the reconnection of sender link or the underlying connection in it's
+   * app, then the `onError` and `onSessionError` handlers must be provided by the user and (s)he
+   * shall be responsible of clearing the `deliveryDispotionMap` of inflight `send()` operation.
+   *
    * @return Promise<AwaitableSender>
    * - **Resolves** the promise with the Sender object when rhea emits the "sender_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "sender_close" event while trying

@@ -19,9 +19,12 @@ export {
 export { Session } from "./session";
 export { Receiver, ReceiverOptions } from "./receiver";
 export { Sender, SenderOptions } from "./sender";
-export { AwaitableSenderOptions, AwaitableSender } from "./awaitableSender";
+export { AwaitableSenderOptions, AwaitableSender, PromiseLike } from "./awaitableSender";
 export { LinkCloseOptions } from "./link";
 export {
   Func, AmqpResponseStatusCode, isAmqpError, ConnectionStringParseOptions, delay, messageHeader,
   messageProperties, parseConnectionString, ParsedOutput
 } from "./util/utils";
+export {
+  InsufficientCreditError, OperationTimeoutError, SendOperationFailedError
+} from "./errorDefinitions";

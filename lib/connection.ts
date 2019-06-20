@@ -530,8 +530,15 @@ export class Connection extends Entity {
 
   /**
    * Creates an awaitable amqp sender. It either uses the provided session or creates a new one.
-   * @param {SenderOptionsWithSession} options Optional parameters to create a sender link.
-   * @return {Promise<AwaitableSender>} Promise<AwaitableSender>.
+   * @param options Optional parameters to create an awaitable sender link.
+   * - If `onError` and `onSessionError` handlers are not provided then the `AwaitableSender` will
+   * clear the timer and reject the Promise for all the entries of inflight send operation in its
+   * `deliveryDispositionMap`.
+   * - If the user is handling the reconnection of sender link or the underlying connection in it's
+   * app, then the `onError` and `onSessionError` handlers must be provided by the user and (s)he
+   * shall be responsible of clearing the `deliveryDispotionMap` of inflight `send()` operation.
+   *
+   * @return Promise<AwaitableSender>.
    */
   async createAwaitableSender(options?: AwaitableSenderOptionsWithSession): Promise<AwaitableSender> {
     if (options && options.session && options.session.createAwaitableSender) {
@@ -602,6 +609,9 @@ export class Connection extends Entity {
           emitterType: "connection",
           connectionId: this.id
         };
+        if (eventName === ConnectionEvents.protocolError) {
+          log.connection("[%s] ProtocolError is: %O.", this.id, context);
+        }
         emitEvent(params);
       });
     }

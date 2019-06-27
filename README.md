@@ -1,6 +1,6 @@
 # rhea-promise
 
-A Promisified layer over rhea AMQP client.
+A Promisified layer over [rhea](https://githhub.com/amqp/rhea) AMQP client.
 
 ## Pre-requisite ##
 - **Node.js version: 6.x or higher.** 
@@ -73,7 +73,7 @@ We believe our design enforces good practices to be followed while using the eve
 Please take a look at the [sample.env](https://github.com/amqp/rhea-promise/blob/master/sample.env) file for examples on how to provide the values for different 
 parameters like host, username, password, port, senderAddress, receiverAddress, etc.
 
-#### Sending a message.
+#### Sending a message via `Sender`.
 - Running the example from terminal: `> ts-node ./examples/send.ts`.
 
 **NOTE:** If you are running the sample with `.env` config file, then please run the sample from the directory that contains `.env` config file. 
@@ -130,8 +130,79 @@ async function main(): Promise<void> {
     message_id: "12343434343434"
   };
 
-  const delivery: Delivery = await sender.send(message);
-  console.log(">>>>>[%s] Delivery id: ", connection.id, delivery.id);
+  // Please, note that we are not awaiting on sender.send()
+  // You will notice that `delivery.settled` will be `false`.
+  const delivery: Delivery = sender.send(message);
+  console.log(">>>>>[%s] Delivery id: %d, settled: %s",
+    connection.id,
+    delivery.id,
+    delivery.settled);
+
+  await sender.close();
+  await connection.close();
+}
+
+main().catch((err) => console.log(err));
+```
+
+### Sending a message via `AwaitableSender`
+- Running the example from terminal: `> ts-node ./examples/awaitableSend.ts`.
+
+```typescript
+import {
+  Connection, Message, ConnectionOptions, Delivery, AwaitableSenderOptions, AwaitableSender
+} from "rhea-promise";
+
+import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
+dotenv.config();
+
+const host = process.env.AMQP_HOST || "host";
+const username = process.env.AMQP_USERNAME || "sharedAccessKeyName";
+const password = process.env.AMQP_PASSWORD || "sharedAccessKeyValue";
+const port = parseInt(process.env.AMQP_PORT || "5671");
+const senderAddress = process.env.SENDER_ADDRESS || "address";
+
+async function main(): Promise<void> {
+  const connectionOptions: ConnectionOptions = {
+    transport: "tls",
+    host: host,
+    hostname: host,
+    username: username,
+    password: password,
+    port: port,
+    reconnect: false
+  };
+  const connection: Connection = new Connection(connectionOptions);
+  const senderName = "sender-1";
+  const awaitableSenderOptions: AwaitableSenderOptions = {
+    name: senderName,
+    target: {
+      address: senderAddress
+    },
+    sendTimeoutInSeconds: 10
+  };
+
+  await connection.open();
+  // Notice that we are awaiting on the message being sent.
+  const sender: AwaitableSender = await connection.createAwaitableSender(
+    awaitableSenderOptions
+  );
+
+  for (let i = 0; i < 10; i++) {
+    const message: Message = {
+      body: `Hello World - ${i}`,
+      message_id: i
+    };
+    // Note: Here we are awaiting for the send to complete.
+    // You will notice that `delivery.settled` will be `true`, irrespective of whether the promise resolves or rejects.
+    const delivery: Delivery = await sender.send(message);
+    console.log(
+      "[%s] await sendMessage -> Delivery id: %d, settled: %s",
+      connection.id,
+      delivery.id,
+      delivery.settled
+    );
+  }
 
   await sender.close();
   await connection.close();
@@ -222,3 +293,7 @@ npm i
 ```
 npm run build
 ```
+
+
+## AMQP Protocol specification
+Amqp protocol specification can be found [here](http://www.amqp.org/sites/amqp.org/files/amqp.pdf).

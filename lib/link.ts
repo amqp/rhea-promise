@@ -4,17 +4,30 @@
 import * as log from "./log";
 import {
   link, LinkOptions, AmqpError, Dictionary, Source, TerminusOptions, SenderEvents, ReceiverEvents,
-  EventContext as RheaEventContext
+  EventContext as RheaEventContext, ConnectionEvents
 } from "rhea";
 import { Session } from "./session";
 import { Connection } from "./connection";
 import { Func, emitEvent, EmitParameters } from './util/utils';
 import { Entity } from "./entity";
-import { OperationTimeoutError } from "./operationTimeoutError";
+import { OperationTimeoutError } from "./errorDefinitions";
 
 export enum LinkType {
   sender = "sender",
   receiver = "receiver"
+}
+
+/**
+ * @interface LinkCloseOptions
+ * Describes the options that can be provided while closing the link.
+ */
+export interface LinkCloseOptions {
+  /**
+   * Indicates whether the underlying amqp session should also be closed when the
+   * link is being closed.
+   * - **Default: `true`**.
+   */
+  closeSession?: boolean;
 }
 
 export abstract class Link extends Entity {
@@ -208,17 +221,21 @@ export abstract class Link extends Entity {
   }
 
   /**
-   * Closes the underlying amqp link and session in rhea if open. Also removes all the event
-   * handlers added in the rhea-promise library on the link and it's session
-   * @return {Promise<void>} Promise<void>
+   * Closes the underlying amqp link and optionally the session as well in rhea if open.
+   * Also removes all the event handlers added in the rhea-promise library on the link
+   * and optionally it's session.
+   * @returns Promise<void>
    * - **Resolves** the promise when rhea emits the "sender_close" | "receiver_close" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the
    * "sender_error" | "receiver_error" event while trying to close the amqp link.
    */
-  async close(): Promise<void> {
+  async close(options?: LinkCloseOptions): Promise<void> {
+    if (!options) options = {};
+    if (options.closeSession == undefined) options.closeSession = true;
     this.removeAllListeners();
     await new Promise<void>((resolve, reject) => {
-      log.error("[%s] The %s is open ? -> %s", this.connection.id, this.type, this.isOpen());
+      log.error("[%s] The %s '%s' on amqp session '%s' is open ? -> %s",
+        this.connection.id, this.type, this.name, this.session.id, this.isOpen());
       if (this.isOpen()) {
         const errorEvent = this.type === LinkType.sender
           ? SenderEvents.senderError
@@ -228,6 +245,7 @@ export abstract class Link extends Entity {
           : ReceiverEvents.receiverClose;
         let onError: Func<RheaEventContext, void>;
         let onClose: Func<RheaEventContext, void>;
+        let onDisconnected: Func<RheaEventContext, void>;
         let waitTimer: any;
 
         const removeListeners = () => {
@@ -235,32 +253,44 @@ export abstract class Link extends Entity {
           this.actionInitiated--;
           this._link.removeListener(errorEvent, onError);
           this._link.removeListener(closeEvent, onClose);
+          this._link.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
         };
 
         onClose = (context: RheaEventContext) => {
           removeListeners();
-          log[this.type]("[%s] Resolving the promise as the amqp %s has been closed.",
-            this.connection.id, this.type);
+          log[this.type]("[%s] Resolving the promise as the %s '%s' on amqp session '%s' " +
+            "has been closed.", this.connection.id, this.type, this.name, this.session.id);
           return resolve();
         };
 
         onError = (context: RheaEventContext) => {
           removeListeners();
-          log.error("[%s] Error occurred while closing amqp %s: %O.",
-            this.connection.id, this.type, context.session!.error);
+          log.error("[%s] Error occurred while closing %s '%s' on amqp session '%s': %O.",
+            this.connection.id, this.type, this.name, this.session.id, context.session!.error);
           return reject(context.session!.error);
+        };
+
+        onDisconnected = (context: RheaEventContext) => {
+          removeListeners();
+          const error = context.connection && context.connection.error
+            ? context.connection.error
+            : context.error;
+          log.error("[%s] Connection got disconnected while closing amqp %s '%s' on amqp " +
+            "session '%s': %O.", this.connection.id, this.type, this.name, this.session.id, error);
         };
 
         const actionAfterTimeout = () => {
           removeListeners();
-          const msg: string = `Unable to close the amqp %s ${this.name} due to operation timeout.`;
-          log.error("[%s] %s", this.connection.id, this.type, msg);
+          const msg: string = `Unable to close the ${this.type} '${this.name}' ` +
+            `on amqp session '${this.session.id}' due to operation timeout.`;
+          log.error("[%s] %s", this.connection.id, msg);
           return reject(new OperationTimeoutError(msg));
         };
 
         // listeners that we add for completing the operation are added directly to rhea's objects.
         this._link.once(closeEvent, onClose);
         this._link.once(errorEvent, onError);
+        this._link.connection.once(ConnectionEvents.disconnected, onDisconnected);
         waitTimer = setTimeout(actionAfterTimeout,
           this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._link.close();
@@ -269,9 +299,12 @@ export abstract class Link extends Entity {
         return resolve();
       }
     });
-    log[this.type]("[%s] %s has been closed, now closing it's session.",
-      this.connection.id, this.type);
-    return this._session.close();
+
+    if (options.closeSession) {
+      log[this.type]("[%s] %s '%s' has been closed, now closing it's amqp session '%s'.",
+        this.connection.id, this.type, this.name, this.session.id);
+      return this._session.close();
+    }
   }
 
   /**

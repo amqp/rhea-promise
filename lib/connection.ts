@@ -18,7 +18,8 @@ import {
 
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
-import { OperationTimeoutError } from "./operationTimeoutError";
+import { OperationTimeoutError } from "./errorDefinitions";
+import { AwaitableSender, AwaitableSenderOptions } from "./awaitableSender";
 
 /**
  * Describes the options that can be provided while creating an AMQP sender. One can also provide
@@ -26,6 +27,15 @@ import { OperationTimeoutError } from "./operationTimeoutError";
  * @interface SenderOptionsWithSession
  */
 export interface SenderOptionsWithSession extends SenderOptions {
+  session?: Session;
+}
+
+/**
+ * Describes the options that can be provided while creating an Async AMQP sender.
+ * One can also provide a session if it was already created.
+ * @interface AwaitableSenderOptionsWithSession
+ */
+export interface AwaitableSenderOptionsWithSession extends AwaitableSenderOptions {
   session?: Session;
 }
 
@@ -324,12 +334,14 @@ export class Connection extends Entity {
       if (this.isOpen()) {
         let onClose: Func<RheaEventContext, void>;
         let onError: Func<RheaEventContext, void>;
+        let onDisconnected: Func<RheaEventContext, void>;
         let waitTimer: any;
         const removeListeners = () => {
           clearTimeout(waitTimer);
           this.actionInitiated--;
           this._connection.removeListener(ConnectionEvents.connectionError, onError);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
+          this._connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
         };
 
         onClose = (context: RheaEventContext) => {
@@ -346,6 +358,14 @@ export class Connection extends Entity {
           return reject(context.connection.error);
         };
 
+        onDisconnected = (context: RheaEventContext) => {
+          removeListeners();
+          const error = context.connection && context.connection.error
+            ? context.connection.error
+            : context.error;
+          log.error("[%s] Connection got disconnected while closing itself: %O.", this.id, error);
+        };
+
         const actionAfterTimeout = () => {
           removeListeners();
           const msg: string = `Unable to close the amqp connection "${this.id}" due to operation timeout.`;
@@ -356,6 +376,7 @@ export class Connection extends Entity {
         // listeners that we add for completing the operation are added directly to rhea's objects.
         this._connection.once(ConnectionEvents.connectionClose, onClose);
         this._connection.once(ConnectionEvents.connectionError, onError);
+        this._connection.once(ConnectionEvents.disconnected, onDisconnected);
         waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
         this._connection.close();
         this.actionInitiated++;
@@ -443,6 +464,7 @@ export class Connection extends Entity {
       session.actionInitiated++;
       let onOpen: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
+      let onDisconnected: Func<RheaEventContext, void>;
       let waitTimer: any;
 
       const removeListeners = () => {
@@ -450,11 +472,12 @@ export class Connection extends Entity {
         session.actionInitiated--;
         rheaSession.removeListener(SessionEvents.sessionOpen, onOpen);
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
+        rheaSession.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
       };
 
       onOpen = (context: RheaEventContext) => {
         removeListeners();
-        log.session("[%s] Resolving the promise with amqp session.", this.id);
+        log.session("[%s] Resolving the promise with amqp session '%s'.", this.id, session.id);
         return resolve(session);
       };
 
@@ -463,6 +486,16 @@ export class Connection extends Entity {
         log.error("[%s] Error occurred while establishing a session over amqp connection: %O.",
           this.id, context.session!.error);
         return reject(context.session!.error);
+      };
+
+      onDisconnected = (context: RheaEventContext) => {
+        removeListeners();
+        const error = context.connection && context.connection.error
+          ? context.connection.error
+          : context.error;
+        log.error("[%s] Connection got disconnected while creating amqp session '%s': %O.",
+          this.id, session.id, error);
+        return reject(error);
       };
 
       const actionAfterTimeout = () => {
@@ -475,6 +508,7 @@ export class Connection extends Entity {
       // listeners that we add for completing the operation are added directly to rhea's objects.
       rheaSession.once(SessionEvents.sessionOpen, onOpen);
       rheaSession.once(SessionEvents.sessionClose, onClose);
+      rheaSession.connection.once(ConnectionEvents.disconnected, onDisconnected);
       log.session("[%s] Calling amqp session.begin().", this.id);
       waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
       rheaSession.begin();
@@ -492,6 +526,26 @@ export class Connection extends Entity {
     }
     const session = await this.createSession();
     return session.createSender(options);
+  }
+
+  /**
+   * Creates an awaitable amqp sender. It either uses the provided session or creates a new one.
+   * @param options Optional parameters to create an awaitable sender link.
+   * - If `onError` and `onSessionError` handlers are not provided then the `AwaitableSender` will
+   * clear the timer and reject the Promise for all the entries of inflight send operation in its
+   * `deliveryDispositionMap`.
+   * - If the user is handling the reconnection of sender link or the underlying connection in it's
+   * app, then the `onError` and `onSessionError` handlers must be provided by the user and (s)he
+   * shall be responsible of clearing the `deliveryDispotionMap` of inflight `send()` operation.
+   *
+   * @return Promise<AwaitableSender>.
+   */
+  async createAwaitableSender(options?: AwaitableSenderOptionsWithSession): Promise<AwaitableSender> {
+    if (options && options.session && options.session.createAwaitableSender) {
+      return options.session.createAwaitableSender(options);
+    }
+    const session = await this.createSession();
+    return session.createAwaitableSender(options);
   }
 
   /**
@@ -530,8 +584,8 @@ export class Connection extends Entity {
       session.createSender(senderOptions),
       session.createReceiver(receiverOptions)
     ]);
-    log.connection("[%s] Successfully created the sender and receiver links on the same session.",
-      this.id);
+    log.connection("[%s] Successfully created the sender '%s' and receiver '%s' on the same " +
+      "amqp session '%s'.", this.id, sender.name, receiver.name, session.id);
     return {
       session: session,
       sender: sender,
@@ -555,6 +609,9 @@ export class Connection extends Entity {
           emitterType: "connection",
           connectionId: this.id
         };
+        if (eventName === ConnectionEvents.protocolError) {
+          log.connection("[%s] ProtocolError is: %O.", this.id, context);
+        }
         emitEvent(params);
       });
     }

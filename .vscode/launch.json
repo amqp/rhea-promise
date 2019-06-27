@@ -7,8 +7,28 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "examples",
+            "name": "awaitableSend",
+            "program": "${workspaceFolder}/examples/awaitableSend.ts",
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ],
+            "envFile": "${workspaceFolder}/.env" // You can take a look at the sample.env file for supported environment variables.
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "send",
             "program": "${workspaceFolder}/examples/send.ts",
+            "outFiles": [
+                "${workspaceFolder}/dist/**/*.js"
+            ],
+            "envFile": "${workspaceFolder}/.env" // You can take a look at the sample.env file for supported environment variables.
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "receive",
+            "program": "${workspaceFolder}/examples/receive.ts",
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ],

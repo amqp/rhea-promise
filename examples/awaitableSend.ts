@@ -3,12 +3,11 @@
 
 import {
   Connection,
-  Sender,
-  EventContext,
   Message,
   ConnectionOptions,
   Delivery,
-  SenderOptions
+  AwaitableSenderOptions,
+  AwaitableSender
 } from "../lib";
 
 import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
@@ -32,51 +31,34 @@ async function main(): Promise<void> {
   };
   const connection: Connection = new Connection(connectionOptions);
   const senderName = "sender-1";
-  const senderOptions: SenderOptions = {
+  const senderOptions: AwaitableSenderOptions = {
     name: senderName,
     target: {
       address: senderAddress
     },
-    onError: (context: EventContext) => {
-      const senderError = context.sender && context.sender.error;
-      if (senderError) {
-        console.log(
-          ">>>>> [%s] An error occurred for sender '%s': %O.",
-          connection.id,
-          senderName,
-          senderError
-        );
-      }
-    },
-    onSessionError: (context: EventContext) => {
-      const sessionError = context.session && context.session.error;
-      if (sessionError) {
-        console.log(
-          ">>>>> [%s] An error occurred for session of sender '%s': %O.",
-          connection.id,
-          senderName,
-          sessionError
-        );
-      }
-    }
+    sendTimeoutInSeconds: 10
   };
 
   await connection.open();
-  const sender: Sender = await connection.createSender(senderOptions);
-  const message: Message = {
-    body: "Hello World!!",
-    message_id: "12343434343434"
-  };
-
-  // Please, note that we are not awaiting on sender.send()
-  // You will notice that `delivery.settled` will be `false`.
-  const delivery: Delivery = sender.send(message);
-  console.log(
-    ">>>>>[%s] send -> Delivery id: %d, settled: %s",
-    connection.id,
-    delivery.id,
-    delivery.settled
+  const sender: AwaitableSender = await connection.createAwaitableSender(
+    senderOptions
   );
+
+  for (let i = 0; i < 10; i++) {
+    const message: Message = {
+      body: `Hello World - ${i}`,
+      message_id: i
+    };
+    // Please, note that we are awaiting on sender.send() to complete.
+    // You will notice that `delivery.settled` will be `true`, irrespective of whether the promise resolves or rejects.
+    const delivery: Delivery = await sender.send(message);
+    console.log(
+      "[%s] await sendMessage -> Delivery id: %d, settled: %s",
+      connection.id,
+      delivery.id,
+      delivery.settled
+    );
+  }
 
   await sender.close();
   await connection.close();

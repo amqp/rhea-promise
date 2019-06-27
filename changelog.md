@@ -1,3 +1,15 @@
+### 1.0.0 - 2019-06-18
+- Updated minimum version of `rhea` to `^1.0.8`.
+- Added a read only property `id` to the `Session` object. The id property is created by concatenating session's local channel, remote channel and the connection id `"local-<number>_remote-<number>_<connection-id>"`, thus making it unique for that connection.
+- Improved log statements by adding the session `id` and the sender, receiver `name` to help while debugging applications.
+- Added `options` to `Link.close({closeSession: true | false})`, thus the user can specify whether the underlying session should be closed while closing the `Sender|Receiver`. Default is `true`.
+- Improved `open` and `close` operations on `Connection`, `Session` and `Link` by creating timer in case the connection gets disconnected. Fixes [#41](https://github.com/amqp/rhea-promise/issues/41).
+- The current `Sender` does not have a provision of **"awaiting"** on sending a message. The user needs to add handlers on the `Sender` for `accepted`, `rejected`, `released`, `modified` to ensure whether the message was successfully sent.
+Now, we have added a new `AwaitableSender` which adds the handlers internally and provides an **awaitable** `send()` operation to the customer. Fixes [#45](https://github.com/amqp/rhea-promise/issues/45).
+- Exporting new Errors:
+   - `InsufficientCreditError`: Defines the error that occurs when the Sender does not have enough credit.
+   - `SendOperationFailedError`: Defines the error that occurs when the Sender fails to send a message.
+
 ### 0.2.0 - 2019-05-17
 - Updated `OperationTimeoutError` to be a non-AMQP Error as pointed out in [#42](https://github.com/amqp/rhea-promise/issues/42). Fixed in [PR](https://github.com/amqp/rhea-promise/pull/43).
 

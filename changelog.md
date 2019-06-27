@@ -1,4 +1,5 @@
 ### 1.0.0 - 2019-06-18
+- Updated minimum version of `rhea` to `^1.0.8`.
 - Added a read only property `id` to the `Session` object. The id property is created by concatenating session's local channel, remote channel and the connection id `"local-<number>_remote-<number>_<connection-id>"`, thus making it unique for that connection.
 - Improved log statements by adding the session `id` and the sender, receiver `name` to help while debugging applications.
 - Added `options` to `Link.close({closeSession: true | false})`, thus the user can specify whether the underlying session should be closed while closing the `Sender|Receiver`. Default is `true`.

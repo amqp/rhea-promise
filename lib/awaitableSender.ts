@@ -174,6 +174,9 @@ export class AwaitableSender extends BaseSender {
    */
   send(msg: Message | Buffer, tag?: Buffer | string, format?: number): Promise<Delivery> {
     return new Promise<Delivery>((resolve, reject) => {
+      log.sender("[%s] Sender '%s' on amqp session '%s', credit: %d available: %d",
+        this.connection.id, this.name, this.session.id, this.credit,
+        this.session.outgoing.available());
       if (this.sendable()) {
         const timer = setTimeout(() => {
           this.deliveryDispositionMap.delete(delivery.id);

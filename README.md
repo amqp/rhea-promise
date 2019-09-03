@@ -1,6 +1,6 @@
 # rhea-promise
 
-A Promisified layer over [rhea](https://githhub.com/amqp/rhea) AMQP client.
+A Promisified layer over [rhea](https://github.com/amqp/rhea) AMQP client.
 
 ## Pre-requisite ##
 - **Node.js version: 6.x or higher.** 

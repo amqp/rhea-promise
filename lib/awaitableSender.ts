@@ -182,7 +182,8 @@ export class AwaitableSender extends BaseSender {
         this.connection.id, this.name, this.session.id, this.credit,
         this.session.outgoing.available());
       if (this.sendable()) {
-        if (timeoutInSeconds && typeof timeoutInSeconds == "number" && timeoutInSeconds > 0) this.sendTimeoutInSeconds = timeoutInSeconds;
+        let sendTimoutInSeconds = this.sendTimeoutInSeconds;
+        if (typeof timeoutInSeconds === "number" && timeoutInSeconds > 0) sendTimeoutInSeconds = timeoutInSeconds;
         const timer = setTimeout(() => {
           this.deliveryDispositionMap.delete(delivery.id);
           const message = `Sender '${this.name}' on amqp session ` +

@@ -182,7 +182,7 @@ export class AwaitableSender extends BaseSender {
         this.connection.id, this.name, this.session.id, this.credit,
         this.session.outgoing.available());
       if (this.sendable()) {
-        let sendTimoutInSeconds = this.sendTimeoutInSeconds;
+        let sendTimeoutInSeconds = this.sendTimeoutInSeconds;
         if (typeof timeoutInSeconds === "number" && timeoutInSeconds > 0) sendTimeoutInSeconds = timeoutInSeconds;
         const timer = setTimeout(() => {
           this.deliveryDispositionMap.delete(delivery.id);
@@ -191,7 +191,7 @@ export class AwaitableSender extends BaseSender {
             `message with delivery id ${delivery.id} right now, due to operation timeout.`;
           log.error("[%s] %s", this.connection.id, message);
           return reject(new OperationTimeoutError(message));
-        }, this.sendTimeoutInSeconds * 1000);
+        }, sendTimeoutInSeconds * 1000);
 
         const delivery = (this._link as RheaSender).send(msg, tag, format);
         this.deliveryDispositionMap.set(delivery.id, {

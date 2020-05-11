@@ -1,3 +1,6 @@
+### 1.0.1 - #Unreleased
+- Added a `timeoutInSeconds` parameter to the `send` method on the `AwaitableSender`.
+
 ### 1.0.0 - 2019-06-27
 - Updated minimum version of `rhea` to `^1.0.8`.
 - Added a read only property `id` to the `Session` object. The id property is created by concatenating session's local channel, remote channel and the connection id `"local-<number>_remote-<number>_<connection-id>"`, thus making it unique for that connection.

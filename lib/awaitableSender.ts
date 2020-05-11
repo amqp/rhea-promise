@@ -170,9 +170,9 @@ export class AwaitableSender extends BaseSender {
    * @param {number} [format] The message format. Specify this if a message with custom format needs
    * to be sent. `0` implies the standard AMQP 1.0 defined format. If no value is provided, then the
    * given message is assumed to be of type Message interface and encoded appropriately.
-   * @param {number} [timeoutInSeconds] If provided, this timeout overrides the `sendTimeoutInSeconds` 
-   * that is set when the `AwaitableSender` is created. This timeout represents the duration in which 
-   * the promise to send the message should complete (resolve/reject). If not, the Promise will be 
+   * @param {number} [timeoutInSeconds] If provided, this timeout overrides the `sendTimeoutInSeconds`
+   * that is set when the `AwaitableSender` is created. This timeout represents the duration in which
+   * the promise to send the message should complete (resolve/reject). If not, the Promise will be
    * rejected after timeout.
    * @returns {Promise<Delivery>} Promise<Delivery> The delivery information about the sent message.
    */

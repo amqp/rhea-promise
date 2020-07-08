@@ -315,13 +315,13 @@ export abstract class Link extends Entity {
    */
   private _initializeEventListeners(): void {
     const events = this.type === LinkType.sender ? SenderEvents : ReceiverEvents;
-    for (const eventName in events) {
-      this._link.on(events[eventName],
+    for (const eventName in Object.values(events)) {
+      this._link.on(eventName,
         (context: RheaEventContext) => {
           const params: EmitParameters = {
             rheaContext: context,
             emitter: this,
-            eventName: events[eventName],
+            eventName: eventName,
             emitterType: this.type,
             connectionId: this.connection.id
           };

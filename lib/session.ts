@@ -478,13 +478,13 @@ export class Session extends Entity {
    */
   private _initializeEventListeners(): void {
 
-    for (const eventName in SessionEvents) {
-      this._session.on(SessionEvents[eventName],
+    for (const eventName in Object.values(SessionEvents)) {
+      this._session.on(eventName,
         (context) => {
           const params: EmitParameters = {
             rheaContext: context,
             emitter: this,
-            eventName: SessionEvents[eventName],
+            eventName: eventName,
             emitterType: "session",
             connectionId: this.connection.id
           };

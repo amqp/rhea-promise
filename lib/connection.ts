@@ -600,12 +600,12 @@ export class Connection extends Entity {
    * @returns {void} void
    */
   private _initializeEventListeners(): void {
-    for (const eventName in ConnectionEvents) {
-      this._connection.on(ConnectionEvents[eventName], (context) => {
+    for (const eventName in Object.values(ConnectionEvents)) {
+      this._connection.on(eventName, (context) => {
         const params: EmitParameters = {
           rheaContext: context,
           emitter: this,
-          eventName: ConnectionEvents[eventName],
+          eventName: eventName,
           emitterType: "connection",
           connectionId: this.id
         };

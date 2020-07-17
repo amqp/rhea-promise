@@ -600,7 +600,7 @@ export class Connection extends Entity {
    * @returns {void} void
    */
   private _initializeEventListeners(): void {
-    for (const eventName in ConnectionEvents) {
+    for (const eventName of Object.keys(ConnectionEvents) as Array<keyof typeof ConnectionEvents>) {
       this._connection.on(ConnectionEvents[eventName], (context) => {
         const params: EmitParameters = {
           rheaContext: context,
@@ -609,7 +609,7 @@ export class Connection extends Entity {
           emitterType: "connection",
           connectionId: this.id
         };
-        if (eventName === ConnectionEvents.protocolError) {
+        if (ConnectionEvents[eventName] === ConnectionEvents.protocolError) {
           log.connection("[%s] ProtocolError is: %O.", this.id, context);
         }
         emitEvent(params);

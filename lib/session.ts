@@ -478,7 +478,7 @@ export class Session extends Entity {
    */
   private _initializeEventListeners(): void {
 
-    for (const eventName in SessionEvents) {
+    for (const eventName of Object.keys(SessionEvents) as Array<keyof typeof SessionEvents>) {
       this._session.on(SessionEvents[eventName],
         (context) => {
           const params: EmitParameters = {

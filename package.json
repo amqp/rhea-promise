@@ -18,21 +18,25 @@
     "messaging"
   ],
   "devDependencies": {
+    "@types/chai": "^4.2.11",
     "@types/debug": "^0.0.31",
-    "@types/node": "^8.0.37",
     "@types/dotenv": "^6.1.1",
+    "@types/mocha": "^7.0.2",
+    "@types/node": "^8.0.37",
+    "chai": "^4.2.0",
+    "dotenv": "^8.0.0",
+    "mocha": "^6.2.3",
     "rimraf": "^2.6.3",
     "ts-node": "^8.2.0",
     "tslint": "^5.17.0",
-    "typescript": "^3.5.1",
-    "dotenv": "^8.0.0"
+    "typescript": "^3.5.1"
   },
   "scripts": {
     "tslint": "tslint -p . -c tslint.json --exclude tests/**/*.ts",
     "tsc": "tsc",
     "prebuild": "rimraf dist && rimraf typings",
     "build": "npm run tslint && npm run tsc",
-    "test": "npm run build",
+    "test": "npm run build && mocha -r ts-node/register ./test/*.spec.ts",
     "prepack": "npm i && npm run build"
   },
   "homepage": "https://github.com/amqp/rhea-promise",

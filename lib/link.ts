@@ -322,7 +322,7 @@ export abstract class Link extends Entity {
    */
   private _initializeEventListeners(): void {
     const events = this.type === LinkType.sender ? SenderEvents : ReceiverEvents;
-    for (const eventName in events) {
+    for (const eventName of Object.keys(events) as Array<keyof typeof events>) {
       this._link.on(events[eventName],
         (context: RheaEventContext) => {
           const params: EmitParameters = {

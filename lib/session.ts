@@ -143,9 +143,9 @@ export class Session extends Entity {
    * - **Rejects** the promise with an AmqpError when rhea emits the "session_error" event while trying
    * to close an amqp session.
    */
-  close(): Promise<void> {
-    this.removeAllListeners();
-    return new Promise<void>((resolve, reject) => {
+  async close(): Promise<void> {
+
+    const closePromise = new Promise<void>((resolve, reject) => {
       log.error("[%s] The amqp session '%s' is open ? -> %s", this.connection.id, this.id, this.isOpen());
       if (this.isOpen()) {
         let onError: Func<RheaEventContext, void>;
@@ -203,6 +203,13 @@ export class Session extends Entity {
         return resolve();
       }
     });
+
+    try {
+      await closePromise;
+    } finally {
+      this.removeAllListeners();
+    }
+
   }
 
   /**

@@ -77,5 +77,61 @@ describe("Session", () => {
       // Open the session.
       session.begin();
     });
+
+    it("sessionClose", (done: Function) => {
+      const session = new Session(
+        connection,
+        connection["_connection"].create_session()
+      );
+
+      session.on(SessionEvents.sessionOpen, async () => {
+        await session.close();
+        assert.strictEqual(session.listeners(SessionEvents.sessionOpen).length, 0);
+        assert.strictEqual(session.listeners(SessionEvents.sessionClose).length, 0);
+      });
+
+      session.on(SessionEvents.sessionClose, (event) => {
+        assert.exists(event, "Expected an AMQP event.");
+
+        done();
+      });
+
+      // Open the session.
+      session.begin();
+
+      assert.strictEqual(session.listeners(SessionEvents.sessionOpen).length, 1);
+      assert.strictEqual(session.listeners(SessionEvents.sessionClose).length, 1);
+    });
+
+    it("sessionError", (done: Function) => {
+      const errorCondition = "amqp:connection:forced";
+      const errorDescription = "testing error on close";
+      mockService.on(
+        rhea.SessionEvents.sessionOpen,
+        (context: rhea.EventContext) => {
+          context.session?.close({
+            condition: errorCondition,
+            description: errorDescription,
+          });
+        }
+      );
+
+      const session = new Session(
+        connection,
+        connection["_connection"].create_session()
+      );
+
+      session.on(SessionEvents.sessionError, async (event) => {
+        assert.exists(event, "Expected an AMQP event.");
+        const error = event.session?.error as rhea.ConnectionError;
+        assert.exists(error, "Expected an AMQP error.");
+        assert.strictEqual(error.condition, errorCondition);
+        assert.strictEqual(error.description, errorDescription);
+        await session.close();
+        done();
+      });
+
+      session.begin();
+    });
   });
 });

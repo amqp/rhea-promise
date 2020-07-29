@@ -133,5 +133,39 @@ describe("Session", () => {
 
       session.begin();
     });
+
+    it("sessionError on session.close() is bubbled up", (done: Function) => {
+      const errorCondition = "amqp:connection:forced";
+      const errorDescription = "testing error on close";
+      mockService.on(
+        rhea.SessionEvents.sessionClose,
+        (context: rhea.EventContext) => {
+          context.session?.close({
+            condition: errorCondition,
+            description: errorDescription,
+          });
+        }
+      );
+
+      const session = new Session(
+        connection,
+        connection["_connection"].create_session()
+      );
+
+      session.on(SessionEvents.sessionOpen, async () => {
+        try {
+          await session.close();
+          throw new Error("boo")
+        } catch (error) {
+          assert.exists(error, "Expected an AMQP error.");
+          assert.strictEqual(error.condition, errorCondition);
+          assert.strictEqual(error.description, errorDescription);
+        }
+        done();
+      });
+
+      // Open the session.
+      session.begin();
+    });
   });
 });

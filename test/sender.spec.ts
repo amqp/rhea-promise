@@ -39,4 +39,31 @@ describe("Sender", () => {
     assert.isTrue(sender.isItselfClosed(), "Sender should be fully closed.");
     assert.isFalse(sender.isOpen(), "Sender should not be open.");
   });
+
+  describe("supports events", () => {
+    it("senderError on sender.close() is bubbled up", async () => {
+      const errorCondition = "amqp:connection:forced";
+      const errorDescription = "testing error on close";
+      mockService.on(
+        rhea.ReceiverEvents.receiverClose,
+        (context: rhea.EventContext) => {
+          context.receiver?.close({
+            condition: errorCondition,
+            description: errorDescription,
+          });
+        }
+      );
+
+      const sender = await connection.createSender();
+
+      try {
+        await sender.close();
+        throw new Error("boo")
+      } catch (error) {
+        assert.exists(error, "Expected an AMQP error.");
+        assert.strictEqual(error.condition, errorCondition);
+        assert.strictEqual(error.description, errorDescription);
+      }
+    });
+  });
 });

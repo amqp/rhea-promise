@@ -265,9 +265,16 @@ export abstract class Link extends Entity {
 
         onError = (context: RheaEventContext) => {
           removeListeners();
+          let error = context.session!.error;
+          if (this.type === LinkType.sender && context.sender && context.sender.error) {
+            error = context.sender.error;
+          } else if (this.type === LinkType.receiver && context.receiver && context.receiver.error) {
+            error = context.receiver.error;
+          }
+
           log.error("[%s] Error occurred while closing %s '%s' on amqp session '%s': %O.",
-            this.connection.id, this.type, this.name, this.session.id, context.session!.error);
-          return reject(context.session!.error);
+            this.connection.id, this.type, this.name, this.session.id, error);
+          return reject(error);
         };
 
         onDisconnected = (context: RheaEventContext) => {

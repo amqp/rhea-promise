@@ -67,7 +67,7 @@ describe("Connection", () => {
       })();
     });
 
-    it("connectionError", (done: Function) => {
+    it("connectionError on connection open", (done: Function) => {
       const errorCondition = "amqp:connection:forced";
       const errorDescription = "testing error on close";
       mockService.on(
@@ -98,7 +98,7 @@ describe("Connection", () => {
       connection.open();
     });
 
-    it("connectionError", (done: Function) => {
+    it("disconnected", (done: Function) => {
       mockService.on(
         rhea.ConnectionEvents.connectionOpen,
         (context: rhea.EventContext) => {
@@ -121,6 +121,43 @@ describe("Connection", () => {
       });
 
       connection.open();
+    });
+
+    it("connectionError on connection.close() is bubbled up", (done: Function) => {
+      const errorCondition = "amqp:connection:forced";
+      const errorDescription = "testing error on close";
+      mockService.on(
+        rhea.ConnectionEvents.connectionClose,
+        (context: rhea.EventContext) => {
+          context.connection.close({
+            condition: errorCondition,
+            description: errorDescription,
+          });
+        }
+      );
+
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+
+      connection.on(ConnectionEvents.connectionOpen, async (event) => {
+        assert.exists(event, "Expected an AMQP event.");
+        try {
+          await connection.close();
+          throw new Error("boo")
+        } catch (error) {
+          assert.exists(error, "Expected an AMQP error.");
+          assert.strictEqual(error.condition, errorCondition);
+          assert.strictEqual(error.description, errorDescription);
+        }
+        done();
+      });
+
+      connection.open();
+
+
+
     });
   });
 });

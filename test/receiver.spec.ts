@@ -39,4 +39,59 @@ describe("Receiver", () => {
     assert.isTrue(receiver.isItselfClosed(), "Receiver should be fully closed.");
     assert.isFalse(receiver.isOpen(), "Receiver should not be open.");
   });
+
+  it(".remove() removes event listeners", async () => {
+    const receiver = await connection.createReceiver();
+    receiver.on(rhea.ReceiverEvents.receiverOpen, () => {
+      /** no-op */
+    });
+
+    assert.isTrue(receiver.isOpen(), "Receiver should be open.");
+    assert.isAtLeast(receiver.listenerCount(rhea.ReceiverEvents.receiverOpen), 1);
+
+    receiver.remove();
+
+    // TODO: receiver.isOpen() returns true at this point, need to find out why
+    // assert.isFalse(receiver.isOpen(), "Receiver should not be open.");
+    assert.strictEqual(receiver.listenerCount(rhea.ReceiverEvents.receiverOpen), 0);
+
+  });
+
+  it(".close() removes event listeners", async () => {
+    const receiver = await connection.createReceiver();
+    receiver.on(rhea.ReceiverEvents.receiverOpen, () => {
+      /** no-op */
+    });
+
+    assert.isAtLeast(receiver.listenerCount(rhea.ReceiverEvents.receiverOpen), 1);
+
+    await receiver.close();
+
+    assert.strictEqual(receiver.listenerCount(rhea.ReceiverEvents.receiverOpen), 0);
+  });
+
+  // TODO: This test fails because we first get a receiver_open event instead of
+  // a receiver_close event which does get fired, but by then we have removed listeners
+  // it("createReceiver() bubbles up error", async () => {
+  //   const errorCondition = "amqp:connection:forced";
+  //   const errorDescription = "testing error on create";
+  //   mockService.on(
+  //     rhea.SenderEvents.senderOpen,
+  //     (context: rhea.EventContext) => {
+  //       context.sender?.close({
+  //         condition: errorCondition,
+  //         description: errorDescription,
+  //       });
+  //     }
+  //   );
+
+  //   try {
+  //     await connection.createReceiver();
+  //     throw new Error("boo");
+  //   } catch (error) {
+  //     assert.exists(error, "Expected an AMQP error.");
+  //     assert.strictEqual(error.condition, errorCondition);
+  //     assert.strictEqual(error.description, errorDescription);
+  //   }
+  // });
 });

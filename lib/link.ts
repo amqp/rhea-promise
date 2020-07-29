@@ -232,8 +232,8 @@ export abstract class Link extends Entity {
   async close(options?: LinkCloseOptions): Promise<void> {
     if (!options) options = {};
     if (options.closeSession == undefined) options.closeSession = true;
-    this.removeAllListeners();
-    await new Promise<void>((resolve, reject) => {
+
+    const closePromise = new Promise<void>((resolve, reject) => {
       log.error("[%s] The %s '%s' on amqp session '%s' is open ? -> %s",
         this.connection.id, this.type, this.name, this.session.id, this.isOpen());
       if (this.isOpen()) {
@@ -299,6 +299,12 @@ export abstract class Link extends Entity {
         return resolve();
       }
     });
+
+    try {
+      await closePromise;
+    } finally {
+      this.removeAllListeners();
+    }
 
     if (options.closeSession) {
       log[this.type]("[%s] %s '%s' has been closed, now closing it's amqp session '%s'.",

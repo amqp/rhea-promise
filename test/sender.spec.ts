@@ -39,4 +39,59 @@ describe("Sender", () => {
     assert.isTrue(sender.isItselfClosed(), "Sender should be fully closed.");
     assert.isFalse(sender.isOpen(), "Sender should not be open.");
   });
+
+
+  it(".remove() removes event listeners", async () => {
+    const sender = await connection.createSender();
+    sender.on(rhea.SenderEvents.senderOpen, () => {
+      /** no-op */
+    });
+
+    assert.isTrue(sender.isOpen(), "Sender should be open.");
+    assert.isAtLeast(sender.listenerCount(rhea.SenderEvents.senderOpen), 1);
+
+    sender.remove();
+
+    // TODO: sender.isOpen() returns true at this point, need to find out why
+    // assert.isFalse(sender.isOpen(), "Sender should not be open.");
+    assert.strictEqual(sender.listenerCount(rhea.SenderEvents.senderOpen), 0);
+
+  });
+
+  it(".close() removes event listeners", async () => {
+    const sender = await connection.createSender();
+    sender.on(rhea.SenderEvents.senderOpen, () => {
+      /** no-op */
+    });
+
+    assert.isAtLeast(sender.listenerCount(rhea.SenderEvents.senderOpen), 1);
+
+    await sender.close();
+
+    assert.strictEqual(sender.listenerCount(rhea.SenderEvents.senderOpen), 0);
+
+  });
+
+  it("createSender() bubbles up error", async () => {
+    const errorCondition = "amqp:connection:forced";
+    const errorDescription = "testing error on create";
+    mockService.on(
+      rhea.ReceiverEvents.receiverOpen,
+      (context: rhea.EventContext) => {
+        context.receiver?.close({
+          condition: errorCondition,
+          description: errorDescription,
+        });
+      }
+    );
+
+    try {
+      await connection.createSender();
+      throw new Error("boo");
+    } catch (error) {
+      assert.exists(error, "Expected an AMQP error.");
+      assert.strictEqual(error.condition, errorCondition);
+      assert.strictEqual(error.description, errorDescription);
+    }
+  });
 });

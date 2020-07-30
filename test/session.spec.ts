@@ -56,6 +56,22 @@ describe("Session", () => {
     await session.close();
   });
 
+  it(".close() removes event listeners", async () => {
+    const session = new Session(
+      connection,
+      connection["_connection"].create_session()
+    );
+
+    session.on(SessionEvents.sessionOpen, () => {
+      /** no-op */
+    });
+
+    assert.isAtLeast(session.listenerCount(SessionEvents.sessionOpen), 1);
+    await session.close();
+    assert.strictEqual(session.listenerCount(SessionEvents.sessionOpen), 0);
+  });
+
+
   describe("supports events", () => {
     it("sessionOpen", (done: Function) => {
       const session = new Session(
@@ -86,8 +102,6 @@ describe("Session", () => {
 
       session.on(SessionEvents.sessionOpen, async () => {
         await session.close();
-        assert.strictEqual(session.listeners(SessionEvents.sessionOpen).length, 0);
-        assert.strictEqual(session.listeners(SessionEvents.sessionClose).length, 0);
       });
 
       session.on(SessionEvents.sessionClose, (event) => {
@@ -98,9 +112,6 @@ describe("Session", () => {
 
       // Open the session.
       session.begin();
-
-      assert.strictEqual(session.listeners(SessionEvents.sessionOpen).length, 1);
-      assert.strictEqual(session.listeners(SessionEvents.sessionClose).length, 1);
     });
 
     it("sessionError", (done: Function) => {

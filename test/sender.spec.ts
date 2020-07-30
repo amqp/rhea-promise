@@ -46,15 +46,11 @@ describe("Sender", () => {
       /** no-op */
     });
 
-    assert.isTrue(sender.isOpen(), "Sender should be open.");
     assert.isAtLeast(sender.listenerCount(rhea.SenderEvents.senderOpen), 1);
 
     sender.remove();
 
-    // TODO: sender.isOpen() returns true at this point, need to find out why
-    // assert.isFalse(sender.isOpen(), "Sender should not be open.");
     assert.strictEqual(sender.listenerCount(rhea.SenderEvents.senderOpen), 0);
-
   });
 
   it(".close() removes event listeners", async () => {

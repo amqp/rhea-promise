@@ -46,15 +46,11 @@ describe("Receiver", () => {
       /** no-op */
     });
 
-    assert.isTrue(receiver.isOpen(), "Receiver should be open.");
     assert.isAtLeast(receiver.listenerCount(rhea.ReceiverEvents.receiverOpen), 1);
 
     receiver.remove();
 
-    // TODO: receiver.isOpen() returns true at this point, need to find out why
-    // assert.isFalse(receiver.isOpen(), "Receiver should not be open.");
     assert.strictEqual(receiver.listenerCount(rhea.ReceiverEvents.receiverOpen), 0);
-
   });
 
   it(".close() removes event listeners", async () => {

@@ -9,7 +9,7 @@ import {
   SenderEvents, ReceiverEvents, SessionEvents, AmqpError, Session as RheaSession,
   EventContext as RheaEventContext, ConnectionEvents
 } from "rhea";
-import { Func, EmitParameters, emitEvent } from "./util/utils";
+import { Func, EmitParameters, emitEvent, abortErrorName, AbortSignalLike } from "./util/utils";
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
 import { OperationTimeoutError } from "./errorDefinitions";
@@ -138,12 +138,15 @@ export class Session extends Entity {
   /**
    * Closes the underlying amqp session in rhea if open. Also removes all the event
    * handlers added in the rhea-promise library on the session
+   * @param abortSignal A signal used to cancel the operation. The local endpoint is indeed closed.
+   * This does not guarantee that the remote has closed as well. It only stops listening for
+   * an acknowledgement that the remote endpoint is closed as well.
    * @return {Promise<void>} Promise<void>
    * - **Resolves** the promise when rhea emits the "session_close" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "session_error" event while trying
-   * to close an amqp session.
+   * to close an amqp session or with an AbortError if the operation was cancelled.
    */
-  async close(): Promise<void> {
+  async close(abortSignal?: AbortSignalLike): Promise<void> {
 
     const closePromise = new Promise<void>((resolve, reject) => {
       log.error("[%s] The amqp session '%s' is open ? -> %s", this.connection.id, this.id, this.isOpen());
@@ -151,6 +154,7 @@ export class Session extends Entity {
         let onError: Func<RheaEventContext, void>;
         let onClose: Func<RheaEventContext, void>;
         let onDisconnected: Func<RheaEventContext, void>;
+        let onAbort: Func<void, void>;
         let waitTimer: any;
 
         const removeListeners = () => {
@@ -159,6 +163,9 @@ export class Session extends Entity {
           this._session.removeListener(SessionEvents.sessionError, onError);
           this._session.removeListener(SessionEvents.sessionClose, onClose);
           this._session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
+          if (abortSignal) {
+            abortSignal.removeEventListener("abort", onAbort);
+          }
         };
 
         onClose = (context: RheaEventContext) => {
@@ -184,6 +191,14 @@ export class Session extends Entity {
             this.connection.id, this.id, error);
         };
 
+        onAbort = () => {
+          removeListeners();
+          const err = new Error("Session close request has been cancelled.");
+          err.name = abortErrorName;
+          log.error(`[%s] ${err.message}`);
+          return reject(err);
+        };
+
         const actionAfterTimeout = () => {
           removeListeners();
           const msg: string = `Unable to close the amqp session ${this.id} due to operation timeout.`;
@@ -199,6 +214,14 @@ export class Session extends Entity {
         waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._session.close();
         this.actionInitiated++;
+
+        if (abortSignal) {
+          if (abortSignal.aborted) {
+            onAbort();
+          } else {
+            abortSignal.addEventListener("abort", onAbort);
+          }
+        }
       } else {
         return resolve();
       }
@@ -221,7 +244,7 @@ export class Session extends Entity {
    * - **Rejects** the promise with an AmqpError when rhea emits the "receiver_close" event while trying
    * to create an amqp receiver or the operation timeout occurs.
    */
-  createReceiver(options?: ReceiverOptions): Promise<Receiver> {
+  createReceiver(options?: ReceiverOptions & { abortSignal?: AbortSignalLike; }): Promise<Receiver> {
     return new Promise((resolve, reject) => {
       if (options &&
         ((options.onMessage && !options.onError) || (options.onError && !options.onMessage))) {
@@ -262,6 +285,8 @@ export class Session extends Entity {
       let onOpen: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
       let onDisconnected: Func<RheaEventContext, void>;
+      let onAbort: Func<void, void>;
+      const abortSignal = options?.abortSignal;
       let waitTimer: any;
 
       if (options && options.onMessage) {
@@ -293,6 +318,9 @@ export class Session extends Entity {
         rheaReceiver.removeListener(ReceiverEvents.receiverOpen, onOpen);
         rheaReceiver.removeListener(ReceiverEvents.receiverClose, onClose);
         rheaReceiver.session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
+        if (abortSignal) {
+          abortSignal.removeEventListener("abort", onAbort);
+        }
       };
 
       onOpen = (context: RheaEventContext) => {
@@ -320,6 +348,15 @@ export class Session extends Entity {
         return reject(error);
       };
 
+      onAbort = () => {
+        removeListeners();
+        rheaReceiver.close();
+        const err = new Error("Create receiver request has been cancelled.");
+        err.name = abortErrorName;
+        log.error(`[%s] ${err.message}`);
+        return reject(err);
+      };
+
       const actionAfterTimeout = () => {
         removeListeners();
         const msg: string = `Unable to create the amqp receiver '${receiver.name}' on amqp ` +
@@ -333,6 +370,14 @@ export class Session extends Entity {
       rheaReceiver.once(ReceiverEvents.receiverClose, onClose);
       rheaReceiver.session.connection.on(ConnectionEvents.disconnected, onDisconnected);
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
+
+      if (abortSignal) {
+        if (abortSignal.aborted) {
+          onAbort();
+        } else {
+          abortSignal.addEventListener("abort", onAbort);
+        }
+      }
     });
   }
 
@@ -344,7 +389,7 @@ export class Session extends Entity {
    * - **Rejects** the promise with an AmqpError when rhea emits the "sender_close" event while trying
    * to create an amqp sender or the operation timeout occurs.
    */
-  createSender(options?: SenderOptions): Promise<Sender> {
+  createSender(options?: SenderOptions & { abortSignal?: AbortSignalLike; }): Promise<Sender> {
     return this._createSender(SenderType.sender, options) as Promise<Sender>;
   }
 
@@ -363,7 +408,7 @@ export class Session extends Entity {
    * - **Rejects** the promise with an AmqpError when rhea emits the "sender_close" event while trying
    * to create an amqp sender or the operation timeout occurs.
    */
-  createAwaitableSender(options?: AwaitableSenderOptions): Promise<AwaitableSender> {
+  createAwaitableSender(options?: AwaitableSenderOptions & { abortSignal?: AbortSignalLike; }): Promise<AwaitableSender> {
     return this._createSender(SenderType.AwaitableSender, options) as Promise<AwaitableSender>;
   }
 
@@ -375,7 +420,7 @@ export class Session extends Entity {
    */
   private _createSender(
     type: SenderType,
-    options?: SenderOptions | AwaitableSenderOptions): Promise<Sender | AwaitableSender> {
+    options?: (SenderOptions | AwaitableSenderOptions) & { abortSignal?: AbortSignalLike; }): Promise<Sender | AwaitableSender> {
     return new Promise((resolve, reject) => {
       // Register session handlers for session_error and session_close if provided.
       if (options && options.onSessionError) {
@@ -401,6 +446,8 @@ export class Session extends Entity {
       let onSendable: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
       let onDisconnected: Func<RheaEventContext, void>;
+      let onAbort: Func<void, void>;
+      const abortSignal = options?.abortSignal;
       let waitTimer: any;
 
       // listeners provided by the user in the options object should be added
@@ -434,6 +481,9 @@ export class Session extends Entity {
         rheaSender.removeListener(SenderEvents.senderOpen, onSendable);
         rheaSender.removeListener(SenderEvents.senderClose, onClose);
         rheaSender.session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
+        if (abortSignal) {
+          abortSignal.removeEventListener("abort", onAbort);
+        }
       };
 
       onSendable = (context: RheaEventContext) => {
@@ -461,6 +511,15 @@ export class Session extends Entity {
         return reject(error);
       };
 
+      onAbort = () => {
+        removeListeners();
+        rheaSender.close();
+        const err = new Error("Create sender request has been cancelled.");
+        err.name = abortErrorName;
+        log.error(`[%s] ${err.message}`);
+        return reject(err);
+      };
+
       const actionAfterTimeout = () => {
         removeListeners();
         const msg: string = `Unable to create the amqp sender '${sender.name}' on amqp session ` +
@@ -474,6 +533,14 @@ export class Session extends Entity {
       rheaSender.once(SenderEvents.senderClose, onClose);
       rheaSender.session.connection.on(ConnectionEvents.disconnected, onDisconnected);
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
+
+      if (abortSignal) {
+        if (abortSignal.aborted) {
+          onAbort();
+        } else {
+          abortSignal.addEventListener("abort", onAbort);
+        }
+      }
     });
   }
 

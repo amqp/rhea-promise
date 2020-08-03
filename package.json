@@ -18,6 +18,7 @@
     "messaging"
   ],
   "devDependencies": {
+    "@azure/abort-controller": "^1.0.1",
     "@types/chai": "^4.2.11",
     "@types/debug": "^0.0.31",
     "@types/dotenv": "^6.1.1",

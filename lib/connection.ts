@@ -9,7 +9,7 @@ import { Sender, SenderOptions } from "./sender";
 import { Receiver, ReceiverOptions } from "./receiver";
 import { Container } from "./container";
 import { defaultOperationTimeoutInSeconds } from "./util/constants";
-import { Func, EmitParameters, emitEvent } from "./util/utils";
+import { Func, EmitParameters, emitEvent, AbortSignalLike, abortErrorName } from "./util/utils";
 import {
   ConnectionEvents, SessionEvents, SenderEvents, ReceiverEvents, create_connection, websocket_connect,
   ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, AmqpError, Dictionary,
@@ -264,17 +264,19 @@ export class Connection extends Entity {
 
   /**
    * Creates a new amqp connection.
+   * @param abortSignal A signal used to cancel the operation.
    * @return {Promise<Connection>} Promise<Connection>
    * - **Resolves** the promise with the Connection object when rhea emits the "connection_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "connection_close" event
-   * while trying to establish an amqp connection.
+   * while trying to establish an amqp connection or with an AbortError if the operation was cancelled.
    */
-  open(): Promise<Connection> {
+  open(abortSignal?: AbortSignalLike): Promise<Connection> {
     return new Promise((resolve, reject) => {
       if (!this.isOpen()) {
 
         let onOpen: Func<RheaEventContext, void>;
         let onClose: Func<RheaEventContext, void>;
+        let onAbort: Func<void, void>;
         let waitTimer: any;
 
         const removeListeners: Function = () => {
@@ -283,6 +285,9 @@ export class Connection extends Entity {
           this._connection.removeListener(ConnectionEvents.connectionOpen, onOpen);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onClose);
+          if (abortSignal) {
+            abortSignal.removeEventListener("abort", onAbort);
+          }
         };
 
         onOpen = (context: RheaEventContext) => {
@@ -296,6 +301,15 @@ export class Connection extends Entity {
           const err = context.error || context.connection.error || Error('Failed to connect');
           log.error("[%s] Error occurred while establishing amqp connection: %O",
             this.id, err);
+          return reject(err);
+        };
+
+        onAbort = () => {
+          removeListeners();
+          this._connection.close();
+          const err = new Error("Connection open request has been cancelled.");
+          err.name = abortErrorName;
+          log.error(`[%s] ${err.message}`);
           return reject(err);
         };
 
@@ -314,6 +328,14 @@ export class Connection extends Entity {
         log.connection("[%s] Trying to create a new amqp connection.", this.id);
         this._connection.connect();
         this.actionInitiated++;
+
+        if (abortSignal) {
+          if (abortSignal.aborted) {
+            onAbort();
+          } else {
+            abortSignal.addEventListener("abort", onAbort);
+          }
+        }
       } else {
         return resolve(this);
       }
@@ -323,25 +345,33 @@ export class Connection extends Entity {
 
   /**
    * Closes the amqp connection.
+   * @param abortSignal A signal used to cancel the operation. The local endpoint is indeed closed.
+   * This does not guarantee that the remote has closed as well. It only stops listening for
+   * an acknowledgement that the remote endpoint is closed as well.
    * @return {Promise<void>} Promise<void>
    * - **Resolves** the promise when rhea emits the "connection_close" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "connection_error" event while
-   * trying to close an amqp connection.
+   * trying to close an amqp connection or with an AbortError if the operation was cancelled.
    */
-  close(): Promise<void> {
+  close(abortSignal?: AbortSignalLike): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       log.error("[%s] The connection is open ? -> %s", this.id, this.isOpen());
       if (this.isOpen()) {
         let onClose: Func<RheaEventContext, void>;
         let onError: Func<RheaEventContext, void>;
         let onDisconnected: Func<RheaEventContext, void>;
+        let onAbort: Func<void, void>;
         let waitTimer: any;
+
         const removeListeners = () => {
           clearTimeout(waitTimer);
           this.actionInitiated--;
           this._connection.removeListener(ConnectionEvents.connectionError, onError);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
+          if (abortSignal) {
+            abortSignal.removeEventListener("abort", onAbort);
+          }
         };
 
         onClose = (context: RheaEventContext) => {
@@ -366,6 +396,14 @@ export class Connection extends Entity {
           log.error("[%s] Connection got disconnected while closing itself: %O.", this.id, error);
         };
 
+        onAbort = () => {
+          removeListeners();
+          const err = new Error("Connection close request has been cancelled.");
+          err.name = abortErrorName;
+          log.error(`[%s] ${err.message}`);
+          return reject(err);
+        };
+
         const actionAfterTimeout = () => {
           removeListeners();
           const msg: string = `Unable to close the amqp connection "${this.id}" due to operation timeout.`;
@@ -380,6 +418,14 @@ export class Connection extends Entity {
         waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
         this._connection.close();
         this.actionInitiated++;
+
+        if (abortSignal) {
+          if (abortSignal.aborted) {
+            onAbort();
+          } else {
+            abortSignal.addEventListener("abort", onAbort);
+          }
+        }
       } else {
         return resolve();
       }
@@ -452,12 +498,13 @@ export class Connection extends Entity {
 
   /**
    * Creates an amqp session on the provided amqp connection.
+   * @param abortSignal A signal used to cancel the operation.
    * @return {Promise<Session>} Promise<Session>
    * - **Resolves** the promise with the Session object when rhea emits the "session_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "session_close" event while
-   * trying to create an amqp session.
+   * trying to create an amqp session or with an AbortError if the operation was cancelled.
    */
-  createSession(): Promise<Session> {
+  createSession(abortSignal?: AbortSignalLike): Promise<Session> {
     return new Promise((resolve, reject) => {
       const rheaSession = this._connection.create_session();
       const session = new Session(this, rheaSession);
@@ -465,6 +512,7 @@ export class Connection extends Entity {
       let onOpen: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
       let onDisconnected: Func<RheaEventContext, void>;
+      let onAbort: Func<void, void>;
       let waitTimer: any;
 
       const removeListeners = () => {
@@ -473,6 +521,9 @@ export class Connection extends Entity {
         rheaSession.removeListener(SessionEvents.sessionOpen, onOpen);
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
         rheaSession.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
+        if (abortSignal) {
+          abortSignal.removeEventListener("abort", onAbort);
+        }
       };
 
       onOpen = (context: RheaEventContext) => {
@@ -498,6 +549,15 @@ export class Connection extends Entity {
         return reject(error);
       };
 
+      onAbort = () => {
+        removeListeners();
+        rheaSession.close();
+        const err = new Error("Create session request has been cancelled.");
+        err.name = abortErrorName;
+        log.error(`[%s] ${err.message}`);
+        return reject(err);
+      };
+
       const actionAfterTimeout = () => {
         removeListeners();
         const msg: string = `Unable to create the amqp session due to operation timeout.`;
@@ -512,19 +572,30 @@ export class Connection extends Entity {
       log.session("[%s] Calling amqp session.begin().", this.id);
       waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
       rheaSession.begin();
+
+      if (abortSignal) {
+        if (abortSignal.aborted) {
+          onAbort();
+        } else {
+          abortSignal.addEventListener("abort", onAbort);
+        }
+      }
     });
   }
 
   /**
    * Creates an amqp sender link. It either uses the provided session or creates a new one.
+   * - **Resolves** the promise with the Sender object when rhea emits the "sender_open" event.
+   * - **Rejects** the promise with an AmqpError when rhea emits the "sender_close" event while
+   * trying to create an amqp session or with an AbortError if the operation was cancelled.
    * @param {SenderOptionsWithSession} options Optional parameters to create a sender link.
    * @return {Promise<Sender>} Promise<Sender>.
    */
-  async createSender(options?: SenderOptionsWithSession): Promise<Sender> {
+  async createSender(options?: SenderOptionsWithSession & { abortSignal?: AbortSignalLike; }): Promise<Sender> {
     if (options && options.session && options.session.createSender) {
       return options.session.createSender(options);
     }
-    const session = await this.createSession();
+    const session = await this.createSession(options?.abortSignal);
     return session.createSender(options);
   }
 
@@ -540,24 +611,27 @@ export class Connection extends Entity {
    *
    * @return Promise<AwaitableSender>.
    */
-  async createAwaitableSender(options?: AwaitableSenderOptionsWithSession): Promise<AwaitableSender> {
+  async createAwaitableSender(options?: AwaitableSenderOptionsWithSession & { abortSignal?: AbortSignalLike; }): Promise<AwaitableSender> {
     if (options && options.session && options.session.createAwaitableSender) {
       return options.session.createAwaitableSender(options);
     }
-    const session = await this.createSession();
+    const session = await this.createSession(options?.abortSignal);
     return session.createAwaitableSender(options);
   }
 
   /**
    * Creates an amqp receiver link. It either uses the provided session or creates a new one.
+   * - **Resolves** the promise with the Sender object when rhea emits the "receiver_open" event.
+   * - **Rejects** the promise with an AmqpError when rhea emits the "receiver_close" event while
+   * trying to create an amqp session or with an AbortError if the operation was cancelled.
    * @param {ReceiverOptionsWithSession} options Optional parameters to create a receiver link.
    * @return {Promise<Receiver>} Promise<Receiver>.
    */
-  async createReceiver(options?: ReceiverOptionsWithSession): Promise<Receiver> {
+  async createReceiver(options?: ReceiverOptionsWithSession & { abortSignal?: AbortSignalLike; }): Promise<Receiver> {
     if (options && options.session && options.session.createReceiver) {
       return options.session.createReceiver(options);
     }
-    const session = await this.createSession();
+    const session = await this.createSession(options?.abortSignal);
     return session.createReceiver(options);
   }
 
@@ -572,17 +646,17 @@ export class Connection extends Entity {
    * @return {Promise<ReqResLink>} Promise<ReqResLink>
    */
   async createRequestResponseLink(senderOptions: SenderOptions, receiverOptions: ReceiverOptions,
-    providedSession?: Session): Promise<ReqResLink> {
+    providedSession?: Session, abortSignal?: AbortSignal): Promise<ReqResLink> {
     if (!senderOptions) {
       throw new Error(`Please provide sender options.`);
     }
     if (!receiverOptions) {
       throw new Error(`Please provide receiver options.`);
     }
-    const session = providedSession || await this.createSession();
+    const session = providedSession || await this.createSession(abortSignal);
     const [sender, receiver] = await Promise.all([
-      session.createSender(senderOptions),
-      session.createReceiver(receiverOptions)
+      session.createSender({ ...senderOptions, abortSignal }),
+      session.createReceiver({ ...receiverOptions, abortSignal })
     ]);
     log.connection("[%s] Successfully created the sender '%s' and receiver '%s' on the same " +
       "amqp session '%s'.", this.id, sender.name, receiver.name, session.id);

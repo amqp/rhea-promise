@@ -49,6 +49,20 @@ export interface ReceiverOptionsWithSession extends ReceiverOptions {
 }
 
 /**
+ * Set of options to use when running Connection.open()
+ */
+export interface ConnectionOpenOptions {
+  abortSignal?: AbortSignalLike;
+}
+
+/**
+ * Set of options to use when running Connection.close()
+ */
+export interface ConnectionCloseOptions {
+  abortSignal?: AbortSignalLike;
+}
+
+/**
  * Describes the options that can be provided while creating an AMQP connection.
  * @interface ConnectionOptions
  */
@@ -264,19 +278,20 @@ export class Connection extends Entity {
 
   /**
    * Creates a new amqp connection.
-   * @param abortSignal A signal used to cancel the operation.
+   * @param options A set of options including a signal used to cancel the operation.
    * @return {Promise<Connection>} Promise<Connection>
    * - **Resolves** the promise with the Connection object when rhea emits the "connection_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "connection_close" event
    * while trying to establish an amqp connection or with an AbortError if the operation was cancelled.
    */
-  open(abortSignal?: AbortSignalLike): Promise<Connection> {
+  open(options?: ConnectionOpenOptions): Promise<Connection> {
     return new Promise((resolve, reject) => {
       if (!this.isOpen()) {
 
         let onOpen: Func<RheaEventContext, void>;
         let onClose: Func<RheaEventContext, void>;
         let onAbort: Func<void, void>;
+        const abortSignal = options?.abortSignal;
         let waitTimer: any;
 
         const removeListeners: Function = () => {
@@ -345,7 +360,8 @@ export class Connection extends Entity {
 
   /**
    * Closes the amqp connection.
-   * @param abortSignal A signal used to cancel the operation. The local endpoint is indeed closed.
+   * @param options A set of options including a signal used to cancel the operation.
+   * When the abort signal is used, the local endpoint is indeed closed.
    * This does not guarantee that the remote has closed as well. It only stops listening for
    * an acknowledgement that the remote endpoint is closed as well.
    * @return {Promise<void>} Promise<void>
@@ -353,7 +369,7 @@ export class Connection extends Entity {
    * - **Rejects** the promise with an AmqpError when rhea emits the "connection_error" event while
    * trying to close an amqp connection or with an AbortError if the operation was cancelled.
    */
-  close(abortSignal?: AbortSignalLike): Promise<void> {
+  close(options?: ConnectionCloseOptions): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       log.error("[%s] The connection is open ? -> %s", this.id, this.isOpen());
       if (this.isOpen()) {
@@ -361,6 +377,7 @@ export class Connection extends Entity {
         let onError: Func<RheaEventContext, void>;
         let onDisconnected: Func<RheaEventContext, void>;
         let onAbort: Func<void, void>;
+        const abortSignal = options?.abortSignal;
         let waitTimer: any;
 
         const removeListeners = () => {

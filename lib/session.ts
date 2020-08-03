@@ -24,6 +24,13 @@ export declare interface Session {
 }
 
 /**
+ * Set of options to use when running session.close()
+ */
+export interface SessionCloseOptions {
+  abortSignal?: AbortSignalLike;
+}
+
+/**
  * @internal
  */
 enum SenderType {
@@ -138,7 +145,8 @@ export class Session extends Entity {
   /**
    * Closes the underlying amqp session in rhea if open. Also removes all the event
    * handlers added in the rhea-promise library on the session
-   * @param abortSignal A signal used to cancel the operation. The local endpoint is indeed closed.
+   * @param options A set of options including a signal used to cancel the operation.
+   * When the abort signal is used, the local endpoint is indeed closed.
    * This does not guarantee that the remote has closed as well. It only stops listening for
    * an acknowledgement that the remote endpoint is closed as well.
    * @return {Promise<void>} Promise<void>
@@ -146,7 +154,7 @@ export class Session extends Entity {
    * - **Rejects** the promise with an AmqpError when rhea emits the "session_error" event while trying
    * to close an amqp session or with an AbortError if the operation was cancelled.
    */
-  async close(abortSignal?: AbortSignalLike): Promise<void> {
+  async close(options?: SessionCloseOptions): Promise<void> {
 
     const closePromise = new Promise<void>((resolve, reject) => {
       log.error("[%s] The amqp session '%s' is open ? -> %s", this.connection.id, this.id, this.isOpen());
@@ -155,6 +163,7 @@ export class Session extends Entity {
         let onClose: Func<RheaEventContext, void>;
         let onDisconnected: Func<RheaEventContext, void>;
         let onAbort: Func<void, void>;
+        const abortSignal = options?.abortSignal;
         let waitTimer: any;
 
         const removeListeners = () => {

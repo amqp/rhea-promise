@@ -197,7 +197,7 @@ describe("Session", () => {
 
       // Pass an already aborted signal to close()
       abortController.abort();
-      const sessionClosePromise = session.close(abortSignal);
+      const sessionClosePromise = session.close({ abortSignal });
 
       let abortErrorThrown = false;
       try {
@@ -226,7 +226,7 @@ describe("Session", () => {
       const abortSignal = abortController.signal;
 
       // Abort the signal after passing it to open()
-      const sessionClosePromise = session.close(abortSignal);
+      const sessionClosePromise = session.close({ abortSignal });
       abortController.abort();
 
       let abortErrorThrown = false;

@@ -174,7 +174,7 @@ describe("Connection", () => {
 
       // Pass an already aborted signal to open()
       abortController.abort();
-      const connectionOpenPromise = connection.open(abortSignal);
+      const connectionOpenPromise = connection.open({ abortSignal });
 
       let abortErrorThrown = false;
       try {
@@ -196,7 +196,7 @@ describe("Connection", () => {
       const abortSignal = abortController.signal;
 
       // Abort the signal after passing it to open()
-      const connectionOpenPromise = connection.open(abortSignal);
+      const connectionOpenPromise = connection.open({ abortSignal });
       abortController.abort();
 
       let abortErrorThrown = false;
@@ -224,7 +224,7 @@ describe("Connection", () => {
 
       // Pass an already aborted signal to close()
       abortController.abort();
-      const connectionClosePromise = connection.close(abortSignal);
+      const connectionClosePromise = connection.close({ abortSignal });
 
       let abortErrorThrown = false;
       try {
@@ -250,7 +250,7 @@ describe("Connection", () => {
       const abortSignal = abortController.signal;
 
       // Abort the signal after passing it to open()
-      const connectionClosePromise = connection.close(abortSignal);
+      const connectionClosePromise = connection.close({ abortSignal });
       abortController.abort();
 
       let abortErrorThrown = false;

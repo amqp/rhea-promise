@@ -276,7 +276,7 @@ describe("Connection", () => {
 
       // Pass an already aborted signal to createSession()
       abortController.abort();
-      const createSessionPromise = connection.createSession(abortSignal);
+      const createSessionPromise = connection.createSession({ abortSignal });
 
       let abortErrorThrown = false;
       try {
@@ -299,7 +299,7 @@ describe("Connection", () => {
       const abortSignal = abortController.signal;
 
       // Abort the signal after passing it to createSession()
-      const createSessionPromise = connection.createSession(abortSignal);
+      const createSessionPromise = connection.createSession({ abortSignal });
       abortController.abort();
 
       let abortErrorThrown = false;

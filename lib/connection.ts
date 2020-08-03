@@ -52,6 +52,9 @@ export interface ReceiverOptionsWithSession extends ReceiverOptions {
  * Set of options to use when running Connection.open()
  */
 export interface ConnectionOpenOptions {
+  /**
+   * A signal used to cancel the Connection.open() operation.
+   */
   abortSignal?: AbortSignalLike;
 }
 
@@ -59,6 +62,19 @@ export interface ConnectionOpenOptions {
  * Set of options to use when running Connection.close()
  */
 export interface ConnectionCloseOptions {
+  /**
+   * A signal used to cancel the Connection.close() operation.
+   */
+  abortSignal?: AbortSignalLike;
+}
+
+/**
+ * Set of options to use when running Connection.createSession()
+ */
+export interface SessionCreateOptions {
+  /**
+   * A signal used to cancel the Connection.createSession() operation.
+   */
   abortSignal?: AbortSignalLike;
 }
 
@@ -515,13 +531,13 @@ export class Connection extends Entity {
 
   /**
    * Creates an amqp session on the provided amqp connection.
-   * @param abortSignal A signal used to cancel the operation.
+   * @param options A set of options including a signal used to cancel the operation.
    * @return {Promise<Session>} Promise<Session>
    * - **Resolves** the promise with the Session object when rhea emits the "session_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "session_close" event while
    * trying to create an amqp session or with an AbortError if the operation was cancelled.
    */
-  createSession(abortSignal?: AbortSignalLike): Promise<Session> {
+  createSession(options?: SessionCreateOptions): Promise<Session> {
     return new Promise((resolve, reject) => {
       const rheaSession = this._connection.create_session();
       const session = new Session(this, rheaSession);
@@ -530,6 +546,7 @@ export class Connection extends Entity {
       let onClose: Func<RheaEventContext, void>;
       let onDisconnected: Func<RheaEventContext, void>;
       let onAbort: Func<void, void>;
+      const abortSignal = options?.abortSignal;
       let waitTimer: any;
 
       const removeListeners = () => {
@@ -612,7 +629,7 @@ export class Connection extends Entity {
     if (options && options.session && options.session.createSender) {
       return options.session.createSender(options);
     }
-    const session = await this.createSession(options?.abortSignal);
+    const session = await this.createSession({ abortSignal: options?.abortSignal });
     return session.createSender(options);
   }
 
@@ -632,7 +649,7 @@ export class Connection extends Entity {
     if (options && options.session && options.session.createAwaitableSender) {
       return options.session.createAwaitableSender(options);
     }
-    const session = await this.createSession(options?.abortSignal);
+    const session = await this.createSession({ abortSignal: options?.abortSignal });
     return session.createAwaitableSender(options);
   }
 
@@ -648,7 +665,7 @@ export class Connection extends Entity {
     if (options && options.session && options.session.createReceiver) {
       return options.session.createReceiver(options);
     }
-    const session = await this.createSession(options?.abortSignal);
+    const session = await this.createSession({ abortSignal: options?.abortSignal });
     return session.createReceiver(options);
   }
 
@@ -670,7 +687,7 @@ export class Connection extends Entity {
     if (!receiverOptions) {
       throw new Error(`Please provide receiver options.`);
     }
-    const session = providedSession || await this.createSession(abortSignal);
+    const session = providedSession || await this.createSession({ abortSignal });
     const [sender, receiver] = await Promise.all([
       session.createSender({ ...senderOptions, abortSignal }),
       session.createReceiver({ ...receiverOptions, abortSignal })

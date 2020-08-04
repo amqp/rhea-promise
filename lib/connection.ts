@@ -9,7 +9,7 @@ import { Sender, SenderOptions } from "./sender";
 import { Receiver, ReceiverOptions } from "./receiver";
 import { Container } from "./container";
 import { defaultOperationTimeoutInSeconds } from "./util/constants";
-import { Func, EmitParameters, emitEvent, AbortSignalLike, abortErrorName } from "./util/utils";
+import { Func, EmitParameters, emitEvent, AbortSignalLike, createAbortError } from "./util/utils";
 import {
   ConnectionEvents, SessionEvents, SenderEvents, ReceiverEvents, create_connection, websocket_connect,
   ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, AmqpError, Dictionary,
@@ -336,9 +336,8 @@ export class Connection extends Entity {
         onAbort = () => {
           removeListeners();
           this._connection.close();
-          const err = new Error("Connection open request has been cancelled.");
-          err.name = abortErrorName;
-          log.error(`[%s] ${err.message}`);
+          const err = createAbortError("Connection open request has been cancelled.");
+          log.error("[%s] [%s]", this.id, err.message);
           return reject(err);
         };
 
@@ -427,9 +426,8 @@ export class Connection extends Entity {
 
         onAbort = () => {
           removeListeners();
-          const err = new Error("Connection close request has been cancelled.");
-          err.name = abortErrorName;
-          log.error(`[%s] ${err.message}`);
+          const err = createAbortError("Connection close request has been cancelled.");
+          log.error("[%s] [%s]", this.id, err.message);
           return reject(err);
         };
 
@@ -580,9 +578,8 @@ export class Connection extends Entity {
       onAbort = () => {
         removeListeners();
         rheaSession.close();
-        const err = new Error("Create session request has been cancelled.");
-        err.name = abortErrorName;
-        log.error(`[%s] ${err.message}`);
+        const err = createAbortError("Create session request has been cancelled.");
+        log.error("[%s] [%s]", this.id, err.message);
         return reject(err);
       };
 

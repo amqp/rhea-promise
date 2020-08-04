@@ -9,7 +9,7 @@ import {
   SenderEvents, ReceiverEvents, SessionEvents, AmqpError, Session as RheaSession,
   EventContext as RheaEventContext, ConnectionEvents
 } from "rhea";
-import { Func, EmitParameters, emitEvent, abortErrorName, AbortSignalLike } from "./util/utils";
+import { Func, EmitParameters, emitEvent, createAbortError, AbortSignalLike } from "./util/utils";
 import { OnAmqpEvent } from "./eventContext";
 import { Entity } from "./entity";
 import { OperationTimeoutError } from "./errorDefinitions";
@@ -200,9 +200,8 @@ export class Session extends Entity {
 
         onAbort = () => {
           removeListeners();
-          const err = new Error("Session close request has been cancelled.");
-          err.name = abortErrorName;
-          log.error(`[%s] ${err.message}`);
+          const err = createAbortError("Session close request has been cancelled.");
+          log.error("[%s] [%s]", this.connection.id, err.message);
           return reject(err);
         };
 
@@ -356,9 +355,8 @@ export class Session extends Entity {
       onAbort = () => {
         removeListeners();
         rheaReceiver.close();
-        const err = new Error("Create receiver request has been cancelled.");
-        err.name = abortErrorName;
-        log.error(`[%s] ${err.message}`);
+        const err = createAbortError("Create receiver request has been cancelled.");
+        log.error("[%s] [%s]", this.connection.id, err.message);
         return reject(err);
       };
 
@@ -517,9 +515,8 @@ export class Session extends Entity {
       onAbort = () => {
         removeListeners();
         rheaSender.close();
-        const err = new Error("Create sender request has been cancelled.");
-        err.name = abortErrorName;
-        log.error(`[%s] ${err.message}`);
+        const err = createAbortError("Create sender request has been cancelled.");
+        log.error("[%s] [%s]", this.connection.id, err.message);
         return reject(err);
       };
 

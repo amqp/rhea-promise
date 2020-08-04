@@ -222,3 +222,14 @@ export interface AbortSignalLike {
 }
 
 export const abortErrorName = "AbortError";
+
+/**
+ * Helper method to return an Error to be used when an operation is cancelled
+ * using an AbortSignalLike
+ * @param errorMessage
+ */
+export function createAbortError(errorMessage: string): Error {
+  const error = new Error(errorMessage);
+  error.name = abortErrorName;
+  return error;
+}

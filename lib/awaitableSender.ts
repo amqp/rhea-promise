@@ -12,7 +12,7 @@ import { Session } from "./session";
 import {
   OperationTimeoutError, InsufficientCreditError, SendOperationFailedError
 } from "./errorDefinitions";
-import { AbortSignalLike, abortErrorName } from "./util/utils";
+import { AbortSignalLike, createAbortError } from "./util/utils";
 
 /**
  * Describes the interface for the send operation Promise which contains a reference to resolve,
@@ -200,8 +200,7 @@ export class AwaitableSender extends BaseSender {
             " map of sender '%s' on amqp session '%s' and cleared the timer: %s.",
             this.connection.id, delivery.id, this.name, this.session.id, deleteResult
           );
-          const err = new Error("Send request has been cancelled.");
-          err.name = abortErrorName;
+          const err = createAbortError("Send request has been cancelled.");
           log.error("[%s] %s", this.connection.id, err.message);
           promise.reject(err);
         };

@@ -123,6 +123,7 @@ describe("Sender", () => {
     it("send() fails with aborted signal", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
       const sender = await connection.createAwaitableSender();
@@ -148,6 +149,7 @@ describe("Sender", () => {
     it("send() fails when abort signal is fired", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
       const sender = await connection.createAwaitableSender();

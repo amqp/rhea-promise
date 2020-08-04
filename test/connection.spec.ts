@@ -167,6 +167,7 @@ describe("Connection", () => {
     it("connection.open() fails with aborted signal", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
 
       const abortController = new AbortController();
@@ -190,6 +191,7 @@ describe("Connection", () => {
     it("connection.open() fails when abort signal is fired", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
 
       const abortController = new AbortController();
@@ -213,6 +215,7 @@ describe("Connection", () => {
     it("connection.close() fails with aborted signal", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
 
       await connection.open();
@@ -240,6 +243,7 @@ describe("Connection", () => {
     it("connection.close() fails when abort signal is fired", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
 
       await connection.open();
@@ -267,6 +271,7 @@ describe("Connection", () => {
     it("createSession() fails with aborted signal", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
 
@@ -291,6 +296,7 @@ describe("Connection", () => {
     it("createSession() fails when abort signal is fired", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
 
@@ -315,6 +321,7 @@ describe("Connection", () => {
     it("createSender() fails with aborted signal", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
 
@@ -339,6 +346,7 @@ describe("Connection", () => {
     it("createSender() fails when abort signal is fired", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
 
@@ -363,6 +371,7 @@ describe("Connection", () => {
     it("createAwaitableSender() fails with aborted signal", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
 
@@ -387,6 +396,7 @@ describe("Connection", () => {
     it("createAwaitableSender() fails when abort signal is fired", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
 
@@ -411,6 +421,7 @@ describe("Connection", () => {
     it("createReceiver() fails with aborted signal", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
 
@@ -435,6 +446,7 @@ describe("Connection", () => {
     it("createReceiver() fails when abort signal is fired", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
 
@@ -459,6 +471,7 @@ describe("Connection", () => {
     it("createRequestResponseLink() fails with aborted signal", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
 
@@ -483,6 +496,7 @@ describe("Connection", () => {
     it("createRequestResponseLink() fails when abort signal is fired", async () => {
       const connection = new Connection({
         port: mockServiceListener.address().port,
+        reconnect: false,
       });
       await connection.open();
 

@@ -202,7 +202,6 @@ describe("Connection", () => {
       let abortErrorThrown = false;
       try {
         await connectionOpenPromise;
-        abortController.abort();
       } catch (error) {
         abortErrorThrown = error.name === abortErrorName;
       }

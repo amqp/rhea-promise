@@ -23,7 +23,6 @@ export interface PromiseLike {
   resolve: (value?: any) => void;
   reject: (reason?: any) => void;
   timer: NodeJS.Timer;
-  onAbort: () => void;
 }
 
 /**
@@ -223,8 +222,7 @@ export class AwaitableSender extends BaseSender {
             reject(reason);
             removeAbortListener();
           },
-          timer: timer,
-          onAbort
+          timer: timer
         });
 
         if (abortSignal) {

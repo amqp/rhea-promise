@@ -374,7 +374,7 @@ export class Connection extends Entity {
   /**
    * Closes the amqp connection.
    * @param options A set of options including a signal used to cancel the operation.
-   * When the abort signal is used, the local endpoint is indeed closed.
+   * When the abort signal in the options is fired, the local endpoint is closed.
    * This does not guarantee that the remote has closed as well. It only stops listening for
    * an acknowledgement that the remote endpoint is closed as well.
    * @return {Promise<void>} Promise<void>

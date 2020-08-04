@@ -316,9 +316,7 @@ export class Connection extends Entity {
           this._connection.removeListener(ConnectionEvents.connectionOpen, onOpen);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onClose);
-          if (abortSignal) {
-            abortSignal.removeEventListener("abort", onAbort);
-          }
+          abortSignal?.removeEventListener("abort", onAbort);
         };
 
         onOpen = (context: RheaEventContext) => {
@@ -402,9 +400,7 @@ export class Connection extends Entity {
           this._connection.removeListener(ConnectionEvents.connectionError, onError);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-          if (abortSignal) {
-            abortSignal.removeEventListener("abort", onAbort);
-          }
+          abortSignal?.removeEventListener("abort", onAbort);
         };
 
         onClose = (context: RheaEventContext) => {
@@ -555,9 +551,7 @@ export class Connection extends Entity {
         rheaSession.removeListener(SessionEvents.sessionOpen, onOpen);
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
         rheaSession.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-        if (abortSignal) {
-          abortSignal.removeEventListener("abort", onAbort);
-        }
+        abortSignal?.removeEventListener("abort", onAbort);
       };
 
       onOpen = (context: RheaEventContext) => {

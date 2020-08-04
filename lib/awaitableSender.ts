@@ -207,9 +207,7 @@ export class AwaitableSender extends BaseSender {
         };
 
         const removeAbortListener = () => {
-          if (abortSignal) {
-            abortSignal.removeEventListener("abort", onAbort);
-          }
+          abortSignal?.removeEventListener("abort", onAbort);
         };
 
         const delivery = (this._link as RheaSender).send(msg, tag, format);

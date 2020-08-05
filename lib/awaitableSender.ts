@@ -199,17 +199,19 @@ export class AwaitableSender extends BaseSender {
         }, this.sendTimeoutInSeconds * 1000);
 
         const onAbort = () => {
-          const promise = this.deliveryDispositionMap.get(delivery.id) as PromiseLike;
-          clearTimeout(promise.timer);
-          const deleteResult = this.deliveryDispositionMap.delete(delivery.id);
-          log.sender(
-            "[%s] Event: 'abort', Successfully deleted the delivery with id %d from the " +
-            " map of sender '%s' on amqp session '%s' and cleared the timer: %s.",
-            this.connection.id, delivery.id, this.name, this.session.id, deleteResult
-          );
-          const err = createAbortError("Send request has been cancelled.");
-          log.error("[%s] %s", this.connection.id, err.message);
-          promise.reject(err);
+          if (this.deliveryDispositionMap.has(delivery.id)) {
+            const promise = this.deliveryDispositionMap.get(delivery.id) as PromiseLike;
+            clearTimeout(promise.timer);
+            const deleteResult = this.deliveryDispositionMap.delete(delivery.id);
+            log.sender(
+              "[%s] Event: 'abort', Successfully deleted the delivery with id %d from the " +
+              " map of sender '%s' on amqp session '%s' and cleared the timer: %s.",
+              this.connection.id, delivery.id, this.name, this.session.id, deleteResult
+            );
+            const err = createAbortError("Send request has been cancelled.");
+            log.error("[%s] %s", this.connection.id, err.message);
+            promise.reject(err);
+          }
         };
 
         const removeAbortListener = () => {

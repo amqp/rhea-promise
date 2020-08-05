@@ -357,13 +357,12 @@ export class Connection extends Entity {
         this._connection.connect();
         this.actionInitiated++;
 
-        if (abortSignal) {
-          if (abortSignal.aborted) {
-            onAbort();
-          } else {
-            abortSignal.addEventListener("abort", onAbort);
-          }
+        if (abortSignal?.aborted) {
+          onAbort();
+        } else {
+          abortSignal?.addEventListener("abort", onAbort);
         }
+
       } else {
         return resolve(this);
       }
@@ -446,12 +445,10 @@ export class Connection extends Entity {
         this._connection.close();
         this.actionInitiated++;
 
-        if (abortSignal) {
-          if (abortSignal.aborted) {
-            onAbort();
-          } else {
-            abortSignal.addEventListener("abort", onAbort);
-          }
+        if (abortSignal?.aborted) {
+          onAbort();
+        } else {
+          abortSignal?.addEventListener("abort", onAbort);
         }
       } else {
         return resolve();
@@ -598,12 +595,11 @@ export class Connection extends Entity {
       waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
       rheaSession.begin();
 
-      if (abortSignal) {
-        if (abortSignal.aborted) {
-          onAbort();
-        } else {
-          abortSignal.addEventListener("abort", onAbort);
-        }
+
+      if (abortSignal?.aborted) {
+        onAbort();
+      } else {
+        abortSignal?.addEventListener("abort", onAbort);
       }
     });
   }

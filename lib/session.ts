@@ -221,12 +221,10 @@ export class Session extends Entity {
         this._session.close();
         this.actionInitiated++;
 
-        if (abortSignal) {
-          if (abortSignal.aborted) {
-            onAbort();
-          } else {
-            abortSignal.addEventListener("abort", onAbort);
-          }
+        if (abortSignal?.aborted) {
+          onAbort();
+        } else {
+          abortSignal?.addEventListener("abort", onAbort);
         }
       } else {
         return resolve();
@@ -374,12 +372,10 @@ export class Session extends Entity {
       rheaReceiver.session.connection.on(ConnectionEvents.disconnected, onDisconnected);
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
 
-      if (abortSignal) {
-        if (abortSignal.aborted) {
-          onAbort();
-        } else {
-          abortSignal.addEventListener("abort", onAbort);
-        }
+      if (abortSignal?.aborted) {
+        onAbort();
+      } else {
+        abortSignal?.addEventListener("abort", onAbort);
       }
     });
   }
@@ -534,12 +530,10 @@ export class Session extends Entity {
       rheaSender.session.connection.on(ConnectionEvents.disconnected, onDisconnected);
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
 
-      if (abortSignal) {
-        if (abortSignal.aborted) {
-          onAbort();
-        } else {
-          abortSignal.addEventListener("abort", onAbort);
-        }
+      if (abortSignal?.aborted) {
+        onAbort();
+      } else {
+        abortSignal?.addEventListener("abort", onAbort);
       }
     });
   }

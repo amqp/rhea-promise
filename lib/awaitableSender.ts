@@ -181,6 +181,13 @@ export class AwaitableSender extends BaseSender {
       log.sender("[%s] Sender '%s' on amqp session '%s', credit: %d available: %d",
         this.connection.id, this.name, this.session.id, this.credit,
         this.session.outgoing.available());
+
+      if (abortSignal?.aborted) {
+        const err = createAbortError("Send request has been cancelled.");
+        log.error("[%s] %s", this.connection.id, err.message);
+        return reject(err);
+      }
+
       if (this.sendable()) {
         const timer = setTimeout(() => {
           this.deliveryDispositionMap.delete(delivery.id);
@@ -222,13 +229,7 @@ export class AwaitableSender extends BaseSender {
           timer: timer
         });
 
-        if (abortSignal) {
-          if (abortSignal.aborted) {
-            onAbort();
-          } else {
-            abortSignal.addEventListener("abort", onAbort);
-          }
-        }
+        abortSignal?.addEventListener("abort", onAbort);
       } else {
         // Please send the message after some time.
         const msg =

@@ -1,6 +1,6 @@
 import * as rhea from "rhea";
 import { assert } from "chai";
-import { Connection } from "../lib/index";
+import { Connection, InsufficientCreditError } from "../lib/index";
 import { AbortController } from "@azure/abort-controller";
 import { abortErrorName } from "../lib/util/utils";
 
@@ -92,6 +92,26 @@ describe("Sender", () => {
     }
   });
 
+  it("InsufficientCreditError", async () => {
+    const connection = new Connection({
+      port: mockServiceListener.address().port,
+      reconnect: false,
+    });
+    await connection.open();
+    const sender = await connection.createAwaitableSender();
+    sender.sendable = () => { return false }
+
+    let insufficientCreditErrorThrown = false;
+    try {
+      await sender.send({ body: "hello" });
+    } catch (error) {
+      insufficientCreditErrorThrown = error instanceof InsufficientCreditError
+    }
+
+    assert.isTrue(insufficientCreditErrorThrown, "AbortError should have been thrown.");
+    await connection.close();
+  })
+
   describe("supports events", () => {
     it("senderError on sender.close() is bubbled up", async () => {
       const errorCondition = "amqp:connection:forced";
@@ -127,6 +147,33 @@ describe("Sender", () => {
       });
       await connection.open();
       const sender = await connection.createAwaitableSender();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Pass an already aborted signal to send()
+      abortController.abort();
+      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, abortSignal);
+
+      let abortErrorThrown = false;
+      try {
+        await sendPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+
+    it("send() fails with aborted signal even when insufficient credits", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+      const sender = await connection.createAwaitableSender();
+      sender.sendable = () => { return false }
 
       const abortController = new AbortController();
       const abortSignal = abortController.signal;

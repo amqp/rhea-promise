@@ -163,7 +163,7 @@ export class Session extends Entity {
         let onClose: Func<RheaEventContext, void>;
         let onDisconnected: Func<RheaEventContext, void>;
         let onAbort: Func<void, void>;
-        const abortSignal = options?.abortSignal;
+        const abortSignal = options && options.abortSignal;
         let waitTimer: any;
 
         const removeListeners = () => {
@@ -172,7 +172,7 @@ export class Session extends Entity {
           this._session.removeListener(SessionEvents.sessionError, onError);
           this._session.removeListener(SessionEvents.sessionClose, onClose);
           this._session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-          abortSignal?.removeEventListener("abort", onAbort);
+          if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
         };
 
         onClose = (context: RheaEventContext) => {
@@ -221,10 +221,12 @@ export class Session extends Entity {
         this._session.close();
         this.actionInitiated++;
 
-        if (abortSignal?.aborted) {
-          onAbort();
-        } else {
-          abortSignal?.addEventListener("abort", onAbort);
+        if (abortSignal) {
+          if (abortSignal.aborted) {
+            onAbort();
+          } else {
+            abortSignal.addEventListener("abort", onAbort);
+          }
         }
       } else {
         return resolve();
@@ -290,7 +292,7 @@ export class Session extends Entity {
       let onClose: Func<RheaEventContext, void>;
       let onDisconnected: Func<RheaEventContext, void>;
       let onAbort: Func<void, void>;
-      const abortSignal = options?.abortSignal;
+      const abortSignal = options && options.abortSignal;
       let waitTimer: any;
 
       if (options && options.onMessage) {
@@ -322,7 +324,7 @@ export class Session extends Entity {
         rheaReceiver.removeListener(ReceiverEvents.receiverOpen, onOpen);
         rheaReceiver.removeListener(ReceiverEvents.receiverClose, onClose);
         rheaReceiver.session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-        abortSignal?.removeEventListener("abort", onAbort);
+        if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
       };
 
       onOpen = (context: RheaEventContext) => {
@@ -372,10 +374,12 @@ export class Session extends Entity {
       rheaReceiver.session.connection.on(ConnectionEvents.disconnected, onDisconnected);
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
 
-      if (abortSignal?.aborted) {
-        onAbort();
-      } else {
-        abortSignal?.addEventListener("abort", onAbort);
+      if (abortSignal) {
+        if (abortSignal.aborted) {
+          onAbort();
+        } else {
+          abortSignal.addEventListener("abort", onAbort);
+        }
       }
     });
   }
@@ -446,7 +450,7 @@ export class Session extends Entity {
       let onClose: Func<RheaEventContext, void>;
       let onDisconnected: Func<RheaEventContext, void>;
       let onAbort: Func<void, void>;
-      const abortSignal = options?.abortSignal;
+      const abortSignal = options && options.abortSignal;
       let waitTimer: any;
 
       // listeners provided by the user in the options object should be added
@@ -480,7 +484,7 @@ export class Session extends Entity {
         rheaSender.removeListener(SenderEvents.senderOpen, onSendable);
         rheaSender.removeListener(SenderEvents.senderClose, onClose);
         rheaSender.session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-        abortSignal?.removeEventListener("abort", onAbort);
+        if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
       };
 
       onSendable = (context: RheaEventContext) => {
@@ -530,10 +534,12 @@ export class Session extends Entity {
       rheaSender.session.connection.on(ConnectionEvents.disconnected, onDisconnected);
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
 
-      if (abortSignal?.aborted) {
-        onAbort();
-      } else {
-        abortSignal?.addEventListener("abort", onAbort);
+      if (abortSignal) {
+        if (abortSignal.aborted) {
+          onAbort();
+        } else {
+          abortSignal.addEventListener("abort", onAbort);
+        }
       }
     });
   }

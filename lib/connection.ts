@@ -307,7 +307,7 @@ export class Connection extends Entity {
         let onOpen: Func<RheaEventContext, void>;
         let onClose: Func<RheaEventContext, void>;
         let onAbort: Func<void, void>;
-        const abortSignal = options?.abortSignal;
+        const abortSignal = options && options.abortSignal;
         let waitTimer: any;
 
         const removeListeners: Function = () => {
@@ -316,7 +316,7 @@ export class Connection extends Entity {
           this._connection.removeListener(ConnectionEvents.connectionOpen, onOpen);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onClose);
-          abortSignal?.removeEventListener("abort", onAbort);
+          if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
         };
 
         onOpen = (context: RheaEventContext) => {
@@ -357,12 +357,13 @@ export class Connection extends Entity {
         this._connection.connect();
         this.actionInitiated++;
 
-        if (abortSignal?.aborted) {
-          onAbort();
-        } else {
-          abortSignal?.addEventListener("abort", onAbort);
+        if (abortSignal) {
+          if (abortSignal.aborted) {
+            onAbort();
+          } else {
+            abortSignal.addEventListener("abort", onAbort);
+          }
         }
-
       } else {
         return resolve(this);
       }
@@ -389,7 +390,7 @@ export class Connection extends Entity {
         let onError: Func<RheaEventContext, void>;
         let onDisconnected: Func<RheaEventContext, void>;
         let onAbort: Func<void, void>;
-        const abortSignal = options?.abortSignal;
+        const abortSignal = options && options.abortSignal;
         let waitTimer: any;
 
         const removeListeners = () => {
@@ -398,7 +399,7 @@ export class Connection extends Entity {
           this._connection.removeListener(ConnectionEvents.connectionError, onError);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-          abortSignal?.removeEventListener("abort", onAbort);
+          if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
         };
 
         onClose = (context: RheaEventContext) => {
@@ -445,10 +446,12 @@ export class Connection extends Entity {
         this._connection.close();
         this.actionInitiated++;
 
-        if (abortSignal?.aborted) {
-          onAbort();
-        } else {
-          abortSignal?.addEventListener("abort", onAbort);
+        if (abortSignal) {
+          if (abortSignal.aborted) {
+            onAbort();
+          } else {
+            abortSignal.addEventListener("abort", onAbort);
+          }
         }
       } else {
         return resolve();
@@ -537,7 +540,7 @@ export class Connection extends Entity {
       let onClose: Func<RheaEventContext, void>;
       let onDisconnected: Func<RheaEventContext, void>;
       let onAbort: Func<void, void>;
-      const abortSignal = options?.abortSignal;
+      const abortSignal = options && options.abortSignal;
       let waitTimer: any;
 
       const removeListeners = () => {
@@ -546,7 +549,7 @@ export class Connection extends Entity {
         rheaSession.removeListener(SessionEvents.sessionOpen, onOpen);
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
         rheaSession.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-        abortSignal?.removeEventListener("abort", onAbort);
+        if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
       };
 
       onOpen = (context: RheaEventContext) => {
@@ -595,11 +598,12 @@ export class Connection extends Entity {
       waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
       rheaSession.begin();
 
-
-      if (abortSignal?.aborted) {
-        onAbort();
-      } else {
-        abortSignal?.addEventListener("abort", onAbort);
+      if (abortSignal) {
+        if (abortSignal.aborted) {
+          onAbort();
+        } else {
+          abortSignal.addEventListener("abort", onAbort);
+        }
       }
     });
   }
@@ -616,7 +620,7 @@ export class Connection extends Entity {
     if (options && options.session && options.session.createSender) {
       return options.session.createSender(options);
     }
-    const session = await this.createSession({ abortSignal: options?.abortSignal });
+    const session = await this.createSession({ abortSignal: options && options.abortSignal });
     return session.createSender(options);
   }
 
@@ -636,7 +640,7 @@ export class Connection extends Entity {
     if (options && options.session && options.session.createAwaitableSender) {
       return options.session.createAwaitableSender(options);
     }
-    const session = await this.createSession({ abortSignal: options?.abortSignal });
+    const session = await this.createSession({ abortSignal: options && options.abortSignal });
     return session.createAwaitableSender(options);
   }
 
@@ -652,7 +656,7 @@ export class Connection extends Entity {
     if (options && options.session && options.session.createReceiver) {
       return options.session.createReceiver(options);
     }
-    const session = await this.createSession({ abortSignal: options?.abortSignal });
+    const session = await this.createSession({ abortSignal: options && options.abortSignal });
     return session.createReceiver(options);
   }
 

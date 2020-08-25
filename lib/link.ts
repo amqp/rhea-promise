@@ -232,8 +232,8 @@ export abstract class Link extends Entity {
   async close(options?: LinkCloseOptions): Promise<void> {
     if (!options) options = {};
     if (options.closeSession == undefined) options.closeSession = true;
-    this.removeAllListeners();
-    await new Promise<void>((resolve, reject) => {
+
+    const closePromise = new Promise<void>((resolve, reject) => {
       log.error("[%s] The %s '%s' on amqp session '%s' is open ? -> %s",
         this.connection.id, this.type, this.name, this.session.id, this.isOpen());
       if (this.isOpen()) {
@@ -265,9 +265,16 @@ export abstract class Link extends Entity {
 
         onError = (context: RheaEventContext) => {
           removeListeners();
+          let error = context.session!.error;
+          if (this.type === LinkType.sender && context.sender && context.sender.error) {
+            error = context.sender.error;
+          } else if (this.type === LinkType.receiver && context.receiver && context.receiver.error) {
+            error = context.receiver.error;
+          }
+
           log.error("[%s] Error occurred while closing %s '%s' on amqp session '%s': %O.",
-            this.connection.id, this.type, this.name, this.session.id, context.session!.error);
-          return reject(context.session!.error);
+            this.connection.id, this.type, this.name, this.session.id, error);
+          return reject(error);
         };
 
         onDisconnected = (context: RheaEventContext) => {
@@ -300,6 +307,12 @@ export abstract class Link extends Entity {
       }
     });
 
+    try {
+      await closePromise;
+    } finally {
+      this.removeAllListeners();
+    }
+
     if (options.closeSession) {
       log[this.type]("[%s] %s '%s' has been closed, now closing it's amqp session '%s'.",
         this.connection.id, this.type, this.name, this.session.id);
@@ -315,7 +328,7 @@ export abstract class Link extends Entity {
    */
   private _initializeEventListeners(): void {
     const events = this.type === LinkType.sender ? SenderEvents : ReceiverEvents;
-    for (const eventName in events) {
+    for (const eventName of Object.keys(events) as Array<keyof typeof events>) {
       this._link.on(events[eventName],
         (context: RheaEventContext) => {
           const params: EmitParameters = {

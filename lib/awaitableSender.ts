@@ -170,14 +170,20 @@ export class AwaitableSender extends BaseSender {
    * @param {number} [format] The message format. Specify this if a message with custom format needs
    * to be sent. `0` implies the standard AMQP 1.0 defined format. If no value is provided, then the
    * given message is assumed to be of type Message interface and encoded appropriately.
+   * @param {number} [timeoutInSeconds] If provided, this timeout overrides the `sendTimeoutInSeconds`
+   * that is set when the `AwaitableSender` is created. This timeout represents the duration in which
+   * the promise to send the message should complete (resolve/reject). If not, the Promise will be
+   * rejected after timeout.
    * @returns {Promise<Delivery>} Promise<Delivery> The delivery information about the sent message.
    */
-  send(msg: Message | Buffer, tag?: Buffer | string, format?: number): Promise<Delivery> {
+  send(msg: Message | Buffer, tag?: Buffer | string, format?: number, timeoutInSeconds?: number): Promise<Delivery> {
     return new Promise<Delivery>((resolve, reject) => {
       log.sender("[%s] Sender '%s' on amqp session '%s', credit: %d available: %d",
         this.connection.id, this.name, this.session.id, this.credit,
         this.session.outgoing.available());
       if (this.sendable()) {
+        let sendTimeoutInSeconds = this.sendTimeoutInSeconds;
+        if (typeof timeoutInSeconds === "number" && timeoutInSeconds > 0) sendTimeoutInSeconds = timeoutInSeconds;
         const timer = setTimeout(() => {
           this.deliveryDispositionMap.delete(delivery.id);
           const message = `Sender '${this.name}' on amqp session ` +
@@ -185,7 +191,7 @@ export class AwaitableSender extends BaseSender {
             `message with delivery id ${delivery.id} right now, due to operation timeout.`;
           log.error("[%s] %s", this.connection.id, message);
           return reject(new OperationTimeoutError(message));
-        }, this.sendTimeoutInSeconds * 1000);
+        }, sendTimeoutInSeconds * 1000);
 
         const delivery = (this._link as RheaSender).send(msg, tag, format);
         this.deliveryDispositionMap.set(delivery.id, {

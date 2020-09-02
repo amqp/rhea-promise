@@ -42,6 +42,20 @@ export interface AwaitableSenderOptions extends BaseSenderOptions {
   sendTimeoutInSeconds?: number;
 }
 
+export interface AwaitableSendOptions {
+  /**
+   * The duration in which the promise to send the message should complete (resolve/reject).
+   * If it is not completed, then the Promise will be rejected after timeout occurs.
+   * Default: `20 seconds`.
+   */
+  timeoutInSeconds?: number;
+  /**
+   * A signal to cancel the send operation. This does not guarantee that the message will not be
+   * sent. It only stops listening for an acknowledgement from the remote endpoint.
+   */
+  abortSignal?: AbortSignalLike;
+}
+
 /**
  * Describes the sender where one can await on the message being sent.
  * @class AwaitableSender
@@ -171,20 +185,18 @@ export class AwaitableSender extends BaseSender {
    * @param {number} [format] The message format. Specify this if a message with custom format needs
    * to be sent. `0` implies the standard AMQP 1.0 defined format. If no value is provided, then the
    * given message is assumed to be of type Message interface and encoded appropriately.
-   * @param {number} [timeoutInSeconds] If provided, this timeout overrides the `sendTimeoutInSeconds`
-   * that is set when the `AwaitableSender` is created. This timeout represents the duration in which
-   * the promise to send the message should complete (resolve/reject). If not, the Promise will be
-   * rejected after timeout.
-   * @param {AbortSignalLike} abortSignal A signal to cancel the send operation. This does not
-   * guarantee that the message will not be sent. It only stops listening for an acknowledgement from
-   * the remote endpoint.
+   * @param {AwaitableSendOptions} [options] Options to configure the timeout and cancellation for
+   * the send operation.
    * @returns {Promise<Delivery>} Promise<Delivery> The delivery information about the sent message.
    */
-  send(msg: Message | Buffer, tag?: Buffer | string, format?: number, timeoutInSeconds?: number, abortSignal?: AbortSignalLike): Promise<Delivery> {
+  send(msg: Message | Buffer, tag?: Buffer | string, format?: number, options?: AwaitableSendOptions): Promise<Delivery> {
     return new Promise<Delivery>((resolve, reject) => {
       log.sender("[%s] Sender '%s' on amqp session '%s', credit: %d available: %d",
         this.connection.id, this.name, this.session.id, this.credit,
         this.session.outgoing.available());
+
+      const abortSignal = options && options.abortSignal;
+      const timeoutInSeconds = options && options.timeoutInSeconds;
 
       if (abortSignal && abortSignal.aborted) {
         const err = createAbortError("Send request has been cancelled.");

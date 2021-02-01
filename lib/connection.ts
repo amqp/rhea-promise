@@ -671,7 +671,7 @@ export class Connection extends Entity {
    * @return {Promise<ReqResLink>} Promise<ReqResLink>
    */
   async createRequestResponseLink(senderOptions: SenderOptions, receiverOptions: ReceiverOptions,
-    providedSession?: Session, abortSignal?: AbortSignal): Promise<ReqResLink> {
+    providedSession?: Session, abortSignal?: AbortSignalLike): Promise<ReqResLink> {
     if (!senderOptions) {
       throw new Error(`Please provide sender options.`);
     }

@@ -1,6 +1,8 @@
 import * as rhea from "rhea";
 import { assert } from "chai";
 import { Connection, ConnectionEvents } from "../lib/index";
+import { AbortController } from "@azure/abort-controller";
+import { abortErrorName } from "../lib/util/utils";
 
 describe("Connection", () => {
   let mockService: rhea.Container;
@@ -321,4 +323,360 @@ describe("Connection", () => {
 
     });
   });
+
+  describe("AbortError", () => {
+    it("connection.open() fails with aborted signal", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Pass an already aborted signal to open()
+      abortController.abort();
+      const connectionOpenPromise = connection.open({ abortSignal });
+
+      let abortErrorThrown = false;
+      try {
+        await connectionOpenPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isFalse(connection.isOpen(), "Connection should not be open.");
+    });
+
+    it("connection.open() fails when abort signal is fired", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Abort the signal after passing it to open()
+      const connectionOpenPromise = connection.open({ abortSignal });
+      abortController.abort();
+
+      let abortErrorThrown = false;
+      try {
+        await connectionOpenPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isFalse(connection.isOpen(), "Connection should not be open.");
+    });
+
+    it("connection.close() fails with aborted signal", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+
+      await connection.open();
+      assert.isTrue(connection.isOpen(), "Connection should be open.");
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Pass an already aborted signal to close()
+      abortController.abort();
+      const connectionClosePromise = connection.close({ abortSignal });
+
+      let abortErrorThrown = false;
+      try {
+        await connectionClosePromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isFalse(connection.isOpen(), "Connection should not be open.");
+      assert.isTrue(connection.isRemoteOpen(), "Connection remote endpoint should not have gotten a chance to close.");
+    });
+
+    it("connection.close() fails when abort signal is fired", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+
+      await connection.open();
+      assert.isTrue(connection.isOpen(), "Connection should be open.");
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Abort the signal after passing it to open()
+      const connectionClosePromise = connection.close({ abortSignal });
+      abortController.abort();
+
+      let abortErrorThrown = false;
+      try {
+        await connectionClosePromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isFalse(connection.isOpen(), "Connection should not be open.");
+      assert.isTrue(connection.isRemoteOpen(), "Connection remote endpoint should not have gotten a chance to close.");
+    });
+
+    it("createSession() fails with aborted signal", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Pass an already aborted signal to createSession()
+      abortController.abort();
+      const createSessionPromise = connection.createSession({ abortSignal });
+
+      let abortErrorThrown = false;
+      try {
+        await createSessionPromise
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+
+    it("createSession() fails when abort signal is fired", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Abort the signal after passing it to createSession()
+      const createSessionPromise = connection.createSession({ abortSignal });
+      abortController.abort();
+
+      let abortErrorThrown = false;
+      try {
+        await createSessionPromise
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+
+    it("createSender() fails with aborted signal", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Pass an already aborted signal to createSender()
+      abortController.abort();
+      const createSenderPromise = connection.createSender({ abortSignal });
+
+      let abortErrorThrown = false;
+      try {
+        await createSenderPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+
+    it("createSender() fails when abort signal is fired", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Abort the signal after passing it to createSender()
+      const createSenderPromise = connection.createSender({ abortSignal });
+      abortController.abort();
+
+      let abortErrorThrown = false;
+      try {
+        await createSenderPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+
+    it("createAwaitableSender() fails with aborted signal", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Pass an already aborted signal to createAwaitableSender()
+      abortController.abort();
+      const createAwaitableSenderPromise = connection.createAwaitableSender({ abortSignal });
+
+      let abortErrorThrown = false;
+      try {
+        await createAwaitableSenderPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+
+    it("createAwaitableSender() fails when abort signal is fired", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Abort the signal after passing it to createAwaitableSender()
+      const createAwaitableSenderPromise = connection.createAwaitableSender({ abortSignal });
+      abortController.abort();
+
+      let abortErrorThrown = false;
+      try {
+        await createAwaitableSenderPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+
+    it("createReceiver() fails with aborted signal", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Pass an already aborted signal to createReceiver()
+      abortController.abort();
+      const createReceiverPromise = connection.createReceiver({ abortSignal });
+
+      let abortErrorThrown = false;
+      try {
+        await createReceiverPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+
+    it("createReceiver() fails when abort signal is fired", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Abort the signal after passing it to createReceiver()
+      const createReceiverPromise = connection.createReceiver({ abortSignal });
+      abortController.abort();
+
+      let abortErrorThrown = false;
+      try {
+        await createReceiverPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+
+    it("createRequestResponseLink() fails with aborted signal", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Pass an already aborted signal to createReceiver()
+      abortController.abort();
+      const createPromise = connection.createRequestResponseLink({}, {}, undefined, abortSignal);
+
+      let abortErrorThrown = false;
+      try {
+        await createPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+
+    it("createRequestResponseLink() fails when abort signal is fired", async () => {
+      const connection = new Connection({
+        port: mockServiceListener.address().port,
+        reconnect: false,
+      });
+      await connection.open();
+
+      const abortController = new AbortController();
+      const abortSignal = abortController.signal;
+
+      // Abort the signal after passing it to createReceiver()
+      const createPromise = connection.createRequestResponseLink({}, {}, undefined, abortSignal);
+      abortController.abort();
+
+      let abortErrorThrown = false;
+      try {
+        await createPromise;
+      } catch (error) {
+        abortErrorThrown = error.name === abortErrorName;
+      }
+
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      await connection.close();
+    });
+  })
 });

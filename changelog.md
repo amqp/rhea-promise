@@ -1,5 +1,6 @@
-### 1.0.1 - #Unreleased
-- Added a `timeoutInSeconds` parameter to the `send` method on the `AwaitableSender`.
+### 1.1.0 - #Unreleased
+- All async methods now take a signal that can be used to cancel the operation. Fixes [#48](https://github.com/amqp/rhea-promise/issues/48)
+- Added a `timeoutInSeconds` parameter to the `send` method on the `AwaitableSender` that overrides the timeout value for the send operation set when creating the sender.
 
 ### 1.0.0 - 2019-06-27
 - Updated minimum version of `rhea` to `^1.0.8`.

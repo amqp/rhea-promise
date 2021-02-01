@@ -197,3 +197,39 @@ export function emitEvent(params: EmitParameters): void {
     emit();
   }
 }
+
+export interface AbortSignalLike {
+  /**
+   * Indicates if the signal has already been aborted.
+   */
+  readonly aborted: boolean;
+  /**
+   * Add new "abort" event listener, only support "abort" event.
+   */
+  addEventListener(
+    type: "abort",
+    listener: (this: AbortSignalLike, ev: any) => any,
+    options?: any
+  ): void;
+  /**
+   * Remove "abort" event listener, only support "abort" event.
+   */
+  removeEventListener(
+    type: "abort",
+    listener: (this: AbortSignalLike, ev: any) => any,
+    options?: any
+  ): void;
+}
+
+export const abortErrorName = "AbortError";
+
+/**
+ * Helper method to return an Error to be used when an operation is cancelled
+ * using an AbortSignalLike
+ * @param errorMessage
+ */
+export function createAbortError(errorMessage: string): Error {
+  const error = new Error(errorMessage);
+  error.name = abortErrorName;
+  return error;
+}

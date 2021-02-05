@@ -122,10 +122,11 @@ describe("Session", () => {
       mockService.on(
         rhea.SessionEvents.sessionOpen,
         (context: rhea.EventContext) => {
-          context.session?.close({
-            condition: errorCondition,
-            description: errorDescription,
-          });
+          context.session &&
+            context.session.close({
+              condition: errorCondition,
+              description: errorDescription,
+            });
         }
       );
 
@@ -136,10 +137,13 @@ describe("Session", () => {
 
       session.on(SessionEvents.sessionError, async (event) => {
         assert.exists(event, "Expected an AMQP event.");
-        const error = event.session?.error as rhea.ConnectionError;
-        assert.exists(error, "Expected an AMQP error.");
-        assert.strictEqual(error.condition, errorCondition);
-        assert.strictEqual(error.description, errorDescription);
+        assert.exists(event.session, "Expected session to be defined on AMQP event.");
+        if (event.session) {
+          const error = event.session.error as rhea.ConnectionError;
+          assert.exists(error, "Expected an AMQP error.");
+          assert.strictEqual(error.condition, errorCondition);
+          assert.strictEqual(error.description, errorDescription);
+        }
         await session.close();
         done();
       });
@@ -153,10 +157,11 @@ describe("Session", () => {
       mockService.on(
         rhea.SessionEvents.sessionClose,
         (context: rhea.EventContext) => {
-          context.session?.close({
-            condition: errorCondition,
-            description: errorDescription,
-          });
+          context.session &&
+            context.session.close({
+              condition: errorCondition,
+              description: errorDescription,
+            });
         }
       );
 

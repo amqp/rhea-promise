@@ -566,7 +566,7 @@ export class Session extends Entity {
         });
     }
 
-    // Add event handlers for *_error and *_close events that can be propogated to the session
+    // Add event handlers for *_error and *_close events that can be propagated to the session
     // object, if they are not handled at their level. * denotes - Sender and Receiver.
 
     // Sender

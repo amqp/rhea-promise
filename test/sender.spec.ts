@@ -75,10 +75,11 @@ describe("Sender", () => {
     mockService.on(
       rhea.ReceiverEvents.receiverOpen,
       (context: rhea.EventContext) => {
-        context.receiver?.close({
-          condition: errorCondition,
-          description: errorDescription,
-        });
+        context.receiver &&
+          context.receiver.close({
+            condition: errorCondition,
+            description: errorDescription,
+          });
       }
     );
 
@@ -119,10 +120,11 @@ describe("Sender", () => {
       mockService.on(
         rhea.ReceiverEvents.receiverClose,
         (context: rhea.EventContext) => {
-          context.receiver?.close({
-            condition: errorCondition,
-            description: errorDescription,
-          });
+          context.receiver &&
+            context.receiver.close({
+              condition: errorCondition,
+              description: errorDescription,
+            });
         }
       );
 

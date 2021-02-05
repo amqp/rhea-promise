@@ -238,8 +238,8 @@ export class AwaitableSender extends BaseSender {
 
         const delivery = (this._link as RheaSender).send(msg, tag, format);
         this.deliveryDispositionMap.set(delivery.id, {
-          resolve: () => {
-            resolve();
+          resolve: (delivery: any) => {
+            resolve(delivery);
             removeAbortListener();
           },
           reject: (reason?: any) => {

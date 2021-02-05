@@ -42,6 +42,22 @@ describe("Sender", () => {
     assert.isFalse(sender.isOpen(), "Sender should not be open.");
   });
 
+  it("Delivery returned from `AwaitableSender.send()` is not undefined", async () => {
+    const sender = await connection.createAwaitableSender({
+      sendTimeoutInSeconds: 1,
+    });
+    const response = await sender.send({ body: "message" });
+    assert.exists(
+      response,
+      "Response from the AwaitableSender.send() is undefined"
+    );
+    assert.exists(
+      response.id,
+      "Delivery returned from the AwaitableSender.send() is undefined"
+    );
+    await sender.close();
+  });
+
   it(".remove() removes event listeners", async () => {
     const sender = await connection.createSender();
     sender.on(rhea.SenderEvents.senderOpen, () => {
@@ -66,7 +82,6 @@ describe("Sender", () => {
     await sender.close();
 
     assert.strictEqual(sender.listenerCount(rhea.SenderEvents.senderOpen), 0);
-
   });
 
   it("createSender() bubbles up error", async () => {
@@ -75,10 +90,11 @@ describe("Sender", () => {
     mockService.on(
       rhea.ReceiverEvents.receiverOpen,
       (context: rhea.EventContext) => {
-        context.receiver?.close({
-          condition: errorCondition,
-          description: errorDescription,
-        });
+        context.receiver &&
+          context.receiver.close({
+            condition: errorCondition,
+            description: errorDescription,
+          });
       }
     );
 
@@ -99,18 +115,23 @@ describe("Sender", () => {
     });
     await connection.open();
     const sender = await connection.createAwaitableSender();
-    sender.sendable = () => { return false }
+    sender.sendable = () => {
+      return false;
+    };
 
     let insufficientCreditErrorThrown = false;
     try {
       await sender.send({ body: "hello" });
     } catch (error) {
-      insufficientCreditErrorThrown = error instanceof InsufficientCreditError
+      insufficientCreditErrorThrown = error instanceof InsufficientCreditError;
     }
 
-    assert.isTrue(insufficientCreditErrorThrown, "AbortError should have been thrown.");
+    assert.isTrue(
+      insufficientCreditErrorThrown,
+      "AbortError should have been thrown."
+    );
     await connection.close();
-  })
+  });
 
   describe("supports events", () => {
     it("senderError on sender.close() is bubbled up", async () => {
@@ -119,10 +140,11 @@ describe("Sender", () => {
       mockService.on(
         rhea.ReceiverEvents.receiverClose,
         (context: rhea.EventContext) => {
-          context.receiver?.close({
-            condition: errorCondition,
-            description: errorDescription,
-          });
+          context.receiver &&
+            context.receiver.close({
+              condition: errorCondition,
+              description: errorDescription,
+            });
         }
       );
 
@@ -130,7 +152,7 @@ describe("Sender", () => {
 
       try {
         await sender.close();
-        throw new Error("boo")
+        throw new Error("boo");
       } catch (error) {
         assert.exists(error, "Expected an AMQP error.");
         assert.strictEqual(error.condition, errorCondition);
@@ -153,7 +175,9 @@ describe("Sender", () => {
 
       // Pass an already aborted signal to send()
       abortController.abort();
-      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, { abortSignal });
+      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, {
+        abortSignal,
+      });
 
       let abortErrorThrown = false;
       try {
@@ -173,14 +197,18 @@ describe("Sender", () => {
       });
       await connection.open();
       const sender = await connection.createAwaitableSender();
-      sender.sendable = () => { return false }
+      sender.sendable = () => {
+        return false;
+      };
 
       const abortController = new AbortController();
       const abortSignal = abortController.signal;
 
       // Pass an already aborted signal to send()
       abortController.abort();
-      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, { abortSignal });
+      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, {
+        abortSignal,
+      });
 
       let abortErrorThrown = false;
       try {
@@ -205,9 +233,10 @@ describe("Sender", () => {
       const abortSignal = abortController.signal;
 
       // Fire abort signal after passing it to send()
-      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, { abortSignal });
+      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, {
+        abortSignal,
+      });
       abortController.abort();
-
 
       let abortErrorThrown = false;
       try {
@@ -219,5 +248,5 @@ describe("Sender", () => {
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
       await connection.close();
     });
-  })
+  });
 });

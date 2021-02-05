@@ -98,7 +98,7 @@ describe("Receiver", () => {
       mockService.on(
         rhea.SenderEvents.senderClose,
         (context: rhea.EventContext) => {
-          context.sender?.close({
+          context.sender && context.sender.close({
             condition: errorCondition,
             description: errorDescription,
           });

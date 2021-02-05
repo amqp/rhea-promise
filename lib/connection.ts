@@ -181,7 +181,7 @@ export declare interface Connection {
 }
 
 /**
- * Descibes the AQMP Connection.
+ * Describes the AMQP Connection.
  * @class Connection
  */
 export class Connection extends Entity {
@@ -632,7 +632,7 @@ export class Connection extends Entity {
    * `deliveryDispositionMap`.
    * - If the user is handling the reconnection of sender link or the underlying connection in it's
    * app, then the `onError` and `onSessionError` handlers must be provided by the user and (s)he
-   * shall be responsible of clearing the `deliveryDispotionMap` of inflight `send()` operation.
+   * shall be responsible of clearing the `deliveryDispositionMap` of inflight `send()` operation.
    *
    * @return Promise<AwaitableSender>.
    */
@@ -715,7 +715,7 @@ export class Connection extends Entity {
       });
     }
 
-    // Add event handlers for *_error and *_close events that can be propogated to the connection
+    // Add event handlers for *_error and *_close events that can be propagated to the connection
     // object, if they are not handled at their level. * denotes - Sender, Receiver, Session
 
     // Sender

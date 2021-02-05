@@ -42,6 +42,18 @@ describe("Sender", () => {
     assert.isFalse(sender.isOpen(), "Sender should not be open.");
   });
 
+  it("Delivery returned from `AwaitableSender.send()` is not undefined", async () => {
+    const sender = await connection.createAwaitableSender({
+      sendTimeoutInSeconds: 1,
+    });
+    const response = await sender.send({ body: "message" });
+    assert.exists(
+      response,
+      "Response from the AwaitableSender.send() is undefined"
+    );
+    await sender.close();
+  });
+
   it(".remove() removes event listeners", async () => {
     const sender = await connection.createSender();
     sender.on(rhea.SenderEvents.senderOpen, () => {

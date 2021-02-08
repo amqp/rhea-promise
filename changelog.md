@@ -1,6 +1,8 @@
-### 1.1.0 - #Unreleased
+### 1.1.0 - 2021-02-08
 - All async methods now take a signal that can be used to cancel the operation. Fixes [#48](https://github.com/amqp/rhea-promise/issues/48)
 - Added a `timeoutInSeconds` parameter to the `send` method on the `AwaitableSender` that overrides the timeout value for the send operation set when creating the sender.
+- When the `error` event is fired when closing the sender/receiver link, surface errors occurring on the sender/receiver context if none are found on the session context. Details can be found in [PR #55](https://github.com/amqp/rhea-promise/pull/55)
+- Updated minimum version of `rhea` to `^1.0.24`. Details can be found in [PR 68](https://github.com/amqp/rhea-promise/pull/68)
 
 ### 1.0.0 - 2019-06-27
 - Updated minimum version of `rhea` to `^1.0.8`.

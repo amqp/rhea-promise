@@ -166,7 +166,7 @@ export interface ReqResLink {
    */
   receiver: Receiver;
   /**
-   * @property {Session} session - The underlying session on whicn the sender and receiver links
+   * @property {Session} session - The underlying session on which the sender and receiver links
    * exist.
    */
   session: Session;

@@ -218,6 +218,28 @@ export class Session extends Entity {
         this._session.once(SessionEvents.sessionClose, onClose);
         this._session.once(SessionEvents.sessionError, onError);
         this._session.connection.once(ConnectionEvents.disconnected, onDisconnected);
+        // Add listener <=> set in the map
+        this._connection._disconnectEventAudienceMap.set(
+          this.id, (context: RheaEventContext) => {
+            removeListeners();
+            const error =
+              context.connection && context.connection.error
+                ? context.connection.error
+                : context.error;
+            console.log(
+              "[%s] Connection got disconnected while closing amqp session '%s': %O.",
+              this.connection.id,
+              this.id,
+              error
+            );
+            log.error(
+              "[%s] Connection got disconnected while closing amqp session '%s': %O.",
+              this.connection.id,
+              this.id,
+              error
+            );
+          }
+        );
         log.session("[%s] Calling session.close() for amqp session '%s'.", this.connection.id, this.id);
         waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._session.close();

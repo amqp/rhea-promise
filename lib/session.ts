@@ -167,13 +167,11 @@ export class Session extends Entity {
         let waitTimer: any;
 
         const removeListeners = () => {
-          // Remove the listener <=> delete from map
-          this._connection._disconnectEventAudienceMap.delete(this.id);
           clearTimeout(waitTimer);
           this.actionInitiated--;
           this._session.removeListener(SessionEvents.sessionError, onError);
           this._session.removeListener(SessionEvents.sessionClose, onClose);
-          this._session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
+          this._connection._disconnectEventAudienceMap.delete(this.id);
           if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
         };
 
@@ -217,22 +215,9 @@ export class Session extends Entity {
         // listeners that we add for completing the operation are added directly to rhea's objects.
         this._session.once(SessionEvents.sessionClose, onClose);
         this._session.once(SessionEvents.sessionError, onError);
-        this._session.connection.once(ConnectionEvents.disconnected, onDisconnected);
-        // Add listener <=> set in the map
         this._connection._disconnectEventAudienceMap.set(
-          this.id, (context: RheaEventContext) => {
-            removeListeners();
-            const error =
-              context.connection && context.connection.error
-                ? context.connection.error
-                : context.error;
-            log.error(
-              "[%s] Connection got disconnected while closing amqp session '%s': %O.",
-              this.connection.id,
-              this.id,
-              error
-            );
-          }
+          this.id,
+          onDisconnected
         );
         log.session("[%s] Calling session.close() for amqp session '%s'.", this.connection.id, this.id);
         waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);

@@ -47,11 +47,13 @@ describe("Session", () => {
     const getDisconnectListenerCount = () => {
       return _connection.listenerCount(rhea.ConnectionEvents.disconnected);
     };
+    const sessionCount = 1000;
     const sessions: Session[] = [];
-    const sessionCount = 100;
+    const callbackCalledForSessionId: { [key: string]: boolean } = {};
     for (let i = 0; i < sessionCount; i++) {
       const session = await connection.createSession();
       sessions.push(session);
+      callbackCalledForSessionId[session.id] = false;
     }
     const disconnectListenerCountBefore = getDisconnectListenerCount();
     await Promise.all(
@@ -63,13 +65,37 @@ describe("Session", () => {
           (() => {
             assert.equal(
               getDisconnectListenerCount(),
-              sessionCount + disconnectListenerCountBefore,
-              `Unexpected number of "disconnected" listeners`
+              disconnectListenerCountBefore,
+              `Unexpected number of "disconnected" listeners - originated from the close() calls`
             );
+            assert.equal(
+              connection._disconnectEventAudienceMap.size,
+              sessionCount,
+              `Unexpected number of items in _disconnectEventAudienceMap`
+            );
+            for (let [
+              key,
+              callback,
+            ] of connection._disconnectEventAudienceMap) {
+              connection._disconnectEventAudienceMap.set(
+                key,
+                (context: rhea.EventContext) => {
+                  callbackCalledForSessionId[key] = true;
+                  callback(context);
+                }
+              );
+            }
             _connection.emit(rhea.ConnectionEvents.disconnected, {});
           })(),
         ])
     );
+    for (const session of sessions) {
+      assert.equal(
+        callbackCalledForSessionId[session.id as string],
+        true,
+        `callback not called for ${session.id} - this is unexpected`
+      );
+    }
     assert.equal(
       getDisconnectListenerCount(),
       disconnectListenerCountBefore,

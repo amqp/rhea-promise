@@ -180,6 +180,13 @@ export declare interface Connection {
   on(event: ConnectionEvents, listener: OnAmqpEvent): this;
 }
 
+function onDisconnectOccurrence(
+  context: RheaEventContext,
+  disconnectEventAudienceMap: Map<string, (context: RheaEventContext) => void>
+): void {
+  disconnectEventAudienceMap.forEach((callback) => callback(context));
+}
+
 /**
  * Describes the AMQP Connection.
  * @class Connection

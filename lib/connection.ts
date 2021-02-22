@@ -248,6 +248,11 @@ export class Connection extends Entity {
     this.options = this._connection.options;
     this.options.operationTimeoutInSeconds = options.operationTimeoutInSeconds;
 
+    // Disconnect event for the disconnectEventAudienceMap
+    this._connection.on(ConnectionEvents.disconnected, (context) => {
+      onDisconnectOccurrence(context, this._disconnectEventAudienceMap);
+    });
+
     this._initializeEventListeners();
   }
 

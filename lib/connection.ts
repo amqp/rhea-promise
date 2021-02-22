@@ -198,6 +198,15 @@ export class Connection extends Entity {
    */
   options: ConnectionOptions;
   /**
+   * Maintains a map of the audience(sessions/senders/receivers) interested in "disconnected" event.
+   * This helps us with not needing to create too many listeners on the "disconnected" event,
+   * which is particularly useful when dealing with 1000s of sessions at the same time.
+   */
+  _disconnectEventAudienceMap: Map<string, (context: RheaEventContext) => void> = new Map<
+    string,
+    (context: RheaEventContext) => void
+  >();
+  /**
    * @property {Container} container The underlying Container instance on which the connection
    * exists.
    */

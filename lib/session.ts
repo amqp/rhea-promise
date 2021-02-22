@@ -167,6 +167,8 @@ export class Session extends Entity {
         let waitTimer: any;
 
         const removeListeners = () => {
+          // Remove the listener <=> delete from map
+          this._connection._disconnectEventAudienceMap.delete(this.id);
           clearTimeout(waitTimer);
           this.actionInitiated--;
           this._session.removeListener(SessionEvents.sessionError, onError);

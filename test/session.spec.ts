@@ -42,6 +42,41 @@ describe("Session", () => {
     assert.isFalse(session.isOpen(), "Session should not be open.");
   });
 
+  it("Single disconnected listener shared among all the sessions when close() is called in parallel", async () => {
+    const _connection = (connection as any)._connection;
+    const getDisconnectListenerCount = () => {
+      return _connection.listenerCount(rhea.ConnectionEvents.disconnected);
+    };
+    const sessions: Session[] = [];
+    const sessionCount = 100;
+    for (let i = 0; i < sessionCount; i++) {
+      const session = await connection.createSession();
+      sessions.push(session);
+    }
+    const disconnectListenerCountBefore = getDisconnectListenerCount();
+    await Promise.all(
+      sessions
+        .map((session) => {
+          session.close();
+        })
+        .concat([
+          (() => {
+            assert.equal(
+              getDisconnectListenerCount(),
+              sessionCount + disconnectListenerCountBefore,
+              `Unexpected number of "disconnected" listeners`
+            );
+            _connection.emit(rhea.ConnectionEvents.disconnected, {});
+          })(),
+        ])
+    );
+    assert.equal(
+      getDisconnectListenerCount(),
+      disconnectListenerCountBefore,
+      `Unexpected number of "disconnected" listeners after sessions were closed`
+    );
+  });
+
   it(".remove() removes event listeners", async () => {
     const session = new Session(
       connection,
@@ -72,7 +107,6 @@ describe("Session", () => {
     await session.close();
     assert.strictEqual(session.listenerCount(SessionEvents.sessionOpen), 0);
   });
-
 
   describe("supports events", () => {
     it("sessionOpen", (done: Function) => {
@@ -137,7 +171,10 @@ describe("Session", () => {
 
       session.on(SessionEvents.sessionError, async (event) => {
         assert.exists(event, "Expected an AMQP event.");
-        assert.exists(event.session, "Expected session to be defined on AMQP event.");
+        assert.exists(
+          event.session,
+          "Expected session to be defined on AMQP event."
+        );
         if (event.session) {
           const error = event.session.error as rhea.ConnectionError;
           assert.exists(error, "Expected an AMQP error.");
@@ -173,7 +210,7 @@ describe("Session", () => {
       session.on(SessionEvents.sessionOpen, async () => {
         try {
           await session.close();
-          throw new Error("boo")
+          throw new Error("boo");
         } catch (error) {
           assert.exists(error, "Expected an AMQP error.");
           assert.strictEqual(error.condition, errorCondition);
@@ -212,9 +249,12 @@ describe("Session", () => {
         abortErrorThrown = error.name === abortErrorName;
       }
 
-      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
       assert.isFalse(session.isOpen(), "Session should not be open.");
-      assert.isTrue(session["_session"].is_remote_open(), "Session remote endpoint should not have gotten a chance to close.");
+      assert.isTrue(
+        session["_session"].is_remote_open(),
+        "Session remote endpoint should not have gotten a chance to close."
+      );
 
       await connection.close();
     });
@@ -243,9 +283,12 @@ describe("Session", () => {
         abortErrorThrown = error.name === abortErrorName;
       }
 
-      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
       assert.isFalse(session.isOpen(), "Session should not be open.");
-      assert.isTrue(session["_session"].is_remote_open(), "Session remote endpoint should not have gotten a chance to close.");
+      assert.isTrue(
+        session["_session"].is_remote_open(),
+        "Session remote endpoint should not have gotten a chance to close."
+      );
 
       await connection.close();
     });
@@ -315,7 +358,9 @@ describe("Session", () => {
 
       // Pass an already aborted signal to createAwaitableSender()
       abortController.abort();
-      const createAwaitableSenderPromise = session.createAwaitableSender({ abortSignal });
+      const createAwaitableSenderPromise = session.createAwaitableSender({
+        abortSignal,
+      });
 
       let abortErrorThrown = false;
       try {
@@ -340,7 +385,9 @@ describe("Session", () => {
       const abortSignal = abortController.signal;
 
       // Abort the signal after passing it to createAwaitableSender()
-      const createAwaitableSenderPromise = session.createAwaitableSender({ abortSignal });
+      const createAwaitableSenderPromise = session.createAwaitableSender({
+        abortSignal,
+      });
       abortController.abort();
 
       let abortErrorThrown = false;

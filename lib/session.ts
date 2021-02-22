@@ -226,12 +226,6 @@ export class Session extends Entity {
               context.connection && context.connection.error
                 ? context.connection.error
                 : context.error;
-            console.log(
-              "[%s] Connection got disconnected while closing amqp session '%s': %O.",
-              this.connection.id,
-              this.id,
-              error
-            );
             log.error(
               "[%s] Connection got disconnected while closing amqp session '%s': %O.",
               this.connection.id,

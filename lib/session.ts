@@ -60,6 +60,10 @@ export class Session extends Entity {
     return this._connection;
   }
 
+  get incoming(): { deliveries: { size: number; capacity: number } } {
+    return (this._session as any).incoming;
+  }
+
   get outgoing(): any {
     return (this._session as any).outgoing;
   }

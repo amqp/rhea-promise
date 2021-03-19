@@ -336,7 +336,7 @@ export class Connection extends Entity {
         onAbort = () => {
           removeListeners();
           this._connection.close();
-          const err = createAbortError("Connection open request has been cancelled.");
+          const err = createAbortError();
           log.error("[%s] [%s]", this.id, err.message);
           return reject(err);
         };
@@ -426,7 +426,7 @@ export class Connection extends Entity {
 
         onAbort = () => {
           removeListeners();
-          const err = createAbortError("Connection close request has been cancelled.");
+          const err = createAbortError();
           log.error("[%s] [%s]", this.id, err.message);
           return reject(err);
         };
@@ -578,7 +578,7 @@ export class Connection extends Entity {
       onAbort = () => {
         removeListeners();
         rheaSession.close();
-        const err = createAbortError("Create session request has been cancelled.");
+        const err = createAbortError();
         log.error("[%s] [%s]", this.id, err.message);
         return reject(err);
       };

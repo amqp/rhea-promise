@@ -204,7 +204,7 @@ export class Session extends Entity {
 
         onAbort = () => {
           removeListeners();
-          const err = createAbortError("Session close request has been cancelled.");
+          const err = createAbortError();
           log.error("[%s] [%s]", this.connection.id, err.message);
           return reject(err);
         };
@@ -359,7 +359,7 @@ export class Session extends Entity {
       onAbort = () => {
         removeListeners();
         rheaReceiver.close();
-        const err = createAbortError("Create receiver request has been cancelled.");
+        const err = createAbortError();
         log.error("[%s] [%s]", this.connection.id, err.message);
         return reject(err);
       };
@@ -519,7 +519,7 @@ export class Session extends Entity {
       onAbort = () => {
         removeListeners();
         rheaSender.close();
-        const err = createAbortError("Create sender request has been cancelled.");
+        const err = createAbortError();
         log.error("[%s] [%s]", this.connection.id, err.message);
         return reject(err);
       };

@@ -199,7 +199,7 @@ export class AwaitableSender extends BaseSender {
       const timeoutInSeconds = options && options.timeoutInSeconds;
 
       if (abortSignal && abortSignal.aborted) {
-        const err = createAbortError("Send request has been cancelled.");
+        const err = createAbortError();
         log.error("[%s] %s", this.connection.id, err.message);
         return reject(err);
       }
@@ -226,7 +226,7 @@ export class AwaitableSender extends BaseSender {
               " map of sender '%s' on amqp session '%s' and cleared the timer: %s.",
               this.connection.id, delivery.id, this.name, this.session.id, deleteResult
             );
-            const err = createAbortError("Send request has been cancelled.");
+            const err = createAbortError();
             log.error("[%s] %s", this.connection.id, err.message);
             promise.reject(err);
           }

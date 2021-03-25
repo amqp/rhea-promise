@@ -1,4 +1,4 @@
-### 1.1.1 - Unreleased
+### 1.2.0 - 2021-03-25
 - Exposes the `incoming` getter on the `Session` that lets accessing size and capacity of the incoming deliveries [#79](https://github.com/amqp/rhea-promise/pull/79).
 - Updates the error message for the `AbortError` to be a standard message `The operation was aborted.`.
 

@@ -56,3 +56,6 @@ dist/
 output/
 out/
 typedoc
+
+# package lock file
+package-lock.json

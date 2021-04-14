@@ -358,7 +358,9 @@ export class Session extends Entity {
 
       onAbort = () => {
         removeListeners();
-        rheaReceiver.close();
+        if (rheaReceiver.is_open()) {
+          rheaReceiver.close();
+        }
         const err = createAbortError();
         log.error("[%s] [%s]", this.connection.id, err.message);
         return reject(err);
@@ -518,7 +520,9 @@ export class Session extends Entity {
 
       onAbort = () => {
         removeListeners();
-        rheaSender.close();
+        if (rheaSender.is_open()) {
+          rheaSender.close();
+        }
         const err = createAbortError();
         log.error("[%s] [%s]", this.connection.id, err.message);
         return reject(err);

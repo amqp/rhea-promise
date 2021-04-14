@@ -577,7 +577,9 @@ export class Connection extends Entity {
 
       onAbort = () => {
         removeListeners();
-        rheaSession.close();
+        if (rheaSession.is_open()) {
+          rheaSession.close();
+        }
         const err = createAbortError();
         log.error("[%s] [%s]", this.id, err.message);
         return reject(err);

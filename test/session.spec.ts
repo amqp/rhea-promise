@@ -273,6 +273,7 @@ describe("Session", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
       await connection.close();
     });
 
@@ -291,6 +292,8 @@ describe("Session", () => {
       const createSenderPromise = session.createSender({ abortSignal });
       abortController.abort();
 
+      const link = extractLink(session)!;
+
       let abortErrorThrown = false;
       try {
         await createSenderPromise;
@@ -299,6 +302,16 @@ describe("Session", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      assert.isFalse(link.is_open(), "Link should not be open.");
+      // Cancelling link creation should guarantee that the underlying
+      // link is closed and removed from the session.
+      if (!link.is_closed()) {
+        await new Promise(resolve => {
+          link.once(rhea.SenderEvents.senderClose, resolve);
+        });
+      }
+      assert.isTrue(link.is_closed(), "Link should be closed.");
+      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
       await connection.close();
     });
 
@@ -325,6 +338,7 @@ describe("Session", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
       await connection.close();
     });
 
@@ -343,6 +357,8 @@ describe("Session", () => {
       const createAwaitableSenderPromise = session.createAwaitableSender({ abortSignal });
       abortController.abort();
 
+      const link = extractLink(session)!;
+
       let abortErrorThrown = false;
       try {
         await createAwaitableSenderPromise;
@@ -351,6 +367,16 @@ describe("Session", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      assert.isFalse(link.is_open(), "Link should not be open.");
+      // Cancelling link creation should guarantee that the underlying
+      // link is closed and removed from the session.
+      if (!link.is_closed()) {
+        await new Promise(resolve => {
+          link.once(rhea.SenderEvents.senderClose, resolve);
+        });
+      }
+      assert.isTrue(link.is_closed(), "Link should be closed.");
+      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
       await connection.close();
     });
 
@@ -377,6 +403,7 @@ describe("Session", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
       await connection.close();
     });
 
@@ -394,6 +421,8 @@ describe("Session", () => {
       // Abort the signal after passing it to createReceiver()
       const createReceiverPromise = session.createReceiver({ abortSignal });
       abortController.abort();
+      
+      const link = extractLink(session)!;
 
       let abortErrorThrown = false;
       try {
@@ -403,7 +432,22 @@ describe("Session", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      assert.isFalse(link.is_open(), "Link should not be open.");
+      // Cancelling link creation should guarantee that the underlying
+      // link is closed and removed from the session.
+      if (!link.is_closed()) {
+        await new Promise(resolve => {
+          link.once(rhea.ReceiverEvents.receiverClose, resolve);
+        });
+      }
+      assert.isTrue(link.is_closed(), "Link should be closed.");
+      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
+
       await connection.close();
     });
   });
+
+  function extractLink(session: Session) {
+    return session["_session"].find_link(() => true);
+  }
 });

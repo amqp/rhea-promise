@@ -534,16 +534,39 @@ export class Connection extends Entity {
   createSession(options?: SessionCreateOptions): Promise<Session> {
     return new Promise((resolve, reject) => {
       const abortSignal = options && options.abortSignal;
-      let rejectOnAbort: Func<void, void>;
+      let onAbort: Func<void, void>;
       if (abortSignal) {
-        rejectOnAbort = () => {
+        const rejectOnAbort = () => {
           const err = createAbortError();
           log.error("[%s] [%s]", this.id, err.message);
           return reject(err);
         };
+
+        onAbort = () => {
+          removeListeners();
+          if (rheaSession.is_open()) {
+            // This scenario *shouldn't* be possible because if `is_open()` returns true,
+            // our `onOpen` handler should have executed and removed this abort listener.
+            // This is a 'just in case' check in case the operation was cancelled sometime
+            // between when the session's state was updated and when the sessionOpen
+            // event was emitted.
+            rheaSession.close();
+          } else if (!rheaSession.is_closed()) {
+            // If the rheaSession isn't closed, then it's possible the peer will still
+            // attempt to begin the session.
+            // We can detect that if it occurs and close our session.
+            rheaSession.once(SessionEvents.sessionOpen, () => {
+              rheaSession.close();
+            });
+          }
+          return rejectOnAbort();
+        };
+
         if (abortSignal.aborted) {
           // Exit early before we do any work.
           return rejectOnAbort();
+        } else {
+          abortSignal.addEventListener("abort", onAbort);
         }
       }
 
@@ -553,7 +576,6 @@ export class Connection extends Entity {
       let onOpen: Func<RheaEventContext, void>;
       let onClose: Func<RheaEventContext, void>;
       let onDisconnected: Func<RheaEventContext, void>;
-      let onAbort: Func<void, void>;
       let waitTimer: any;
 
       const removeListeners = () => {
@@ -588,26 +610,6 @@ export class Connection extends Entity {
         return reject(error);
       };
 
-      onAbort = () => {
-        removeListeners();
-        if (rheaSession.is_open()) {
-          // This scenario *shouldn't* be possible because if `is_open()` returns true,
-          // our `onOpen` handler should have executed and removed this abort listener.
-          // This is a 'just in case' check in case the operation was cancelled sometime
-          // between when the session's state was updated and when the sessionOpen
-          // event was emitted.
-          rheaSession.close();
-        } else if (!rheaSession.is_closed()) {
-          // If the rheaSession isn't closed, then it's possible the peer will still
-          // attempt to begin the session.
-          // We can detect that if it occurs and close our session.
-          rheaSession.once(SessionEvents.sessionOpen, () => {
-            rheaSession.close();
-          });
-        }
-        return rejectOnAbort();
-      };
-
       const actionAfterTimeout = () => {
         removeListeners();
         const msg: string = `Unable to create the amqp session due to operation timeout.`;
@@ -622,14 +624,6 @@ export class Connection extends Entity {
       log.session("[%s] Calling amqp session.begin().", this.id);
       waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
       rheaSession.begin();
-
-      if (abortSignal) {
-        if (abortSignal.aborted) {
-          onAbort();
-        } else {
-          abortSignal.addEventListener("abort", onAbort);
-        }
-      }
     });
   }
 

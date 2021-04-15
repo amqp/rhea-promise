@@ -1,4 +1,4 @@
-### 1.2.1 - (Undeclared)
+### 1.2.1 - (2021-04-15)
 
 - `createSession`, `createReceiver`, and `createSender` methods now only close underlying rhea analogue when cancelled if the resource has already been opened.
 

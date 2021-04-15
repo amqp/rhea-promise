@@ -549,7 +549,7 @@ export class Connection extends Entity {
             // our `onOpen` handler should have executed and removed this abort listener.
             // This is a 'just in case' check in case the operation was cancelled sometime
             // between when the session's state was updated and when the sessionOpen
-            // event was emitted.
+            // event was handled.
             rheaSession.close();
           } else if (!rheaSession.is_closed()) {
             // If the rheaSession isn't closed, then it's possible the peer will still

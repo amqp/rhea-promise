@@ -291,7 +291,7 @@ export class Session extends Entity {
             // our `onOpen` handler should have executed and removed this abort listener.
             // This is a 'just in case' check in case the operation was cancelled sometime
             // between when the receiver's state was updated and when the receiverOpen
-            // event was emitted.
+            // event was handled.
             rheaReceiver.close();
           } else if (!rheaReceiver.is_closed()) {
             // If the rheaReceiver isn't closed, then it's possible the peer will still
@@ -464,7 +464,7 @@ export class Session extends Entity {
             // our `onOpen` handler should have executed and removed this abort listener.
             // This is a 'just in case' check in case the operation was cancelled sometime
             // between when the sender's state was updated and when the senderOpen
-            // event was emitted.
+            // event was handled.
             rheaSender.close();
           } else if (!rheaSender.is_closed()) {
             // If the rheaSender isn't closed, then it's possible the peer will still

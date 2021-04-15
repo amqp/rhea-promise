@@ -275,6 +275,20 @@ export class Session extends Entity {
         }
       }
 
+      const abortSignal = options && options.abortSignal;
+      let rejectOnAbort: Func<void, void>;
+      if (abortSignal) {
+        rejectOnAbort = () => {
+          const err = createAbortError();
+          log.error("[%s] [%s]", this.connection.id, err.message);
+          return reject(err);
+        };
+        if (abortSignal.aborted) {
+          // Exit early before we do any work.
+          return rejectOnAbort();
+        }
+      }
+
       // Register session handlers for session_error and session_close if provided.
       // listeners provided by the user in the options object should be added
       // to our (rhea-promise) object.
@@ -296,7 +310,6 @@ export class Session extends Entity {
       let onClose: Func<RheaEventContext, void>;
       let onDisconnected: Func<RheaEventContext, void>;
       let onAbort: Func<void, void>;
-      const abortSignal = options && options.abortSignal;
       let waitTimer: any;
 
       if (options && options.onMessage) {
@@ -359,11 +372,21 @@ export class Session extends Entity {
       onAbort = () => {
         removeListeners();
         if (rheaReceiver.is_open()) {
+          // This scenario *shouldn't* be possible because if `is_open()` returns true,
+          // our `onOpen` handler should have executed and removed this abort listener.
+          // This is a 'just in case' check in case the operation was cancelled sometime
+          // between when the receiver's state was updated and when the receiverOpen
+          // event was emitted.
           rheaReceiver.close();
+        } else if (!rheaReceiver.is_closed()) {
+          // If the rheaReceiver isn't closed, then it's possible the peer will still
+          // attempt to attach the link and open our receiver.
+          // We can detect that if it occurs and close our receiver.
+          rheaReceiver.once(ReceiverEvents.receiverOpen, () => {
+            rheaReceiver.close();
+          });
         }
-        const err = createAbortError();
-        log.error("[%s] [%s]", this.connection.id, err.message);
-        return reject(err);
+        return rejectOnAbort();
       };
 
       const actionAfterTimeout = () => {
@@ -381,11 +404,7 @@ export class Session extends Entity {
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
 
       if (abortSignal) {
-        if (abortSignal.aborted) {
-          onAbort();
-        } else {
-          abortSignal.addEventListener("abort", onAbort);
-        }
+        abortSignal.addEventListener("abort", onAbort);
       }
     });
   }
@@ -431,6 +450,20 @@ export class Session extends Entity {
     type: SenderType,
     options?: (SenderOptions | AwaitableSenderOptions) & { abortSignal?: AbortSignalLike; }): Promise<Sender | AwaitableSender> {
     return new Promise((resolve, reject) => {
+      const abortSignal = options && options.abortSignal;
+      let rejectOnAbort: Func<void, void>;
+      if (abortSignal) {
+        rejectOnAbort = () => {
+          const err = createAbortError();
+          log.error("[%s] [%s]", this.connection.id, err.message);
+          return reject(err);
+        };
+        if (abortSignal.aborted) {
+          // Exit early before we do any work.
+          return rejectOnAbort();
+        }
+      }
+
       // Register session handlers for session_error and session_close if provided.
       if (options && options.onSessionError) {
         this.on(SessionEvents.sessionError, options.onSessionError);
@@ -456,7 +489,6 @@ export class Session extends Entity {
       let onClose: Func<RheaEventContext, void>;
       let onDisconnected: Func<RheaEventContext, void>;
       let onAbort: Func<void, void>;
-      const abortSignal = options && options.abortSignal;
       let waitTimer: any;
 
       // listeners provided by the user in the options object should be added
@@ -521,11 +553,21 @@ export class Session extends Entity {
       onAbort = () => {
         removeListeners();
         if (rheaSender.is_open()) {
+          // This scenario *shouldn't* be possible because if `is_open()` returns true,
+          // our `onOpen` handler should have executed and removed this abort listener.
+          // This is a 'just in case' check in case the operation was cancelled sometime
+          // between when the sender's state was updated and when the senderOpen
+          // event was emitted.
           rheaSender.close();
+        } else if (!rheaSender.is_closed()) {
+          // If the rheaSender isn't closed, then it's possible the peer will still
+          // attempt to attach the link and open our sender.
+          // We can detect that if it occurs and close our sender.
+          rheaSender.once(SenderEvents.senderOpen, () => {
+            rheaSender.close();
+          });
         }
-        const err = createAbortError();
-        log.error("[%s] [%s]", this.connection.id, err.message);
-        return reject(err);
+        return rejectOnAbort();
       };
 
       const actionAfterTimeout = () => {
@@ -543,11 +585,7 @@ export class Session extends Entity {
       waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
 
       if (abortSignal) {
-        if (abortSignal.aborted) {
-          onAbort();
-        } else {
-          abortSignal.addEventListener("abort", onAbort);
-        }
+        abortSignal.addEventListener("abort", onAbort);
       }
     });
   }

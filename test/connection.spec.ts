@@ -451,6 +451,8 @@ describe("Connection", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      const sessionMap = (connection["_connection"] as any)["local_channel_map"];
+      assert.deepEqual(sessionMap, {});
       await connection.close();
     });
 
@@ -476,6 +478,17 @@ describe("Connection", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
+      const sessionMap = (connection["_connection"] as any)["local_channel_map"];
+      // There should be at most 1 session.
+      const [sessionName] = Object.keys(sessionMap);
+      const session = sessionName && sessionMap[sessionName];
+      if (!session.is_closed()) {
+        await new Promise(resolve => {
+          session.once(rhea.SessionEvents.sessionClose, resolve);
+        });
+      }
+      assert.isTrue(session.is_closed(), "Session should be closed.");
+      assert.deepEqual(sessionMap, {});
       await connection.close();
     });
 

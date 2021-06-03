@@ -54,6 +54,16 @@ export interface AwaitableSendOptions {
    * sent. It only stops listening for an acknowledgement from the remote endpoint.
    */
   abortSignal?: AbortSignalLike;
+  /**
+   * The message format. Specify this if a message with custom format needs to be sent.
+   * `0` implies the standard AMQP 1.0 defined format. If no value is provided, then the
+   * given message is assumed to be of type Message interface and encoded appropriately.
+   */
+  format?: number;
+  /**
+   * The message tag if any.
+   */
+  tag?: Buffer | string;
 }
 
 /**
@@ -181,15 +191,11 @@ export class AwaitableSender extends BaseSender {
    * @param {Message | Buffer} msg The message to be sent. For default AMQP format msg parameter
    * should be of type Message interface. For a custom format, the msg parameter should be a Buffer
    * and a valid value should be passed to the `format` argument.
-   * @param {Buffer | string} [tag] The message tag if any.
-   * @param {number} [format] The message format. Specify this if a message with custom format needs
-   * to be sent. `0` implies the standard AMQP 1.0 defined format. If no value is provided, then the
-   * given message is assumed to be of type Message interface and encoded appropriately.
    * @param {AwaitableSendOptions} [options] Options to configure the timeout and cancellation for
    * the send operation.
    * @returns {Promise<Delivery>} Promise<Delivery> The delivery information about the sent message.
    */
-  send(msg: Message | Buffer, tag?: Buffer | string, format?: number, options?: AwaitableSendOptions): Promise<Delivery> {
+  send(msg: Message | Buffer, options: AwaitableSendOptions = {}): Promise<Delivery> {
     return new Promise<Delivery>((resolve, reject) => {
       log.sender("[%s] Sender '%s' on amqp session '%s', credit: %d available: %d",
         this.connection.id, this.name, this.session.id, this.credit,
@@ -236,7 +242,7 @@ export class AwaitableSender extends BaseSender {
           if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
         };
 
-        const delivery = (this._link as RheaSender).send(msg, tag, format);
+        const delivery = (this._link as RheaSender).send(msg, options.tag, options.format);
         this.deliveryDispositionMap.set(delivery.id, {
           resolve: (delivery: any) => {
             resolve(delivery);

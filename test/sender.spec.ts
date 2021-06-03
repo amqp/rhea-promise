@@ -175,7 +175,7 @@ describe("Sender", () => {
 
       // Pass an already aborted signal to send()
       abortController.abort();
-      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, {
+      const sendPromise = sender.send({ body: "hello" }, {
         abortSignal,
       });
 
@@ -206,7 +206,7 @@ describe("Sender", () => {
 
       // Pass an already aborted signal to send()
       abortController.abort();
-      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, {
+      const sendPromise = sender.send({ body: "hello" }, {
         abortSignal,
       });
 
@@ -233,7 +233,7 @@ describe("Sender", () => {
       const abortSignal = abortController.signal;
 
       // Fire abort signal after passing it to send()
-      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, {
+      const sendPromise = sender.send({ body: "hello" }, {
         abortSignal,
       });
       abortController.abort();

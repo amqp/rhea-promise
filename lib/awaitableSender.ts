@@ -34,12 +34,6 @@ export declare interface AwaitableSender {
 }
 
 export interface AwaitableSenderOptions extends BaseSenderOptions {
-  /**
-   * The duration in which the promise to send the message should complete (resolve/reject).
-   * If it is not completed, then the Promise will be rejected after timeout occurs.
-   * Default: `20 seconds`.
-   */
-  sendTimeoutInSeconds?: number;
 }
 
 export interface AwaitableSendOptions {
@@ -72,12 +66,6 @@ export interface AwaitableSendOptions {
  */
 export class AwaitableSender extends BaseSender {
   /**
-   * The duration in which the promise to send the message should complete (resolve/reject).
-   * If it is not completed, then the Promise will be rejected after timeout occurs.
-   * Default: `20 seconds`.
-   */
-  sendTimeoutInSeconds: number;
-  /**
    * @property {Map<number, PromiseLike} deliveryDispositionMap Maintains a map of delivery of
    * messages that are being sent. It acts as a store for correlating the dispositions received
    * for sent messages.
@@ -86,7 +74,6 @@ export class AwaitableSender extends BaseSender {
 
   constructor(session: Session, sender: RheaSender, options: AwaitableSenderOptions = {}) {
     super(session, sender, options);
-    this.sendTimeoutInSeconds = options.sendTimeoutInSeconds || 20;
     /**
      * The handler that will be added on the Sender for `accepted` event. If the delivery id is
      * present in the disposition map then it will clear the timer and resolve the promise with the
@@ -202,7 +189,7 @@ export class AwaitableSender extends BaseSender {
         this.session.outgoing.available());
 
       const abortSignal = options && options.abortSignal;
-      const timeoutInSeconds = options && options.timeoutInSeconds;
+      const timeoutInSeconds = options.timeoutInSeconds || 20;
 
       if (abortSignal && abortSignal.aborted) {
         const err = createAbortError();
@@ -211,8 +198,6 @@ export class AwaitableSender extends BaseSender {
       }
 
       if (this.sendable()) {
-        let sendTimeoutInSeconds = this.sendTimeoutInSeconds;
-        if (typeof timeoutInSeconds === "number" && timeoutInSeconds > 0) sendTimeoutInSeconds = timeoutInSeconds;
         const timer = setTimeout(() => {
           this.deliveryDispositionMap.delete(delivery.id);
           const message = `Sender '${this.name}' on amqp session ` +
@@ -220,7 +205,7 @@ export class AwaitableSender extends BaseSender {
             `message with delivery id ${delivery.id} right now, due to operation timeout.`;
           log.error("[%s] %s", this.connection.id, message);
           return reject(new OperationTimeoutError(message));
-        }, sendTimeoutInSeconds * 1000);
+        }, timeoutInSeconds * 1000);
 
         const onAbort = () => {
           if (this.deliveryDispositionMap.has(delivery.id)) {

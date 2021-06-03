@@ -1,11 +1,12 @@
 ### 2.0.0 - (2021-06-03)
 
 - Updates rhea dependency to the 2.x major version, and the tslib dependency to the 2.x major version.
-- Updates `AwaitableSendOptions` to include the optional fields `tag` and `format` which were previously passed to `AwaitableSender.send()`. These fields are no longer positional arguments on `AwaitableSender.send()`.
 
-#### Breaking change
+#### Breaking changes
 
 - rhea has 1 breaking change introduced in version 2.x: timestamps are not deserialized as Date objects instead of numbers.
+- Updates `AwaitableSendOptions` to include the optional fields `tag` and `format` which were previously passed to `AwaitableSender.send()`. These fields are no longer positional arguments on `AwaitableSender.send()`.
+- Removes `sendTimeoutInSeconds` from the `AwaitableSendOptions` that is passed to the `AwaitableSender` constructor. `timeoutInSeconds` on `AwaitableSenderOptions` can still be used to set the timeout for individual `AwaitableSender.send()` invocations.
 
 ### 1.2.1 - (2021-04-15)
 

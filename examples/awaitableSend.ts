@@ -36,7 +36,6 @@ async function main(): Promise<void> {
     target: {
       address: senderAddress
     },
-    sendTimeoutInSeconds: 10
   };
 
   await connection.open();
@@ -51,7 +50,7 @@ async function main(): Promise<void> {
     };
     // Please, note that we are awaiting on sender.send() to complete.
     // You will notice that `delivery.settled` will be `true`, irrespective of whether the promise resolves or rejects.
-    const delivery: Delivery = await sender.send(message);
+    const delivery: Delivery = await sender.send(message, {timeoutInSeconds: 10});
     console.log(
       "[%s] await sendMessage -> Delivery id: %d, settled: %s",
       connection.id,

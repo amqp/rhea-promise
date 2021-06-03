@@ -43,10 +43,8 @@ describe("Sender", () => {
   });
 
   it("Delivery returned from `AwaitableSender.send()` is not undefined", async () => {
-    const sender = await connection.createAwaitableSender({
-      sendTimeoutInSeconds: 1,
-    });
-    const response = await sender.send({ body: "message" });
+    const sender = await connection.createAwaitableSender();
+    const response = await sender.send({ body: "message" }, { timeoutInSeconds: 1});
     assert.exists(
       response,
       "Response from the AwaitableSender.send() is undefined"

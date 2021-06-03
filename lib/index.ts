@@ -14,12 +14,12 @@ export {
 export { EventContext, OnAmqpEvent } from "./eventContext";
 export { Container, ContainerOptions } from "./container";
 export {
-  Connection, ReqResLink, ConnectionOptions, ReceiverOptionsWithSession, SenderOptionsWithSession
+  Connection, ReqResLink, ConnectionOptions, CreateReceiverOptions, CreateAwaitableSenderOptions, CreateSenderOptions, CreateRequestResponseLinkOptions
 } from "./connection";
 export { Session } from "./session";
 export { Receiver, ReceiverOptions } from "./receiver";
-export { Sender, SenderOptions } from "./sender";
-export { AwaitableSenderOptions, AwaitableSender, PromiseLike } from "./awaitableSender";
+export { Sender, SenderOptions, SenderSendOptions } from "./sender";
+export { AwaitableSenderOptions, AwaitableSender, PromiseLike, AwaitableSendOptions } from "./awaitableSender";
 export { LinkCloseOptions } from "./link";
 export {
   Func, AmqpResponseStatusCode, isAmqpError, ConnectionStringParseOptions, delay, messageHeader,

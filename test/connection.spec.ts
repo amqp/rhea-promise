@@ -187,7 +187,7 @@ describe("Connection", () => {
     const session = await connection.createSession();
     assert.isTrue(session.isOpen(), "Session should be open.");
 
-    const requestResponseLink = await connection.createRequestResponseLink({}, {}, session);
+    const requestResponseLink = await connection.createRequestResponseLink({}, {}, {session});
 
     assert.isTrue(requestResponseLink.session.isOpen(), "Session should be open.");
     assert.isTrue(requestResponseLink.receiver.isOpen(), "Receiver should be open.");
@@ -654,7 +654,7 @@ describe("Connection", () => {
 
       // Pass an already aborted signal to createReceiver()
       abortController.abort();
-      const createPromise = connection.createRequestResponseLink({}, {}, undefined, abortSignal);
+      const createPromise = connection.createRequestResponseLink({}, {}, {abortSignal});
 
       let abortErrorThrown = false;
       try {
@@ -678,7 +678,7 @@ describe("Connection", () => {
       const abortSignal = abortController.signal;
 
       // Abort the signal after passing it to createReceiver()
-      const createPromise = connection.createRequestResponseLink({}, {}, undefined, abortSignal);
+      const createPromise = connection.createRequestResponseLink({}, {}, {abortSignal});
       abortController.abort();
 
       let abortErrorThrown = false;

@@ -43,10 +43,8 @@ describe("Sender", () => {
   });
 
   it("Delivery returned from `AwaitableSender.send()` is not undefined", async () => {
-    const sender = await connection.createAwaitableSender({
-      sendTimeoutInSeconds: 1,
-    });
-    const response = await sender.send({ body: "message" });
+    const sender = await connection.createAwaitableSender();
+    const response = await sender.send({ body: "message" }, { timeoutInSeconds: 1});
     assert.exists(
       response,
       "Response from the AwaitableSender.send() is undefined"
@@ -175,7 +173,7 @@ describe("Sender", () => {
 
       // Pass an already aborted signal to send()
       abortController.abort();
-      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, {
+      const sendPromise = sender.send({ body: "hello" }, {
         abortSignal,
       });
 
@@ -206,7 +204,7 @@ describe("Sender", () => {
 
       // Pass an already aborted signal to send()
       abortController.abort();
-      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, {
+      const sendPromise = sender.send({ body: "hello" }, {
         abortSignal,
       });
 
@@ -233,7 +231,7 @@ describe("Sender", () => {
       const abortSignal = abortController.signal;
 
       // Fire abort signal after passing it to send()
-      const sendPromise = sender.send({ body: "hello" }, undefined, undefined, {
+      const sendPromise = sender.send({ body: "hello" }, {
         abortSignal,
       });
       abortController.abort();

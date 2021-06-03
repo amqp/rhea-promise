@@ -1,4 +1,4 @@
-### 2.0.0 - (Undeclared)
+### 2.0.0 - (2021-06-03)
 
 - Updates rhea dependency to the 2.x major version, and the tslib dependency to the 2.x major version.
 - Updates `AwaitableSendOptions` to include the optional fields `tag` and `format` which were previously passed to `AwaitableSender.send()`. These fields are no longer positional arguments on `AwaitableSender.send()`.

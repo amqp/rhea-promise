@@ -14,7 +14,7 @@ export {
 export { EventContext, OnAmqpEvent } from "./eventContext";
 export { Container, ContainerOptions } from "./container";
 export {
-  Connection, ReqResLink, ConnectionOptions, ReceiverOptionsWithSession, SenderOptionsWithSession
+  Connection, ReqResLink, ConnectionOptions, CreateReceiverOptions, CreateAwaitableSenderOptions, CreateSenderOptions, CreateRequestResponseLinkOptions
 } from "./connection";
 export { Session } from "./session";
 export { Receiver, ReceiverOptions } from "./receiver";

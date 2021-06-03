@@ -26,26 +26,48 @@ import { AwaitableSender, AwaitableSenderOptions } from "./awaitableSender";
  * a session if it was already created.
  * @interface SenderOptionsWithSession
  */
-export interface SenderOptionsWithSession extends SenderOptions {
+export interface CreateSenderOptions extends SenderOptions {
   session?: Session;
+  /**
+   * A signal used to cancel the Connection.createSender() operation.
+   */
+   abortSignal?: AbortSignalLike;
 }
 
 /**
  * Describes the options that can be provided while creating an Async AMQP sender.
  * One can also provide a session if it was already created.
- * @interface AwaitableSenderOptionsWithSession
  */
-export interface AwaitableSenderOptionsWithSession extends AwaitableSenderOptions {
+export interface CreateAwaitableSenderOptions extends AwaitableSenderOptions {
   session?: Session;
+  /**
+   * A signal used to cancel the Connection.createAwaitableSender() operation.
+   */
+  abortSignal?: AbortSignalLike;
 }
 
 /**
  * Describes the options that can be provided while creating an AMQP receiver. One can also provide
  * a session if it was already created.
- * @interface ReceiverOptionsWithSession
  */
-export interface ReceiverOptionsWithSession extends ReceiverOptions {
+export interface CreateReceiverOptions extends ReceiverOptions {
   session?: Session;
+  /**
+   * A signal used to cancel the Connection.createReceiver() operation.
+   */
+   abortSignal?: AbortSignalLike;
+}
+
+/**
+ * Describes the options that can be provided while creating an AMQP Request-Response link. One can also provide
+ * a session if it was already created.
+ */
+export interface CreateRequestResponseLinkOptions {
+  session?: Session;
+  /**
+   * A signal used to cancel the Connection.createRequestResponseLink() operation.
+   */
+   abortSignal?: AbortSignalLike;
 }
 
 /**
@@ -632,10 +654,10 @@ export class Connection extends Entity {
    * - **Resolves** the promise with the Sender object when rhea emits the "sender_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "sender_close" event while
    * trying to create an amqp session or with an AbortError if the operation was cancelled.
-   * @param {SenderOptionsWithSession} options Optional parameters to create a sender link.
+   * @param {CreateSenderOptions} options Optional parameters to create a sender link.
    * @return {Promise<Sender>} Promise<Sender>.
    */
-  async createSender(options?: SenderOptionsWithSession & { abortSignal?: AbortSignalLike; }): Promise<Sender> {
+  async createSender(options?: CreateSenderOptions): Promise<Sender> {
     if (options && options.session && options.session.createSender) {
       return options.session.createSender(options);
     }
@@ -655,7 +677,7 @@ export class Connection extends Entity {
    *
    * @return Promise<AwaitableSender>.
    */
-  async createAwaitableSender(options?: AwaitableSenderOptionsWithSession & { abortSignal?: AbortSignalLike; }): Promise<AwaitableSender> {
+  async createAwaitableSender(options?: CreateAwaitableSenderOptions): Promise<AwaitableSender> {
     if (options && options.session && options.session.createAwaitableSender) {
       return options.session.createAwaitableSender(options);
     }
@@ -668,10 +690,10 @@ export class Connection extends Entity {
    * - **Resolves** the promise with the Sender object when rhea emits the "receiver_open" event.
    * - **Rejects** the promise with an AmqpError when rhea emits the "receiver_close" event while
    * trying to create an amqp session or with an AbortError if the operation was cancelled.
-   * @param {ReceiverOptionsWithSession} options Optional parameters to create a receiver link.
+   * @param {CreateReceiverOptions} options Optional parameters to create a receiver link.
    * @return {Promise<Receiver>} Promise<Receiver>.
    */
-  async createReceiver(options?: ReceiverOptionsWithSession & { abortSignal?: AbortSignalLike; }): Promise<Receiver> {
+  async createReceiver(options?: CreateReceiverOptions): Promise<Receiver> {
     if (options && options.session && options.session.createReceiver) {
       return options.session.createReceiver(options);
     }
@@ -685,18 +707,18 @@ export class Connection extends Entity {
    * style operations where one may want to send a request and await for response.
    * @param {SenderOptions} senderOptions Parameters to create a sender.
    * @param {ReceiverOptions} receiverOptions Parameters to create a receiver.
-   * @param {Session} [session] The optional session on which the sender and receiver links will be
-   * created.
+   * @param {CreateRequestResponseLinkOptions} [options] Optional parameters to control how sender and receiver link creation.
    * @return {Promise<ReqResLink>} Promise<ReqResLink>
    */
   async createRequestResponseLink(senderOptions: SenderOptions, receiverOptions: ReceiverOptions,
-    providedSession?: Session, abortSignal?: AbortSignalLike): Promise<ReqResLink> {
+    options: CreateRequestResponseLinkOptions = {}): Promise<ReqResLink> {
     if (!senderOptions) {
       throw new Error(`Please provide sender options.`);
     }
     if (!receiverOptions) {
       throw new Error(`Please provide receiver options.`);
     }
+    const { session: providedSession, abortSignal } = options;
     const session = providedSession || await this.createSession({ abortSignal });
     const [sender, receiver] = await Promise.all([
       session.createSender({ ...senderOptions, abortSignal }),

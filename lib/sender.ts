@@ -94,6 +94,19 @@ export class BaseSender extends Link {
   }
 }
 
+export class SenderSendOptions {
+  /**
+   * The message format. Specify this if a message with custom format needs to be sent.
+   * `0` implies the standard AMQP 1.0 defined format. If no value is provided, then the
+   * given message is assumed to be of type Message interface and encoded appropriately.
+   */
+   format?: number;
+   /**
+    * The message tag if any.
+    */
+   tag?: Buffer | string;
+}
+
 /**
  * Describes the AMQP Sender.
  * @class Sender
@@ -109,13 +122,10 @@ export class Sender extends BaseSender {
    * @param {Message | Buffer} msg The message to be sent. For default AMQP format msg parameter
    * should be of type Message interface. For a custom format, the msg parameter should be a Buffer
    * and a valid value should be passed to the `format` argument.
-   * @param {Buffer | string} [tag] The message tag if any.
-   * @param {number} [format] The message format. Specify this if a message with custom format needs
-   * to be sent. `0` implies the standard AMQP 1.0 defined format. If no value is provided, then the
-   * given message is assumed to be of type Message interface and encoded appropriately.
+   * @param {SenderSendOptions} [options] Options to configure the tag and message format of the message.
    * @returns {Delivery} Delivery The delivery information about the sent message.
    */
-  send(msg: Message | Buffer, tag?: Buffer | string, format?: number): Delivery {
-    return (this._link as RheaSender).send(msg, tag, format);
+  send(msg: Message | Buffer, options: SenderSendOptions = {}): Delivery {
+    return (this._link as RheaSender).send(msg, options.tag, options.format);
   }
 }

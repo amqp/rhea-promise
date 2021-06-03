@@ -178,8 +178,8 @@ export class AwaitableSender extends BaseSender {
    * @param {Message | Buffer} msg The message to be sent. For default AMQP format msg parameter
    * should be of type Message interface. For a custom format, the msg parameter should be a Buffer
    * and a valid value should be passed to the `format` argument.
-   * @param {AwaitableSendOptions} [options] Options to configure the timeout and cancellation for
-   * the send operation.
+   * @param {AwaitableSendOptions} [options] Options to configure the timeout, cancellation for
+   * the send operation and the tag and message format of the message.
    * @returns {Promise<Delivery>} Promise<Delivery> The delivery information about the sent message.
    */
   send(msg: Message | Buffer, options: AwaitableSendOptions = {}): Promise<Delivery> {

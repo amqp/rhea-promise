@@ -1,3 +1,9 @@
+### 2.1.0 - (2021-06-30)
+
+- Exposes a new `receiver.drainCredit()` method that calls through to rhea's
+  `receiver.drain_credit()` method.
+- Update rhea minimum version to 2.0.3
+
 ### 2.0.0 - (2021-06-03)
 
 - Updates rhea dependency to the 2.x major version, and the tslib dependency to the 2.x major version.
@@ -10,9 +16,9 @@
 - Adds `SenderSendOptions` to include the optional fields `tag` and `format` which were previously passed to `Sender.send()`. These fields are no longer positional arguments on `Sender.send()`.
 - Removes `sendTimeoutInSeconds` from the `AwaitableSendOptions` that is passed to the `AwaitableSender` constructor. `timeoutInSeconds` on `AwaitableSenderOptions` can still be used to set the timeout for individual `AwaitableSender.send()` invocations.
 - Renames the following TypeScript interfaces to better match the methods they apply to:
-   - SenderOptionsWithSession -> CreateSenderOptions
-   - AwaitableSenderOptionsWithSession -> CreateAwaitableSenderOptions
-   - ReceiverOptionsWithSession -> CreateReceiverOptions
+  - SenderOptionsWithSession -> CreateSenderOptions
+  - AwaitableSenderOptionsWithSession -> CreateAwaitableSenderOptions
+  - ReceiverOptionsWithSession -> CreateReceiverOptions
 
 ### 1.2.1 - (2021-04-15)
 

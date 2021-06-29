@@ -3,7 +3,9 @@
 
 import { Session } from "./session";
 import {
-  ReceiverEvents, Receiver as RheaReceiver, ReceiverOptions as RheaReceiverOptions
+  ReceiverEvents,
+  Receiver as RheaReceiver,
+  ReceiverOptions as RheaReceiverOptions,
 } from "rhea";
 import { Link, LinkType } from "./link";
 import { OnAmqpEvent } from "./eventContext";
@@ -58,7 +60,11 @@ export declare interface Receiver {
  * @class Receiver.
  */
 export class Receiver extends Link {
-  constructor(session: Session, receiver: RheaReceiver, options?: ReceiverOptions) {
+  constructor(
+    session: Session,
+    receiver: RheaReceiver,
+    options?: ReceiverOptions
+  ) {
     super(LinkType.receiver, session, receiver, options);
   }
 
@@ -72,6 +78,10 @@ export class Receiver extends Link {
 
   addCredit(credit: number): void {
     (this._link as RheaReceiver).add_credit(credit);
+  }
+
+  drainCredit(): void {
+    (this._link as RheaReceiver).drain_credit();
   }
 
   setCreditWindow(creditWindow: number): void {

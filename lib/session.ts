@@ -175,7 +175,7 @@ export class Session extends Entity {
           this.actionInitiated--;
           this._session.removeListener(SessionEvents.sessionError, onError);
           this._session.removeListener(SessionEvents.sessionClose, onClose);
-          this._session.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
+          this._connection._disconnectEventAudienceMap.delete(this.id);
           if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
         };
 
@@ -219,7 +219,10 @@ export class Session extends Entity {
         // listeners that we add for completing the operation are added directly to rhea's objects.
         this._session.once(SessionEvents.sessionClose, onClose);
         this._session.once(SessionEvents.sessionError, onError);
-        this._session.connection.once(ConnectionEvents.disconnected, onDisconnected);
+        this._connection._disconnectEventAudienceMap.set(
+          this.id,
+          onDisconnected
+        );
         log.session("[%s] Calling session.close() for amqp session '%s'.", this.connection.id, this.id);
         waitTimer = setTimeout(actionAfterTimeout, this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._session.close();
@@ -427,7 +430,7 @@ export class Session extends Entity {
    * `deliveryDispositionMap`.
    * - If the user is handling the reconnection of sender link or the underlying connection in it's
    * app, then the `onError` and `onSessionError` handlers must be provided by the user and (s)he
-   * shall be responsible of clearing the `deliveryDispotionMap` of inflight `send()` operation.
+   * shall be responsible of clearing the `deliveryDispositionMap` of inflight `send()` operation.
    *
    * @return Promise<AwaitableSender>
    * - **Resolves** the promise with the Sender object when rhea emits the "sender_open" event.

@@ -9,6 +9,7 @@ import { EventEmitter } from "events";
 import { ConnectionOptions, Connection } from './connection';
 import { TlsOptions, Server as TlsServer, ConnectionOptions as TlsConnectionOptions } from "tls";
 import { ListenOptions, Server, Socket } from "net";
+import { TlsServerConnectionOptions } from "rhea/typings/connection";
 
 /**
  * Descibes the options that can be provided while creating the Container.
@@ -80,7 +81,7 @@ export class Container extends EventEmitter {
     return this.createConnection(options).open();
   }
 
-  listen(options: ListenOptions | TlsOptions): Server | TlsServer {
+  listen(options: ListenOptions | TlsOptions & TlsServerConnectionOptions): Server | TlsServer {
     return this._container.listen(options);
   }
 

@@ -23,6 +23,7 @@
     ],
     "include": [
       "./lib/**/*.ts",
-      "./examples/**/*.ts"
+      "./examples/**/*.ts",
+      "./test/**/*.ts"
     ]
   }

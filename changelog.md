@@ -1,3 +1,12 @@
+### 3.0.0 - (Unreleased)
+
+- Update `rhea` dependency to the 3.x major version.
+- Update dev dependency `typescript` to `~4.3.0`
+
+#### Breaking changes
+
+- rhea has one breaking change introduced in version 3.x that impact this library: The TLS options type to `Container.listen()` now requires a `transport` property which is either "ssl" or "tls".
+
 ### 2.1.0 - (2021-06-30)
 
 - Exposes a new `receiver.drainCredit()` method that calls through to rhea's

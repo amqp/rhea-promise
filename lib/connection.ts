@@ -104,7 +104,7 @@ export interface SessionCreateOptions {
  * Describes the options that can be provided while creating an AMQP connection.
  * @interface ConnectionOptions
  */
-export interface ConnectionOptions extends RheaConnectionOptions {
+export type ConnectionOptions = RheaConnectionOptions & {
   /**
    * @property {number} [operationTimeoutInSeconds] - The duration in which the promise should
    * complete (resolve/reject). If it is not completed, then the Promise will be rejected after
@@ -141,7 +141,7 @@ export interface ConnectionOptions extends RheaConnectionOptions {
      */
     options?: any
   };
-}
+};
 
 
 
@@ -168,7 +168,7 @@ export interface CreatedRheaConnectionOptions {
 }
 
 // Determines whether the given object is a CreatedRheConnectionOptions object.
-function isCreatedRheaConnectionOptions(obj: any): boolean {
+function isCreatedRheaConnectionOptions(obj: any): obj is CreatedRheaConnectionOptions {
   return (obj && typeof obj.container === "object" && typeof obj.rheaConnection === "object");
 }
 
@@ -230,16 +230,16 @@ export class Connection extends Entity {
    */
   constructor(options?: ConnectionOptions | CreatedRheaConnectionOptions) {
     super();
-    if (!options) options = {};
-    if (options.operationTimeoutInSeconds == undefined) {
-      options.operationTimeoutInSeconds = defaultOperationTimeoutInSeconds;
-    }
 
     if (isCreatedRheaConnectionOptions(options)) {
       this._connection = (options as CreatedRheaConnectionOptions).rheaConnection;
       this.container = (options as CreatedRheaConnectionOptions).container;
     } else {
-      const connectionOptions = options as ConnectionOptions;
+      let connectionOptions = options as ConnectionOptions;
+      if (!connectionOptions) connectionOptions = { transport: "tls" };
+      if (connectionOptions.operationTimeoutInSeconds == undefined) {
+        connectionOptions.operationTimeoutInSeconds = defaultOperationTimeoutInSeconds;
+      }
       if (connectionOptions.webSocketOptions) {
         const ws = websocket_connect(connectionOptions.webSocketOptions.webSocket);
         (connectionOptions.connection_details as any) = ws(
@@ -249,6 +249,7 @@ export class Connection extends Entity {
       }
       this._connection = create_connection(connectionOptions);
       this.container = Container.copyFromContainerInstance(this._connection.container);
+      options = connectionOptions;
     }
 
     this.options = this._connection.options;

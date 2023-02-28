@@ -1,4 +1,4 @@
-### 3.0.0 - (Unreleased)
+### 3.0.0 - (2023-03-02)
 
 - Update `rhea` dependency to the 3.x major version.
 - Update dev dependency `typescript` to `~4.3.0`

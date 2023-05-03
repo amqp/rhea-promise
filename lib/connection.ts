@@ -237,6 +237,9 @@ export class Connection extends Entity {
     } else {
       let connectionOptions = options as ConnectionOptions;
       if (!connectionOptions) connectionOptions = { transport: "tls" };
+      if (!connectionOptions.operationTimeoutInSeconds) {
+        connectionOptions.operationTimeoutInSeconds = defaultOperationTimeoutInSeconds;
+      }
       if (connectionOptions.webSocketOptions) {
         const ws = websocket_connect(connectionOptions.webSocketOptions.webSocket);
         (connectionOptions.connection_details as any) = ws(

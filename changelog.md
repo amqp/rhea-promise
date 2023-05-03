@@ -1,3 +1,7 @@
+### 3.0.1 - (Unreleased)
+
+- Fix a bug where `Connection` constructor isn't setting `operationTimeoutInSeconds` correctly.
+
 ### 3.0.0 - (2023-03-02)
 
 - Update `rhea` dependency to the 3.x major version.

@@ -702,6 +702,14 @@ describe("Connection", () => {
       assert.equal(30, connection["options"].operationTimeoutInSeconds);
     });
 
+    it("constructor sets operationTimeoutInSeconds option when passing a ConnectionOptions with undefined operationTimeoutInSeconds", () => {
+      const connectionOptions: ConnectionOptions = {
+        transport: "tls",
+      }
+      const connection = new Connection(connectionOptions);
+      assert.equal(60, connection["options"].operationTimeoutInSeconds);
+    });
+
     it("constructor sets operationTimeoutInSeconds option when not passing any options", () => {
       const connection = new Connection();
       assert.equal(60, connection["options"].operationTimeoutInSeconds);
@@ -717,6 +725,17 @@ describe("Connection", () => {
       };
       const connection = new Connection(createdRheaConnectionOptions);
       assert.equal(20, connection["options"].operationTimeoutInSeconds);
+    });
+
+    it("constructor sets operationTimeoutInSeconds option when passing a CreatedRheaConnectionOptions with undefined operationTimeoutInSeconds", () => {
+      const container = new Container();
+      const rheaConnection = rhea.create_connection();
+      const createdRheaConnectionOptions: CreatedRheaConnectionOptions = {
+        rheaConnection,
+        container,
+      };
+      const connection2 = new Connection(createdRheaConnectionOptions);
+      assert.equal(60, connection2["options"].operationTimeoutInSeconds);
     });
   })
 });

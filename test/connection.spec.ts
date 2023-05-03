@@ -1,8 +1,9 @@
 import * as rhea from "rhea";
 import { assert } from "chai";
-import { Connection, ConnectionEvents } from "../lib/index";
+import { Connection, ConnectionEvents, ConnectionOptions, Container } from "../lib/index";
 import { AbortController } from "@azure/abort-controller";
 import { abortErrorName } from "../lib/util/utils";
+import { CreatedRheaConnectionOptions } from "../lib/connection";
 
 describe("Connection", () => {
   let mockService: rhea.Container;
@@ -690,6 +691,51 @@ describe("Connection", () => {
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
       await connection.close();
+    });
+
+    it("constructor sets operationTimeoutInSeconds option when passing a ConnectionOptions", () => {
+      const connectionOptions: ConnectionOptions = {
+        operationTimeoutInSeconds: 30,
+        transport: "tls",
+      }
+      const connection = new Connection(connectionOptions);
+      assert.equal(30, connection["options"].operationTimeoutInSeconds);
+    });
+
+    it("constructor sets operationTimeoutInSeconds option when passing a ConnectionOptions with undefined operationTimeoutInSeconds", () => {
+      const connectionOptions: ConnectionOptions = {
+        transport: "tls",
+      }
+      const connection = new Connection(connectionOptions);
+      assert.equal(60, connection["options"].operationTimeoutInSeconds);
+    });
+
+    it("constructor sets operationTimeoutInSeconds option when not passing any options", () => {
+      const connection = new Connection();
+      assert.equal(60, connection["options"].operationTimeoutInSeconds);
+    });
+
+    it("constructor sets operationTimeoutInSeconds option when passing a CreatedRheaConnectionOptions", () => {
+      const container = new Container();
+      const rheaConnection = rhea.create_connection();
+      const createdRheaConnectionOptions: CreatedRheaConnectionOptions = {
+        operationTimeoutInSeconds: 20,
+        rheaConnection,
+        container,
+      };
+      const connection = new Connection(createdRheaConnectionOptions);
+      assert.equal(20, connection["options"].operationTimeoutInSeconds);
+    });
+
+    it("constructor sets operationTimeoutInSeconds option when passing a CreatedRheaConnectionOptions with undefined operationTimeoutInSeconds", () => {
+      const container = new Container();
+      const rheaConnection = rhea.create_connection();
+      const createdRheaConnectionOptions: CreatedRheaConnectionOptions = {
+        rheaConnection,
+        container,
+      };
+      const connection2 = new Connection(createdRheaConnectionOptions);
+      assert.equal(60, connection2["options"].operationTimeoutInSeconds);
     });
   })
 });

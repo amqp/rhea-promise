@@ -237,7 +237,7 @@ export class Connection extends Entity {
     } else {
       let connectionOptions = options as ConnectionOptions;
       if (!connectionOptions) connectionOptions = { transport: "tls" };
-      if (connectionOptions.operationTimeoutInSeconds == undefined) {
+      if (!connectionOptions.operationTimeoutInSeconds) {
         connectionOptions.operationTimeoutInSeconds = defaultOperationTimeoutInSeconds;
       }
       if (connectionOptions.webSocketOptions) {
@@ -253,7 +253,7 @@ export class Connection extends Entity {
     }
 
     this.options = this._connection.options;
-    this.options.operationTimeoutInSeconds = options.operationTimeoutInSeconds;
+    this.options.operationTimeoutInSeconds = options?.operationTimeoutInSeconds ?? defaultOperationTimeoutInSeconds;
 
     this._initializeEventListeners();
   }

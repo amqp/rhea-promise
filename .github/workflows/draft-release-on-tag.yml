@@ -1,0 +1,31 @@
+name: Draft Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  release:
+    permissions: write-all
+    name: Draft Release on Tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm pack
+      - name: Draft release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF: ${{ github.event.ref }}
+        run: |
+          tag=${REF##*/}
+
+          gh release create "${tag}" \
+              --repo="$GITHUB_REPOSITORY" \
+              --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+              --generate-notes \
+              --draft \
+              ./*.tgz

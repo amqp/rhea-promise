@@ -188,7 +188,7 @@ export interface ReqResLink {
    */
   receiver: Receiver;
   /**
-   * @property {Session} session - The underlying session on whicn the sender and receiver links
+   * @property {Session} session - The underlying session on which the sender and receiver links
    * exist.
    */
   session: Session;
@@ -202,6 +202,13 @@ export declare interface Connection {
   on(event: ConnectionEvents, listener: OnAmqpEvent): this;
 }
 
+function onDisconnectOccurrence(
+  context: RheaEventContext,
+  disconnectEventAudienceMap: Map<string, (context: RheaEventContext) => void>
+): void {
+  disconnectEventAudienceMap.forEach((callback) => callback(context));
+}
+
 /**
  * Describes the AMQP Connection.
  * @class Connection
@@ -212,6 +219,15 @@ export class Connection extends Entity {
    * connection.
    */
   options: ConnectionOptions;
+  /**
+   * Maintains a map of the audience(sessions/senders/receivers) interested in "disconnected" event.
+   * This helps us with not needing to create too many listeners on the "disconnected" event,
+   * which is particularly useful when dealing with 1000s of sessions at the same time.
+   */
+  _disconnectEventAudienceMap: Map<string, (context: RheaEventContext) => void> = new Map<
+    string,
+    (context: RheaEventContext) => void
+  >();
   /**
    * @property {Container} container The underlying Container instance on which the connection
    * exists.
@@ -254,6 +270,11 @@ export class Connection extends Entity {
 
     this.options = this._connection.options;
     this.options.operationTimeoutInSeconds = options?.operationTimeoutInSeconds ?? defaultOperationTimeoutInSeconds;
+
+    // Disconnected event listener for the disconnectEventAudienceMap
+    this._connection.on(ConnectionEvents.disconnected, (context) => {
+      onDisconnectOccurrence(context, this._disconnectEventAudienceMap);
+    });
 
     this._initializeEventListeners();
   }

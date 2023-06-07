@@ -344,7 +344,7 @@ export abstract class Link extends Entity {
     if (typeof this._link.eventNames === "function") {
       log.eventHandler("[%s] rhea-promise '%s' object is listening for events: %o " +
         "emitted by rhea's '%s' object.", this.connection.id, this.type,
-        this._link.eventNames(), this.type);
+      this._link.eventNames(), this.type);
     }
     if (typeof this._link.listenerCount === "function") {
       log.eventHandler("[%s] ListenerCount for event '%s_error' on rhea's '%s' object is: %d.",

@@ -224,7 +224,9 @@ export class AwaitableSender extends BaseSender {
         };
 
         const removeAbortListener = () => {
-          if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
+          if (abortSignal) {
+            abortSignal.removeEventListener("abort", onAbort);
+          }
         };
 
         const delivery = (this._link as RheaSender).send(msg, options.tag, options.format);
@@ -240,7 +242,9 @@ export class AwaitableSender extends BaseSender {
           timer: timer
         });
 
-        if (abortSignal) { abortSignal.addEventListener("abort", onAbort); }
+        if (abortSignal) {
+          abortSignal.addEventListener("abort", onAbort);
+        }
       } else {
         // Please send the message after some time.
         const msg =

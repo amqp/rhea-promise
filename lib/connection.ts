@@ -31,7 +31,7 @@ export interface CreateSenderOptions extends SenderOptions {
   /**
    * A signal used to cancel the Connection.createSender() operation.
    */
-   abortSignal?: AbortSignalLike;
+  abortSignal?: AbortSignalLike;
 }
 
 /**
@@ -55,7 +55,7 @@ export interface CreateReceiverOptions extends ReceiverOptions {
   /**
    * A signal used to cancel the Connection.createReceiver() operation.
    */
-   abortSignal?: AbortSignalLike;
+  abortSignal?: AbortSignalLike;
 }
 
 /**
@@ -67,7 +67,7 @@ export interface CreateRequestResponseLinkOptions {
   /**
    * A signal used to cancel the Connection.createRequestResponseLink() operation.
    */
-   abortSignal?: AbortSignalLike;
+  abortSignal?: AbortSignalLike;
 }
 
 /**
@@ -134,12 +134,12 @@ export type ConnectionOptions = RheaConnectionOptions & {
      * @property {string[]} {protocol} - Websocket SubProtocol to be passed to the function
      * returned by rhea.websocket_connect()
      */
-    protocol: string[],
-    /***
+    protocol: string[];
+    /** *
      * @property {any} {options} - Options to be passed to the function returned by
      * rhea.websocket_connect()
      */
-    options?: any
+    options?: any;
   };
 };
 
@@ -339,7 +339,9 @@ export class Connection extends Entity {
           this._connection.removeListener(ConnectionEvents.connectionOpen, onOpen);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onClose);
-          if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
+          if (abortSignal) {
+            abortSignal.removeEventListener("abort", onAbort);
+          }
         };
 
         onOpen = (context: RheaEventContext) => {
@@ -422,7 +424,9 @@ export class Connection extends Entity {
           this._connection.removeListener(ConnectionEvents.connectionError, onError);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-          if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
+          if (abortSignal) {
+            abortSignal.removeEventListener("abort", onAbort);
+          }
         };
 
         onClose = (context: RheaEventContext) => {
@@ -607,7 +611,9 @@ export class Connection extends Entity {
         rheaSession.removeListener(SessionEvents.sessionOpen, onOpen);
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
         rheaSession.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-        if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
+        if (abortSignal) {
+          abortSignal.removeEventListener("abort", onAbort);
+        }
       };
 
       onOpen = (context: RheaEventContext) => {

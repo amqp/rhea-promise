@@ -14,7 +14,8 @@
     "strict": true,
     "declaration": true,
     "declarationDir": "./typings",
-    "declarationMap": true
+    "declarationMap": true,
+    "useUnknownInCatchVariables": false
   },
   "compileOnSave": true,
   "exclude": ["node_modules", "typings/**"],

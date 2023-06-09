@@ -81,7 +81,8 @@ export interface EventContext {
   _context: RheaEventContext;
 }
 
-export module EventContext {
+// eslint-disable-next-line @typescript-eslint/no-namespace
+export namespace EventContext {
   /**
    * Translates rhea's EventContext into rhea-promise EventContext
    * @param rheaContext The received context from rhea's event emitter

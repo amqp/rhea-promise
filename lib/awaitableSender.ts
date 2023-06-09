@@ -33,8 +33,7 @@ export declare interface AwaitableSender {
   on(event: SenderEvents, listener: OnAmqpEvent): this;
 }
 
-export interface AwaitableSenderOptions extends BaseSenderOptions {
-}
+export type AwaitableSenderOptions = BaseSenderOptions
 
 export interface AwaitableSendOptions {
   /**

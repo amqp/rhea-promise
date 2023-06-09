@@ -93,7 +93,7 @@ export function isAmqpError(err: any): boolean {
   if (!err || typeof err !== "object") {
     throw new Error("err is a required parameter and must be of type 'object'.");
   }
-  let result: boolean = false;
+  let result = false;
   if (((err.condition && typeof err.condition === "string") && (err.description && typeof err.description === "string"))
     || (err.value && Array.isArray(err.value))
     || (err.constructor && err.constructor.name === "c")) {

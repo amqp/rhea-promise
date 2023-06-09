@@ -31,7 +31,7 @@ export interface CreateSenderOptions extends SenderOptions {
   /**
    * A signal used to cancel the Connection.createSender() operation.
    */
-   abortSignal?: AbortSignalLike;
+  abortSignal?: AbortSignalLike;
 }
 
 /**
@@ -55,7 +55,7 @@ export interface CreateReceiverOptions extends ReceiverOptions {
   /**
    * A signal used to cancel the Connection.createReceiver() operation.
    */
-   abortSignal?: AbortSignalLike;
+  abortSignal?: AbortSignalLike;
 }
 
 /**
@@ -67,7 +67,7 @@ export interface CreateRequestResponseLinkOptions {
   /**
    * A signal used to cancel the Connection.createRequestResponseLink() operation.
    */
-   abortSignal?: AbortSignalLike;
+  abortSignal?: AbortSignalLike;
 }
 
 /**
@@ -134,12 +134,12 @@ export type ConnectionOptions = RheaConnectionOptions & {
      * @property {string[]} {protocol} - Websocket SubProtocol to be passed to the function
      * returned by rhea.websocket_connect()
      */
-    protocol: string[],
-    /***
+    protocol: string[];
+    /** *
      * @property {any} {options} - Options to be passed to the function returned by
      * rhea.websocket_connect()
      */
-    options?: any
+    options?: any;
   };
 };
 
@@ -327,28 +327,26 @@ export class Connection extends Entity {
     return new Promise((resolve, reject) => {
       if (!this.isOpen()) {
 
-        let onOpen: Func<RheaEventContext, void>;
-        let onClose: Func<RheaEventContext, void>;
-        let onAbort: Func<void, void>;
         const abortSignal = options && options.abortSignal;
-        let waitTimer: any;
 
-        const removeListeners: Function = () => {
+        const removeListeners = () => {
           clearTimeout(waitTimer);
           this.actionInitiated--;
           this._connection.removeListener(ConnectionEvents.connectionOpen, onOpen);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onClose);
-          if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
+          if (abortSignal) {
+            abortSignal.removeEventListener("abort", onAbort);
+          }
         };
 
-        onOpen = (context: RheaEventContext) => {
+        const onOpen = (context: RheaEventContext) => {
           removeListeners();
           log.connection("[%s] Resolving the promise with amqp connection.", this.id);
           return resolve(this);
         };
 
-        onClose = (context: RheaEventContext) => {
+        const onClose = (context: RheaEventContext) => {
           removeListeners();
           const err = context.error || context.connection.error || Error('Failed to connect');
           log.error("[%s] Error occurred while establishing amqp connection: %O",
@@ -356,7 +354,7 @@ export class Connection extends Entity {
           return reject(err);
         };
 
-        onAbort = () => {
+        const onAbort = () => {
           removeListeners();
           this._connection.close();
           const err = createAbortError();
@@ -366,7 +364,7 @@ export class Connection extends Entity {
 
         const actionAfterTimeout = () => {
           removeListeners();
-          const msg: string = `Unable to open the amqp connection "${this.id}" due to operation timeout.`;
+          const msg = `Unable to open the amqp connection "${this.id}" due to operation timeout.`;
           log.error("[%s] %s", this.id, msg);
           return reject(new Error(msg));
         };
@@ -375,7 +373,7 @@ export class Connection extends Entity {
         this._connection.once(ConnectionEvents.connectionOpen, onOpen);
         this._connection.once(ConnectionEvents.connectionClose, onClose);
         this._connection.once(ConnectionEvents.disconnected, onClose);
-        waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
+        const waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
         log.connection("[%s] Trying to create a new amqp connection.", this.id);
         this._connection.connect();
         this.actionInitiated++;
@@ -409,12 +407,7 @@ export class Connection extends Entity {
     return new Promise<void>((resolve, reject) => {
       log.error("[%s] The connection is open ? -> %s", this.id, this.isOpen());
       if (this.isOpen()) {
-        let onClose: Func<RheaEventContext, void>;
-        let onError: Func<RheaEventContext, void>;
-        let onDisconnected: Func<RheaEventContext, void>;
-        let onAbort: Func<void, void>;
         const abortSignal = options && options.abortSignal;
-        let waitTimer: any;
 
         const removeListeners = () => {
           clearTimeout(waitTimer);
@@ -422,24 +415,26 @@ export class Connection extends Entity {
           this._connection.removeListener(ConnectionEvents.connectionError, onError);
           this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
           this._connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-          if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
+          if (abortSignal) {
+            abortSignal.removeEventListener("abort", onAbort);
+          }
         };
 
-        onClose = (context: RheaEventContext) => {
+        const onClose = (context: RheaEventContext) => {
           removeListeners();
           log.connection("[%s] Resolving the promise as the connection has been successfully closed.",
             this.id);
           return resolve();
         };
 
-        onError = (context: RheaEventContext) => {
+        const onError = (context: RheaEventContext) => {
           removeListeners();
           log.error("[%s] Error occurred while closing amqp connection: %O.",
             this.id, context.connection.error);
           return reject(context.connection.error);
         };
 
-        onDisconnected = (context: RheaEventContext) => {
+        const onDisconnected = (context: RheaEventContext) => {
           removeListeners();
           const error = context.connection && context.connection.error
             ? context.connection.error
@@ -447,7 +442,7 @@ export class Connection extends Entity {
           log.error("[%s] Connection got disconnected while closing itself: %O.", this.id, error);
         };
 
-        onAbort = () => {
+        const onAbort = () => {
           removeListeners();
           const err = createAbortError();
           log.error("[%s] [%s]", this.id, err.message);
@@ -456,7 +451,7 @@ export class Connection extends Entity {
 
         const actionAfterTimeout = () => {
           removeListeners();
-          const msg: string = `Unable to close the amqp connection "${this.id}" due to operation timeout.`;
+          const msg = `Unable to close the amqp connection "${this.id}" due to operation timeout.`;
           log.error("[%s] %s", this.id, msg);
           return reject(new Error(msg));
         };
@@ -465,7 +460,7 @@ export class Connection extends Entity {
         this._connection.once(ConnectionEvents.connectionClose, onClose);
         this._connection.once(ConnectionEvents.connectionError, onError);
         this._connection.once(ConnectionEvents.disconnected, onDisconnected);
-        waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
+        const waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
         this._connection.close();
         this.actionInitiated++;
 
@@ -487,7 +482,7 @@ export class Connection extends Entity {
    * @returns {boolean} result `true` - is open; `false` otherwise.
    */
   isOpen(): boolean {
-    let result: boolean = false;
+    let result = false;
     if (this._connection && this._connection.is_open && this._connection.is_open()) {
       result = true;
     }
@@ -596,10 +591,6 @@ export class Connection extends Entity {
       const rheaSession = this._connection.create_session();
       const session = new Session(this, rheaSession);
       session.actionInitiated++;
-      let onOpen: Func<RheaEventContext, void>;
-      let onClose: Func<RheaEventContext, void>;
-      let onDisconnected: Func<RheaEventContext, void>;
-      let waitTimer: any;
 
       const removeListeners = () => {
         clearTimeout(waitTimer);
@@ -607,23 +598,25 @@ export class Connection extends Entity {
         rheaSession.removeListener(SessionEvents.sessionOpen, onOpen);
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
         rheaSession.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
-        if (abortSignal) { abortSignal.removeEventListener("abort", onAbort); }
+        if (abortSignal) {
+          abortSignal.removeEventListener("abort", onAbort);
+        }
       };
 
-      onOpen = (context: RheaEventContext) => {
+      const onOpen = (context: RheaEventContext) => {
         removeListeners();
         log.session("[%s] Resolving the promise with amqp session '%s'.", this.id, session.id);
         return resolve(session);
       };
 
-      onClose = (context: RheaEventContext) => {
+      const onClose = (context: RheaEventContext) => {
         removeListeners();
         log.error("[%s] Error occurred while establishing a session over amqp connection: %O.",
           this.id, context.session!.error);
         return reject(context.session!.error);
       };
 
-      onDisconnected = (context: RheaEventContext) => {
+      const onDisconnected = (context: RheaEventContext) => {
         removeListeners();
         const error = context.connection && context.connection.error
           ? context.connection.error
@@ -635,7 +628,7 @@ export class Connection extends Entity {
 
       const actionAfterTimeout = () => {
         removeListeners();
-        const msg: string = `Unable to create the amqp session due to operation timeout.`;
+        const msg = `Unable to create the amqp session due to operation timeout.`;
         log.error("[%s] %s", this.id, msg);
         return reject(new OperationTimeoutError(msg));
       };
@@ -645,7 +638,7 @@ export class Connection extends Entity {
       rheaSession.once(SessionEvents.sessionClose, onClose);
       rheaSession.connection.once(ConnectionEvents.disconnected, onDisconnected);
       log.session("[%s] Calling amqp session.begin().", this.id);
-      waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
+      const waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
       rheaSession.begin();
     });
   }

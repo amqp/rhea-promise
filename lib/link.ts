@@ -8,7 +8,7 @@ import {
 } from "rhea";
 import { Session } from "./session";
 import { Connection } from "./connection";
-import { Func, emitEvent, EmitParameters } from './util/utils';
+import { emitEvent, EmitParameters } from './util/utils';
 import { Entity } from "./entity";
 import { OperationTimeoutError } from "./errorDefinitions";
 
@@ -243,10 +243,6 @@ export abstract class Link extends Entity {
         const closeEvent = this.type === LinkType.sender
           ? SenderEvents.senderClose
           : ReceiverEvents.receiverClose;
-        let onError: Func<RheaEventContext, void>;
-        let onClose: Func<RheaEventContext, void>;
-        let onDisconnected: Func<RheaEventContext, void>;
-        let waitTimer: any;
 
         const removeListeners = () => {
           clearTimeout(waitTimer);
@@ -256,14 +252,14 @@ export abstract class Link extends Entity {
           this._link.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
         };
 
-        onClose = (context: RheaEventContext) => {
+        const onClose = (context: RheaEventContext) => {
           removeListeners();
           log[this.type]("[%s] Resolving the promise as the %s '%s' on amqp session '%s' " +
             "has been closed.", this.connection.id, this.type, this.name, this.session.id);
           return resolve();
         };
 
-        onError = (context: RheaEventContext) => {
+        const onError = (context: RheaEventContext) => {
           removeListeners();
           let error = context.session!.error;
           if (this.type === LinkType.sender && context.sender && context.sender.error) {
@@ -277,7 +273,7 @@ export abstract class Link extends Entity {
           return reject(error);
         };
 
-        onDisconnected = (context: RheaEventContext) => {
+        const onDisconnected = (context: RheaEventContext) => {
           removeListeners();
           const error = context.connection && context.connection.error
             ? context.connection.error
@@ -298,7 +294,7 @@ export abstract class Link extends Entity {
         this._link.once(closeEvent, onClose);
         this._link.once(errorEvent, onError);
         this._link.connection.once(ConnectionEvents.disconnected, onDisconnected);
-        waitTimer = setTimeout(actionAfterTimeout,
+        const waitTimer = setTimeout(actionAfterTimeout,
           this.connection.options!.operationTimeoutInSeconds! * 1000);
         this._link.close();
         this.actionInitiated++;

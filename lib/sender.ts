@@ -100,11 +100,11 @@ export class SenderSendOptions {
    * `0` implies the standard AMQP 1.0 defined format. If no value is provided, then the
    * given message is assumed to be of type Message interface and encoded appropriately.
    */
-   format?: number;
-   /**
-    * The message tag if any.
-    */
-   tag?: Buffer | string;
+  format?: number;
+  /**
+   * The message tag if any.
+   */
+  tag?: Buffer | string;
 }
 
 /**

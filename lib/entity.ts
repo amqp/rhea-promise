@@ -15,7 +15,7 @@ export abstract class Entity extends EventEmitter {
    * Whenever the action completes (succeeds/fails) the count will be decremented by 1.
    * Default value: `0`.
    */
-  actionInitiated: number = 0;
+  actionInitiated = 0;
   constructor() {
     super();
   }

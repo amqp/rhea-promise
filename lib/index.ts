@@ -12,9 +12,16 @@ export {
 } from "rhea";
 
 export { EventContext, OnAmqpEvent } from "./eventContext";
-export { Container, ContainerOptions } from "./container";
 export {
-  Connection, ReqResLink, ConnectionOptions, CreateReceiverOptions, CreateAwaitableSenderOptions, CreateSenderOptions, CreateRequestResponseLinkOptions
+  Connection,
+  ReqResLink,
+  ConnectionOptions,
+  CreateReceiverOptions,
+  CreateAwaitableSenderOptions,
+  CreateSenderOptions,
+  CreateRequestResponseLinkOptions,
+  Container,
+  ContainerOptions,
 } from "./connection";
 export { Session } from "./session";
 export { Receiver, ReceiverOptions } from "./receiver";

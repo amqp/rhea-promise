@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the Apache License. See License in the project root for license information.
 
-import { Connection } from "./connection";
+import type { Connection } from "./connection";
 import { Container } from "./container";
 import { Session } from "./session";
 import {
@@ -81,6 +81,10 @@ export interface EventContext {
   _context: RheaEventContext;
 }
 
+function hasConnection(val: any): val is Link | Session {
+  return val && val.connection;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace EventContext {
   /**
@@ -95,9 +99,9 @@ export namespace EventContext {
     rheaContext: RheaEventContext,
     emitter: Link | Session | Connection,
     eventName: string): EventContext {
-    const connection: Connection = emitter instanceof Connection
-      ? emitter
-      : (emitter as Link | Session).connection;
+    const connection = hasConnection(emitter)
+      ? emitter.connection
+      : emitter;
 
     log.contextTranslator("[%s] Translating the context for event: '%s'.", connection.id, eventName);
 

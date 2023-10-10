@@ -1,6 +1,6 @@
 {
   "name": "rhea-promise",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "A Promisified layer over rhea AMQP client",
   "license": "Apache-2.0",
   "main": "./dist/lib/index.js",
@@ -16,6 +16,13 @@
     "promise",
     "amqp-10",
     "messaging"
+  ],
+  "files": [
+    "dist/lib/",
+    "lib/",
+    "typings/lib/",
+    "README.md",
+    "LICENSE"
   ],
   "devDependencies": {
     "@azure/abort-controller": "^1.0.1",

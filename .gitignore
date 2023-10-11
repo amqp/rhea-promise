@@ -60,3 +60,5 @@ typedoc
 
 # package lock file
 package-lock.json
+
+*.tgz

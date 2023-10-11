@@ -35,6 +35,7 @@ module.exports = {
     "ignorePatterns": [
         "test/**",
         "tsconfig.json",
-        "dist/**"
+        "dist/**",
+        "dist-esm/**"
     ]
 }

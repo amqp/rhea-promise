@@ -1,21 +1,23 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "es2015",
     "preserveConstEnums": true,
     "sourceMap": true,
     "newLine": "LF",
-    "target": "es2015",
+    "target": "es2017",
     "importHelpers": true,
     "moduleResolution": "node",
     "noImplicitReturns": true,
-    "outDir": "dist",
+    "outDir": "dist-esm",
     "allowJs": false,
     "noUnusedLocals": true,
     "strict": true,
     "declaration": true,
     "declarationDir": "./typings",
     "declarationMap": true,
-    "useUnknownInCatchVariables": false
+    "useUnknownInCatchVariables": false,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
   },
   "compileOnSave": true,
   "exclude": ["node_modules", "typings/**"],

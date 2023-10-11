@@ -4,7 +4,6 @@
   "description": "A Promisified layer over rhea AMQP client",
   "license": "Apache-2.0",
   "main": "./dist/index.js",
-  "module": "./dist-esm/lib/index.js",
   "types": "./typings/lib/index.d.ts",
   "dependencies": {
     "debug": "^3.1.0",
@@ -19,7 +18,7 @@
     "messaging"
   ],
   "files": [
-    "dist/lib/",
+    "dist/",
     "lib/",
     "typings/lib/",
     "README.md",
@@ -52,7 +51,7 @@
   "scripts": {
     "lint": "eslint .",
     "tsc": "tsc",
-    "prebuild": "rimraf dist dist-esm  typings",
+    "prebuild": "rimraf dist dist-esm typings",
     "build": "npm run lint && npm run tsc && rollup -c",
     "test": "npm run build && mocha -r ts-node/register ./test/*.spec.ts",
     "prepack": "npm i && npm run build"

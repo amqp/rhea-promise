@@ -25,10 +25,10 @@ function sourcemaps() {
           }
           const absoluteMapPath = path.join(basePath, mapPath);
           const map = JSON.parse(await readFile(absoluteMapPath, "utf8"));
-          // this.debug("got map for file " + id);
+          this.debug({ message: "got map for file " + id, id });
           return { code, map };
         }
-        // this.debug("no map for file " + id);
+        this.debug({ message: "no map for file " + id, id });
         return { code, map: null };
       } catch (e) {
         function toString(error) {

@@ -40,6 +40,7 @@
     "eslint-plugin-jsdoc": "^46.2.6",
     "mocha": "^6.2.3",
     "rimraf": "^2.6.3",
+    "rollup": "^3.0.0",
     "ts-node": "^8.2.0",
     "typescript": "~5.0.4"
   },

@@ -1,18 +1,21 @@
 import * as rhea from "rhea";
 import { assert } from "chai";
 import { Connection } from "../lib/index";
+import { AddressInfo } from "net";
 
 describe("Receiver", () => {
   let mockService: rhea.Container;
   let mockServiceListener: ReturnType<rhea.Container["listen"]>;
   let connection: Connection;
+  let listeningPort: number;
 
   beforeEach((done: Function) => {
     mockService = rhea.create_container();
     mockServiceListener = mockService.listen({ port: 0 });
+    listeningPort = (mockServiceListener.address() as AddressInfo).port;
     mockServiceListener.on("listening", async () => {
       connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();

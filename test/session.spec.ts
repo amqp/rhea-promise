@@ -3,18 +3,21 @@ import { assert } from "chai";
 import { Connection, SessionEvents, Session } from "../lib/index";
 import { AbortController } from "@azure/abort-controller";
 import { abortErrorName } from "../lib/util/utils";
+import { AddressInfo } from "net";
 
 describe("Session", () => {
   let mockService: rhea.Container;
   let mockServiceListener: ReturnType<rhea.Container["listen"]>;
   let connection: Connection;
+  let listeningPort: number;
 
   beforeEach((done: Function) => {
     mockService = rhea.create_container();
     mockServiceListener = mockService.listen({ port: 0 });
+    listeningPort = (mockServiceListener.address() as AddressInfo).port;
     mockServiceListener.on("listening", async () => {
       connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();
@@ -190,7 +193,7 @@ describe("Session", () => {
   describe("AbortError", () => {
     it("session.close() fails with aborted signal", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
 
@@ -221,7 +224,7 @@ describe("Session", () => {
 
     it("session.close() fails when abort signal is fired", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
 
@@ -252,7 +255,7 @@ describe("Session", () => {
 
     it("createSender() fails with aborted signal", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();
@@ -279,7 +282,7 @@ describe("Session", () => {
 
     it("createSender() fails when abort signal is fired", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();
@@ -317,7 +320,7 @@ describe("Session", () => {
 
     it("createAwaitableSender() fails with aborted signal", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();
@@ -344,7 +347,7 @@ describe("Session", () => {
 
     it("createAwaitableSender() fails when abort signal is fired", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();
@@ -382,7 +385,7 @@ describe("Session", () => {
 
     it("createReceiver() fails with aborted signal", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();
@@ -409,7 +412,7 @@ describe("Session", () => {
 
     it("createReceiver() fails when abort signal is fired", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();

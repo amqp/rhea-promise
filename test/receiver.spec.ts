@@ -1,4 +1,4 @@
-import * as rhea from "rhea";
+import rhea from "rhea";
 import { assert } from "chai";
 import { Connection } from "../lib/index";
 

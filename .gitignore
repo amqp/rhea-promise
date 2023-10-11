@@ -53,6 +53,7 @@ obj/*
 .env
 typings/
 dist/
+dist-esm/
 output/
 out/
 typedoc

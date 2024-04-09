@@ -202,6 +202,8 @@ export declare interface Connection {
   on(event: ConnectionEvents, listener: OnAmqpEvent): this;
 }
 
+const maxListenerLimit = 1000;
+
 /**
  * Describes the AMQP Connection.
  * @class Connection
@@ -256,6 +258,10 @@ export class Connection extends Entity {
     this.options.operationTimeoutInSeconds = options?.operationTimeoutInSeconds ?? defaultOperationTimeoutInSeconds;
 
     this._initializeEventListeners();
+
+    // Set max listeners on the connection to 1000 because Session and Link add their own listeners
+    // and the default value of 10 in NodeJS is too low.
+    this._connection.setMaxListeners(maxListenerLimit);
   }
 
   /**

@@ -1,4 +1,8 @@
-### 3.0.1 - (Unreleased)
+### 3.0.2 - (2024-05-02)
+
+- Set the max listener limit to 1000 for `RheaConnection`
+
+### 3.0.1 - (2023-05-05)
 
 - Fix a bug where `Connection` constructor isn't setting `operationTimeoutInSeconds` correctly.
 

@@ -29,6 +29,10 @@ module.exports = {
             "rules": {
                 "jsdoc/check-alignment": "error",
                 "jsdoc/check-indentation": "error",
+              "@typescript-eslint/no-duplicate-enum-values": "warn",
+              "@typescript-eslint/no-explicit-any": "warn",
+              "@typescript-eslint/no-unused-vars": "off",
+              "@typescript-eslint/no-unsafe-declaration-merging": "warn"
             },
         }
     ],

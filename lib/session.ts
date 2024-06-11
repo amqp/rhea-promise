@@ -2,7 +2,7 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import * as log from "./log";
-import { Connection } from "./connection";
+import { Connection, CreateReceiverOptions } from "./connection";
 import { Receiver, ReceiverOptions } from "./receiver";
 import { Sender, SenderOptions } from "./sender";
 import {
@@ -396,6 +396,15 @@ export class Session extends Entity {
         const msg: string = `Unable to create the amqp receiver '${receiver.name}' on amqp ` +
           `session '${this.id}' due to operation timeout.`;
         log.error("[%s] %s", this.connection.id, msg);
+
+        const createReceiverOptions = options as CreateReceiverOptions;
+        if (createReceiverOptions?.session?.createReceiver) {
+          // being called on a session passed via the options so don't close the session
+          receiver.close({ closeSession: false }).then(() => { receiver.remove(); })
+        } else {
+          receiver.close({ closeSession: true }).then(() => { receiver.remove(); })
+        }
+
         return reject(new OperationTimeoutError(msg));
       };
 

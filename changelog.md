@@ -1,3 +1,7 @@
+### 3.0.3 - (2024-06-12)
+
+- Release the resources if `Session.createReceiver()` rejects due to timeout.
+
 ### 3.0.2 - (2024-05-02)
 
 - Set the max listener limit to 1000 for `RheaConnection`

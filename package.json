@@ -26,6 +26,7 @@
   ],
   "devDependencies": {
     "@azure/abort-controller": "^1.0.1",
+    "@microsoft/api-extractor": "^7.47.9",
     "@types/chai": "^4.3.7",
     "@types/debug": "^4.0.0",
     "@types/mocha": "^10.0.0",
@@ -46,7 +47,8 @@
     "lint": "eslint .",
     "tsc": "tsc",
     "prebuild": "rimraf dist && rimraf typings",
-    "build": "npm run lint && npm run tsc",
+    "build": "npm run lint && npm run tsc && npm run extract-api",
+    "extract-api": "api-extractor run --local",
     "test": "npm run build && mocha -r ts-node/register ./test/*.spec.ts",
     "prepack": "npm i && npm run build"
   },

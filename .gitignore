@@ -55,6 +55,7 @@ typings/
 dist/
 output/
 out/
+temp/
 typedoc
 
 # package lock file

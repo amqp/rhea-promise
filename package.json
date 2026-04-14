@@ -34,13 +34,14 @@
     "mocha": "^6.2.3",
     "rimraf": "^2.6.3",
     "ts-node": "^8.2.0",
-    "typescript": "~5.0.4"
+    "typescript": "^6.0.2"
   },
   "scripts": {
     "lint": "eslint .",
     "tsc": "tsc",
     "prebuild": "rimraf dist && rimraf typings",
     "build": "npm run lint && npm run tsc",
+    "postbuild": "node scripts/strip-reference-directives.js",
     "test": "npm run build && mocha -r ts-node/register ./test/*.spec.ts",
     "prepack": "npm i && npm run build"
   },

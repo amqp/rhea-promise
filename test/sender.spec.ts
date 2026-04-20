@@ -3,18 +3,21 @@ import { assert } from "chai";
 import { Connection, InsufficientCreditError } from "../lib/index";
 import { AbortController } from "@azure/abort-controller";
 import { abortErrorName } from "../lib/util/utils";
+import { AddressInfo } from "net";
 
 describe("Sender", () => {
   let mockService: rhea.Container;
   let mockServiceListener: ReturnType<rhea.Container["listen"]>;
   let connection: Connection;
+  let listeningPort: number;
 
   beforeEach((done: Function) => {
     mockService = rhea.create_container();
     mockServiceListener = mockService.listen({ port: 0 });
+    listeningPort = (mockServiceListener.address() as AddressInfo).port;
     mockServiceListener.on("listening", async () => {
       connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();
@@ -108,7 +111,7 @@ describe("Sender", () => {
 
   it("InsufficientCreditError", async () => {
     const connection = new Connection({
-      port: mockServiceListener.address().port,
+      port: listeningPort,
       reconnect: false,
     });
     await connection.open();
@@ -162,7 +165,7 @@ describe("Sender", () => {
   describe("AbortSignal", () => {
     it("send() fails with aborted signal", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();
@@ -190,7 +193,7 @@ describe("Sender", () => {
 
     it("send() fails with aborted signal even when insufficient credits", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();
@@ -221,7 +224,7 @@ describe("Sender", () => {
 
     it("send() fails when abort signal is fired", async () => {
       const connection = new Connection({
-        port: mockServiceListener.address().port,
+        port: listeningPort,
         reconnect: false,
       });
       await connection.open();

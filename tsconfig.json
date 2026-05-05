@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "module": "node16",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "preserveConstEnums": true,
     "sourceMap": true,
     "newLine": "LF",

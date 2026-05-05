@@ -204,7 +204,7 @@ export class AwaitableSender extends BaseSender {
               `'${this.session.id}' was not able to send the message with delivery id ${delivery.id} ` +
               `right now, due to the fact that the sender link is closed.`;
             log.error("[%s] %s", this.connection.id, message);
-            return reject(new SendOperationFailedError(message));
+            return reject(new Error(message));
           }
           const message = `Sender '${this.name}' on amqp session ` +
             `'${this.session.id}', with address '${this.address}' was not able to send the ` +

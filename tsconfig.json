@@ -23,7 +23,6 @@
   "include": [
     "./lib/**/*.ts",
     "./examples/**/*.ts",
-    "./test/**/*.ts",
-    "./.eslintrc.js"
+    "./test/**/*.ts"
   ]
 }

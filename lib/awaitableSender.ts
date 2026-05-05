@@ -199,6 +199,13 @@ export class AwaitableSender extends BaseSender {
       if (this.sendable()) {
         const timer = setTimeout(() => {
           this.deliveryDispositionMap.delete(delivery.id);
+          if (!this.source) {
+            const message = `Sender '${this.name}' on amqp session ` +
+              `'${this.session.id}' was not able to send the message with delivery id ${delivery.id} ` +
+              `right now, due to the fact that the sender link is closed.`;
+            log.error("[%s] %s", this.connection.id, message);
+            return reject(new Error(message));
+          }
           const message = `Sender '${this.name}' on amqp session ` +
             `'${this.session.id}', with address '${this.address}' was not able to send the ` +
             `message with delivery id ${delivery.id} right now, due to operation timeout.`;

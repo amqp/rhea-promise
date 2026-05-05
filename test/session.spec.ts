@@ -1,7 +1,6 @@
 import rhea from "rhea";
 import { assert } from "chai";
 import { Connection, SessionEvents, Session } from "../lib/index";
-import { AbortController } from "@azure/abort-controller";
 import { abortErrorName } from "../lib/util/utils";
 import { AddressInfo } from "net";
 

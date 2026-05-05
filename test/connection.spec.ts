@@ -1,7 +1,6 @@
 import rhea from "rhea";
 import { assert } from "chai";
 import { Connection, ConnectionEvents, ConnectionOptions, Container } from "../lib/index";
-import { AbortController } from "@azure/abort-controller";
 import { abortErrorName } from "../lib/util/utils";
 import { CreatedRheaConnectionOptions } from "../lib/connection";
 import { AddressInfo } from "net";

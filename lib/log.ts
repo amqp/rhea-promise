@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the Apache License. See License in the project root for license information.
 
-import * as debugModule from "debug";
+import debugModule from "debug";
 /**
  * @ignore
  * log statements for container

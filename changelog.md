@@ -1,3 +1,9 @@
+### 3.0.4 - (Unreleased)
+
+- Upgrade TypeScript to 6.0 and switch `module` to `nodenext` to remove auto-generated `/// <reference types="node" />` directives from typings.
+- Update minimum Node.js version to 20.x (Node 16 and 18 are EOL).
+- Update `@types/node` to ^20.0.0.
+
 ### 3.0.3 - (2024-06-12)
 
 - Release the resources if `Session.createReceiver()` rejects due to timeout.

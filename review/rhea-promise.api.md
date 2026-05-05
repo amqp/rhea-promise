@@ -4,8 +4,6 @@
 
 ```ts
 
-/// <reference types="node" />
-
 import { AmqpError } from 'rhea';
 import { Connection as Connection_2 } from 'rhea';
 import { ConnectionError } from 'rhea';
@@ -428,7 +426,7 @@ interface PromiseLike_2 {
     // (undocumented)
     resolve: (value?: any) => void;
     // (undocumented)
-    timer: NodeJS.Timer;
+    timer: ReturnType<typeof setTimeout>;
 }
 export { PromiseLike_2 as PromiseLike }
 

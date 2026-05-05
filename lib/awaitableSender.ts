@@ -22,7 +22,7 @@ import { AbortSignalLike, createAbortError } from "./util/utils";
 export interface PromiseLike {
   resolve: (value?: any) => void;
   reject: (reason?: any) => void;
-  timer: NodeJS.Timer;
+  timer: ReturnType<typeof setTimeout>;
 }
 
 /**

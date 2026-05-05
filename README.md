@@ -281,14 +281,9 @@ main().catch((err) => console.log(err));
 ```
 git clone https://github.com/amqp/rhea-promise.git
 ```
-- Install typescript, ts-node globally
-```
-npm i -g typescript
-npm i -g ts-node
-```
 - NPM install from the root of the package
 ```
-npm i
+npm ci
 ```
 - Build the project
 ```

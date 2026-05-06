@@ -1,5 +1,5 @@
 import rhea from "rhea";
-import { assert } from "chai";
+import { describe, it, beforeEach, afterEach, assert } from "vitest";
 import {
   Connection,
   ConnectionEvents,
@@ -15,13 +15,15 @@ describe("Connection", () => {
   let mockServiceListener: ReturnType<rhea.Container["listen"]>;
   let listeningPort: number;
 
-  beforeEach((done: Function) => {
+  beforeEach(async () => {
     mockService = rhea.create_container();
     mockServiceListener = mockService.listen({ port: 0 });
     listeningPort = (mockServiceListener.address() as AddressInfo).port;
 
-    mockServiceListener.on("listening", () => {
-      done();
+    await new Promise<void>((resolve) => {
+      mockServiceListener.on("listening", () => {
+        resolve();
+      });
     });
   });
 
@@ -290,36 +292,41 @@ describe("Connection", () => {
   });
 
   describe("supports events", () => {
-    it("connectionOpen", (done: Function) => {
+    it("connectionOpen", async () => {
       const connection = new Connection({
         port: listeningPort,
       });
 
-      connection.on(ConnectionEvents.connectionOpen, async (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        await connection.close();
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        connection.on(ConnectionEvents.connectionOpen, async (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          await connection.close();
+          resolve();
+        });
       });
+
       connection.open();
+      await eventPromise;
     });
 
-    it("connectionClose", (done: Function) => {
+    it("connectionClose", async () => {
       const connection = new Connection({
         port: listeningPort,
       });
 
-      connection.on(ConnectionEvents.connectionClose, (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        connection.on(ConnectionEvents.connectionClose, (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          resolve();
+        });
       });
 
-      (async function run() {
-        await connection.open();
-        await connection.close();
-      })();
+      await connection.open();
+      await connection.close();
+      await eventPromise;
     });
 
-    it("connectionError on connection open", (done: Function) => {
+    it("connectionError on connection open", async () => {
       const errorCondition = "amqp:connection:forced";
       const errorDescription = "testing error on close";
       mockService.on(
@@ -337,20 +344,23 @@ describe("Connection", () => {
         reconnect: false,
       });
 
-      connection.on(ConnectionEvents.connectionError, async (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        const error = event.error as rhea.ConnectionError;
-        assert.exists(error, "Expected an AMQP error.");
-        assert.strictEqual(error.condition, errorCondition);
-        assert.strictEqual(error.description, errorDescription);
-        await connection.close();
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        connection.on(ConnectionEvents.connectionError, async (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          const error = event.error as rhea.ConnectionError;
+          assert.exists(error, "Expected an AMQP error.");
+          assert.strictEqual(error.condition, errorCondition);
+          assert.strictEqual(error.description, errorDescription);
+          await connection.close();
+          resolve();
+        });
       });
 
       connection.open();
+      await eventPromise;
     });
 
-    it("disconnected", (done: Function) => {
+    it("disconnected", async () => {
       mockService.on(
         rhea.ConnectionEvents.connectionOpen,
         (context: rhea.EventContext) => {
@@ -366,16 +376,19 @@ describe("Connection", () => {
         reconnect: false,
       });
 
-      connection.on(ConnectionEvents.disconnected, async (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        await connection.close();
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        connection.on(ConnectionEvents.disconnected, async (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          await connection.close();
+          resolve();
+        });
       });
 
       connection.open();
+      await eventPromise;
     });
 
-    it("connectionError on connection.close() is bubbled up", (done: Function) => {
+    it("connectionError on connection.close() is bubbled up", async () => {
       const errorCondition = "amqp:connection:forced";
       const errorDescription = "testing error on close";
       mockService.on(
@@ -393,20 +406,23 @@ describe("Connection", () => {
         reconnect: false,
       });
 
-      connection.on(ConnectionEvents.connectionOpen, async (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        try {
-          await connection.close();
-          throw new Error("boo");
-        } catch (error) {
-          assert.exists(error, "Expected an AMQP error.");
-          assert.strictEqual(error.condition, errorCondition);
-          assert.strictEqual(error.description, errorDescription);
-        }
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        connection.on(ConnectionEvents.connectionOpen, async (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          try {
+            await connection.close();
+            throw new Error("boo");
+          } catch (error) {
+            assert.exists(error, "Expected an AMQP error.");
+            assert.strictEqual(error.condition, errorCondition);
+            assert.strictEqual(error.description, errorDescription);
+          }
+          resolve();
+        });
       });
 
       connection.open();
+      await eventPromise;
     });
   });
 

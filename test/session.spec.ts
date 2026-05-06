@@ -1,5 +1,5 @@
 import rhea from "rhea";
-import { assert } from "chai";
+import { describe, it, beforeEach, afterEach, assert } from "vitest";
 import { Connection, SessionEvents, Session } from "../lib/index";
 import { abortErrorName } from "../lib/util/utils";
 import { AddressInfo } from "net";
@@ -10,17 +10,19 @@ describe("Session", () => {
   let connection: Connection;
   let listeningPort: number;
 
-  beforeEach((done: Function) => {
+  beforeEach(async () => {
     mockService = rhea.create_container();
     mockServiceListener = mockService.listen({ port: 0 });
     listeningPort = (mockServiceListener.address() as AddressInfo).port;
-    mockServiceListener.on("listening", async () => {
-      connection = new Connection({
-        port: listeningPort,
-        reconnect: false,
+    await new Promise<void>((resolve) => {
+      mockServiceListener.on("listening", async () => {
+        connection = new Connection({
+          port: listeningPort,
+          reconnect: false,
+        });
+        await connection.open();
+        resolve();
       });
-      await connection.open();
-      done();
     });
   });
 
@@ -76,48 +78,53 @@ describe("Session", () => {
   });
 
   describe("supports events", () => {
-    it("sessionOpen", (done: Function) => {
+    it("sessionOpen", async () => {
       const session = new Session(
         connection,
         connection["_connection"].create_session(),
       );
 
-      session.on(SessionEvents.sessionOpen, async (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        assert.isTrue(session.isOpen(), "Expected session to be open.");
-        assert.isFalse(
-          session.isClosed(),
-          "Expected session to not be closed.",
-        );
-        await session.close();
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        session.on(SessionEvents.sessionOpen, async (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          assert.isTrue(session.isOpen(), "Expected session to be open.");
+          assert.isFalse(
+            session.isClosed(),
+            "Expected session to not be closed.",
+          );
+          await session.close();
+          resolve();
+        });
       });
 
       // Open the session.
       session.begin();
+      await eventPromise;
     });
 
-    it("sessionClose", (done: Function) => {
+    it("sessionClose", async () => {
       const session = new Session(
         connection,
         connection["_connection"].create_session(),
       );
 
-      session.on(SessionEvents.sessionOpen, async () => {
-        await session.close();
-      });
+      const eventPromise = new Promise<void>((resolve) => {
+        session.on(SessionEvents.sessionOpen, async () => {
+          await session.close();
+        });
 
-      session.on(SessionEvents.sessionClose, (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-
-        done();
+        session.on(SessionEvents.sessionClose, (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          resolve();
+        });
       });
 
       // Open the session.
       session.begin();
+      await eventPromise;
     });
 
-    it("sessionError", (done: Function) => {
+    it("sessionError", async () => {
       const errorCondition = "amqp:connection:forced";
       const errorDescription = "testing error on close";
       mockService.on(
@@ -136,26 +143,29 @@ describe("Session", () => {
         connection["_connection"].create_session(),
       );
 
-      session.on(SessionEvents.sessionError, async (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        assert.exists(
-          event.session,
-          "Expected session to be defined on AMQP event.",
-        );
-        if (event.session) {
-          const error = event.session.error as rhea.ConnectionError;
-          assert.exists(error, "Expected an AMQP error.");
-          assert.strictEqual(error.condition, errorCondition);
-          assert.strictEqual(error.description, errorDescription);
-        }
-        await session.close();
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        session.on(SessionEvents.sessionError, async (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          assert.exists(
+            event.session,
+            "Expected session to be defined on AMQP event.",
+          );
+          if (event.session) {
+            const error = event.session.error as rhea.ConnectionError;
+            assert.exists(error, "Expected an AMQP error.");
+            assert.strictEqual(error.condition, errorCondition);
+            assert.strictEqual(error.description, errorDescription);
+          }
+          await session.close();
+          resolve();
+        });
       });
 
       session.begin();
+      await eventPromise;
     });
 
-    it("sessionError on session.close() is bubbled up", (done: Function) => {
+    it("sessionError on session.close() is bubbled up", async () => {
       const errorCondition = "amqp:connection:forced";
       const errorDescription = "testing error on close";
       mockService.on(
@@ -174,20 +184,23 @@ describe("Session", () => {
         connection["_connection"].create_session(),
       );
 
-      session.on(SessionEvents.sessionOpen, async () => {
-        try {
-          await session.close();
-          throw new Error("boo");
-        } catch (error) {
-          assert.exists(error, "Expected an AMQP error.");
-          assert.strictEqual(error.condition, errorCondition);
-          assert.strictEqual(error.description, errorDescription);
-        }
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        session.on(SessionEvents.sessionOpen, async () => {
+          try {
+            await session.close();
+            throw new Error("boo");
+          } catch (error) {
+            assert.exists(error, "Expected an AMQP error.");
+            assert.strictEqual(error.condition, errorCondition);
+            assert.strictEqual(error.description, errorDescription);
+          }
+          resolve();
+        });
       });
 
       // Open the session.
       session.begin();
+      await eventPromise;
     });
   });
 

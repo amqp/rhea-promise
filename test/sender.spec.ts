@@ -1,5 +1,5 @@
 import rhea from "rhea";
-import { assert } from "chai";
+import { describe, it, beforeEach, afterEach, assert } from "vitest";
 import { Connection, InsufficientCreditError } from "../lib/index";
 import { abortErrorName } from "../lib/util/utils";
 import { AddressInfo } from "net";
@@ -10,17 +10,19 @@ describe("Sender", () => {
   let connection: Connection;
   let listeningPort: number;
 
-  beforeEach((done: Function) => {
+  beforeEach(async () => {
     mockService = rhea.create_container();
     mockServiceListener = mockService.listen({ port: 0 });
     listeningPort = (mockServiceListener.address() as AddressInfo).port;
-    mockServiceListener.on("listening", async () => {
-      connection = new Connection({
-        port: listeningPort,
-        reconnect: false,
+    await new Promise<void>((resolve) => {
+      mockServiceListener.on("listening", async () => {
+        connection = new Connection({
+          port: listeningPort,
+          reconnect: false,
+        });
+        await connection.open();
+        resolve();
       });
-      await connection.open();
-      done();
     });
   });
 

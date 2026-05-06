@@ -20,9 +20,5 @@
   },
   "compileOnSave": true,
   "exclude": ["node_modules", "typings/**"],
-  "include": [
-    "./lib/**/*.ts",
-    "./examples/**/*.ts",
-    "./test/**/*.ts"
-  ]
+  "include": ["./lib/**/*.ts", "./examples/**/*.ts", "./test/**/*.ts"]
 }

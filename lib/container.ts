@@ -2,12 +2,21 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import {
-  Container as RheaContainer, ContainerOptions as ContainerOptionsBase, create_container,
-  Filter, Types, MessageUtil, Sasl
+  Container as RheaContainer,
+  ContainerOptions as ContainerOptionsBase,
+  create_container,
+  Filter,
+  Types,
+  MessageUtil,
+  Sasl,
 } from "rhea";
 import { EventEmitter } from "events";
-import { ConnectionOptions, Connection } from './connection';
-import { TlsOptions, Server as TlsServer, ConnectionOptions as TlsConnectionOptions } from "tls";
+import { ConnectionOptions, Connection } from "./connection";
+import {
+  TlsOptions,
+  Server as TlsServer,
+  ConnectionOptions as TlsConnectionOptions,
+} from "tls";
 import { ListenOptions, Server, Socket } from "net";
 import { TlsServerConnectionOptions } from "rhea/typings/connection";
 
@@ -81,7 +90,9 @@ export class Container extends EventEmitter {
     return this.createConnection(options).open();
   }
 
-  listen(options: ListenOptions | TlsOptions & TlsServerConnectionOptions): Server | TlsServer {
+  listen(
+    options: ListenOptions | (TlsOptions & TlsServerConnectionOptions),
+  ): Server | TlsServer {
     return this._container.listen(options);
   }
 

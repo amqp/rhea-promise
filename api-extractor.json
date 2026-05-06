@@ -10,7 +10,7 @@
   },
   "dtsRollup": {
     "enabled": true,
-    "publicTrimmedFilePath": "./typings/rhea-promise.d.ts",
+    "publicTrimmedFilePath": "./typings/rhea-promise.d.ts"
   },
   "messages": {
     "tsdocMessageReporting": {

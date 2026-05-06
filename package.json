@@ -46,7 +46,7 @@
     "lint": "eslint .",
     "tsc": "tsc",
     "prebuild": "rimraf dist && rimraf typings",
-    "build": "npm run lint && npm run tsc && npm run extract-api",
+    "build": "npm run check-format && npm run lint && npm run tsc && npm run extract-api",
     "check-format": "prettier --list-different \"lib/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\" \"*.{js,json}\"",
     "extract-api": "api-extractor run --local",
     "format": "prettier --write \"lib/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\" \"*.{js,json}\"",

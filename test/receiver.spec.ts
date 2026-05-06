@@ -34,12 +34,15 @@ describe("Receiver", () => {
     assert.isFalse(receiver.isClosed(), "Receiver should not be closed.");
     assert.isFalse(
       receiver.isItselfClosed(),
-      "Receiver should not be fully closed."
+      "Receiver should not be fully closed.",
     );
 
     await receiver.close();
     assert.isTrue(receiver.isClosed(), "Receiver should be closed.");
-    assert.isTrue(receiver.isItselfClosed(), "Receiver should be fully closed.");
+    assert.isTrue(
+      receiver.isItselfClosed(),
+      "Receiver should be fully closed.",
+    );
     assert.isFalse(receiver.isOpen(), "Receiver should not be open.");
   });
 
@@ -49,11 +52,17 @@ describe("Receiver", () => {
       /** no-op */
     });
 
-    assert.isAtLeast(receiver.listenerCount(rhea.ReceiverEvents.receiverOpen), 1);
+    assert.isAtLeast(
+      receiver.listenerCount(rhea.ReceiverEvents.receiverOpen),
+      1,
+    );
 
     receiver.remove();
 
-    assert.strictEqual(receiver.listenerCount(rhea.ReceiverEvents.receiverOpen), 0);
+    assert.strictEqual(
+      receiver.listenerCount(rhea.ReceiverEvents.receiverOpen),
+      0,
+    );
   });
 
   it(".close() removes event listeners", async () => {
@@ -62,11 +71,17 @@ describe("Receiver", () => {
       /** no-op */
     });
 
-    assert.isAtLeast(receiver.listenerCount(rhea.ReceiverEvents.receiverOpen), 1);
+    assert.isAtLeast(
+      receiver.listenerCount(rhea.ReceiverEvents.receiverOpen),
+      1,
+    );
 
     await receiver.close();
 
-    assert.strictEqual(receiver.listenerCount(rhea.ReceiverEvents.receiverOpen), 0);
+    assert.strictEqual(
+      receiver.listenerCount(rhea.ReceiverEvents.receiverOpen),
+      0,
+    );
   });
 
   // TODO: This test fails because we first get a receiver_open event instead of
@@ -101,18 +116,19 @@ describe("Receiver", () => {
       mockService.on(
         rhea.SenderEvents.senderClose,
         (context: rhea.EventContext) => {
-          context.sender && context.sender.close({
-            condition: errorCondition,
-            description: errorDescription,
-          });
-        }
+          context.sender &&
+            context.sender.close({
+              condition: errorCondition,
+              description: errorDescription,
+            });
+        },
       );
 
       const receiver = await connection.createReceiver();
 
       try {
         await receiver.close();
-        throw new Error("boo")
+        throw new Error("boo");
       } catch (error) {
         assert.exists(error, "Expected an AMQP error.");
         assert.strictEqual(error.condition, errorCondition);

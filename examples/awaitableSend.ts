@@ -7,7 +7,7 @@ import {
   ConnectionOptions,
   Delivery,
   AwaitableSenderOptions,
-  AwaitableSender
+  AwaitableSender,
 } from "../lib";
 
 import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
@@ -27,35 +27,36 @@ async function main(): Promise<void> {
     username: username,
     password: password,
     port: port,
-    reconnect: false
+    reconnect: false,
   };
   const connection: Connection = new Connection(connectionOptions);
   const senderName = "sender-1";
   const senderOptions: AwaitableSenderOptions = {
     name: senderName,
     target: {
-      address: senderAddress
+      address: senderAddress,
     },
   };
 
   await connection.open();
-  const sender: AwaitableSender = await connection.createAwaitableSender(
-    senderOptions
-  );
+  const sender: AwaitableSender =
+    await connection.createAwaitableSender(senderOptions);
 
   for (let i = 0; i < 10; i++) {
     const message: Message = {
       body: `Hello World - ${i}`,
-      message_id: i
+      message_id: i,
     };
     // Please, note that we are awaiting on sender.send() to complete.
     // You will notice that `delivery.settled` will be `true`, irrespective of whether the promise resolves or rejects.
-    const delivery: Delivery = await sender.send(message, {timeoutInSeconds: 10});
+    const delivery: Delivery = await sender.send(message, {
+      timeoutInSeconds: 10,
+    });
     console.log(
       "[%s] await sendMessage -> Delivery id: %d, settled: %s",
       connection.id,
       delivery.id,
-      delivery.settled
+      delivery.settled,
     );
   }
 

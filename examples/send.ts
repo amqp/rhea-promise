@@ -8,7 +8,7 @@ import {
   Message,
   ConnectionOptions,
   Delivery,
-  SenderOptions
+  SenderOptions,
 } from "../lib";
 
 import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
@@ -28,14 +28,14 @@ async function main(): Promise<void> {
     username: username,
     password: password,
     port: port,
-    reconnect: false
+    reconnect: false,
   };
   const connection: Connection = new Connection(connectionOptions);
   const senderName = "sender-1";
   const senderOptions: SenderOptions = {
     name: senderName,
     target: {
-      address: senderAddress
+      address: senderAddress,
     },
     onError: (context: EventContext) => {
       const senderError = context.sender && context.sender.error;
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
           ">>>>> [%s] An error occurred for sender '%s': %O.",
           connection.id,
           senderName,
-          senderError
+          senderError,
         );
       }
     },
@@ -55,17 +55,17 @@ async function main(): Promise<void> {
           ">>>>> [%s] An error occurred for session of sender '%s': %O.",
           connection.id,
           senderName,
-          sessionError
+          sessionError,
         );
       }
-    }
+    },
   };
 
   await connection.open();
   const sender: Sender = await connection.createSender(senderOptions);
   const message: Message = {
     body: "Hello World!!",
-    message_id: "12343434343434"
+    message_id: "12343434343434",
   };
 
   // Please, note that we are not awaiting on sender.send()
@@ -75,7 +75,7 @@ async function main(): Promise<void> {
     ">>>>>[%s] send -> Delivery id: %d, settled: %s",
     connection.id,
     delivery.id,
-    delivery.settled
+    delivery.settled,
   );
 
   await sender.close();

@@ -5,11 +5,14 @@ import type { Connection } from "./connection";
 import type { Container } from "./container";
 import { Session } from "./session";
 import {
-  Delivery, Message, ConnectionError, EventContext as RheaEventContext
+  Delivery,
+  Message,
+  ConnectionError,
+  EventContext as RheaEventContext,
 } from "rhea";
 import { Receiver } from "./receiver";
 import { Sender } from "./sender";
-import { Link, LinkType } from './link';
+import { Link, LinkType } from "./link";
 import * as log from "./log";
 
 /**
@@ -98,17 +101,20 @@ export namespace EventContext {
   export function translate(
     rheaContext: RheaEventContext,
     emitter: Link | Session | Connection,
-    eventName: string): EventContext {
-    const connection = hasConnection(emitter)
-      ? emitter.connection
-      : emitter;
+    eventName: string,
+  ): EventContext {
+    const connection = hasConnection(emitter) ? emitter.connection : emitter;
 
-    log.contextTranslator("[%s] Translating the context for event: '%s'.", connection.id, eventName);
+    log.contextTranslator(
+      "[%s] Translating the context for event: '%s'.",
+      connection.id,
+      eventName,
+    );
 
     // initialize the result
     const result: EventContext = {
       _context: rheaContext,
-      ...rheaContext
+      ...rheaContext,
     } as any;
 
     // set rhea-promise connection and container

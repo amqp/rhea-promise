@@ -270,7 +270,7 @@ export class Container extends EventEmitter {
     // (undocumented)
     get id(): string;
     // (undocumented)
-    listen(options: ListenOptions | TlsOptions & TlsServerConnectionOptions): Server | Server_2;
+    listen(options: ListenOptions | (TlsOptions & TlsServerConnectionOptions)): Server | Server_2;
     // (undocumented)
     get message(): MessageUtil;
     options: ContainerOptions;

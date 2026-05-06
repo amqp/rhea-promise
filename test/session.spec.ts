@@ -35,7 +35,7 @@ describe("Session", () => {
     assert.isFalse(session.isClosed(), "Session should not be closed.");
     assert.isFalse(
       session.isItselfClosed(),
-      "Session should not be fully closed."
+      "Session should not be fully closed.",
     );
 
     await session.close();
@@ -47,7 +47,7 @@ describe("Session", () => {
   it(".remove() removes event listeners", async () => {
     const session = new Session(
       connection,
-      connection["_connection"].create_session()
+      connection["_connection"].create_session(),
     );
 
     session.on(SessionEvents.sessionOpen, () => {
@@ -63,7 +63,7 @@ describe("Session", () => {
   it(".close() removes event listeners", async () => {
     const session = new Session(
       connection,
-      connection["_connection"].create_session()
+      connection["_connection"].create_session(),
     );
 
     session.on(SessionEvents.sessionOpen, () => {
@@ -75,12 +75,11 @@ describe("Session", () => {
     assert.strictEqual(session.listenerCount(SessionEvents.sessionOpen), 0);
   });
 
-
   describe("supports events", () => {
     it("sessionOpen", (done: Function) => {
       const session = new Session(
         connection,
-        connection["_connection"].create_session()
+        connection["_connection"].create_session(),
       );
 
       session.on(SessionEvents.sessionOpen, async (event) => {
@@ -88,7 +87,7 @@ describe("Session", () => {
         assert.isTrue(session.isOpen(), "Expected session to be open.");
         assert.isFalse(
           session.isClosed(),
-          "Expected session to not be closed."
+          "Expected session to not be closed.",
         );
         await session.close();
         done();
@@ -101,7 +100,7 @@ describe("Session", () => {
     it("sessionClose", (done: Function) => {
       const session = new Session(
         connection,
-        connection["_connection"].create_session()
+        connection["_connection"].create_session(),
       );
 
       session.on(SessionEvents.sessionOpen, async () => {
@@ -129,17 +128,20 @@ describe("Session", () => {
               condition: errorCondition,
               description: errorDescription,
             });
-        }
+        },
       );
 
       const session = new Session(
         connection,
-        connection["_connection"].create_session()
+        connection["_connection"].create_session(),
       );
 
       session.on(SessionEvents.sessionError, async (event) => {
         assert.exists(event, "Expected an AMQP event.");
-        assert.exists(event.session, "Expected session to be defined on AMQP event.");
+        assert.exists(
+          event.session,
+          "Expected session to be defined on AMQP event.",
+        );
         if (event.session) {
           const error = event.session.error as rhea.ConnectionError;
           assert.exists(error, "Expected an AMQP error.");
@@ -164,18 +166,18 @@ describe("Session", () => {
               condition: errorCondition,
               description: errorDescription,
             });
-        }
+        },
       );
 
       const session = new Session(
         connection,
-        connection["_connection"].create_session()
+        connection["_connection"].create_session(),
       );
 
       session.on(SessionEvents.sessionOpen, async () => {
         try {
           await session.close();
-          throw new Error("boo")
+          throw new Error("boo");
         } catch (error) {
           assert.exists(error, "Expected an AMQP error.");
           assert.strictEqual(error.condition, errorCondition);
@@ -214,9 +216,12 @@ describe("Session", () => {
         abortErrorThrown = error.name === abortErrorName;
       }
 
-      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
       assert.isFalse(session.isOpen(), "Session should not be open.");
-      assert.isTrue(session["_session"].is_remote_open(), "Session remote endpoint should not have gotten a chance to close.");
+      assert.isTrue(
+        session["_session"].is_remote_open(),
+        "Session remote endpoint should not have gotten a chance to close.",
+      );
 
       await connection.close();
     });
@@ -245,9 +250,12 @@ describe("Session", () => {
         abortErrorThrown = error.name === abortErrorName;
       }
 
-      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
       assert.isFalse(session.isOpen(), "Session should not be open.");
-      assert.isTrue(session["_session"].is_remote_open(), "Session remote endpoint should not have gotten a chance to close.");
+      assert.isTrue(
+        session["_session"].is_remote_open(),
+        "Session remote endpoint should not have gotten a chance to close.",
+      );
 
       await connection.close();
     });
@@ -275,7 +283,10 @@ describe("Session", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
-      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
+      assert.isUndefined(
+        extractLink(session),
+        "Expected the session to not have any links.",
+      );
       await connection.close();
     });
 
@@ -308,12 +319,15 @@ describe("Session", () => {
       // Cancelling link creation should guarantee that the underlying
       // link is closed and removed from the session.
       if (!link.is_closed()) {
-        await new Promise(resolve => {
+        await new Promise((resolve) => {
           link.once(rhea.SenderEvents.senderClose, resolve);
         });
       }
       assert.isTrue(link.is_closed(), "Link should be closed.");
-      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
+      assert.isUndefined(
+        extractLink(session),
+        "Expected the session to not have any links.",
+      );
       await connection.close();
     });
 
@@ -330,7 +344,9 @@ describe("Session", () => {
 
       // Pass an already aborted signal to createAwaitableSender()
       abortController.abort();
-      const createAwaitableSenderPromise = session.createAwaitableSender({ abortSignal });
+      const createAwaitableSenderPromise = session.createAwaitableSender({
+        abortSignal,
+      });
 
       let abortErrorThrown = false;
       try {
@@ -340,7 +356,10 @@ describe("Session", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
-      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
+      assert.isUndefined(
+        extractLink(session),
+        "Expected the session to not have any links.",
+      );
       await connection.close();
     });
 
@@ -356,7 +375,9 @@ describe("Session", () => {
       const abortSignal = abortController.signal;
 
       // Abort the signal after passing it to createAwaitableSender()
-      const createAwaitableSenderPromise = session.createAwaitableSender({ abortSignal });
+      const createAwaitableSenderPromise = session.createAwaitableSender({
+        abortSignal,
+      });
       abortController.abort();
 
       const link = extractLink(session)!;
@@ -373,12 +394,15 @@ describe("Session", () => {
       // Cancelling link creation should guarantee that the underlying
       // link is closed and removed from the session.
       if (!link.is_closed()) {
-        await new Promise(resolve => {
+        await new Promise((resolve) => {
           link.once(rhea.SenderEvents.senderClose, resolve);
         });
       }
       assert.isTrue(link.is_closed(), "Link should be closed.");
-      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
+      assert.isUndefined(
+        extractLink(session),
+        "Expected the session to not have any links.",
+      );
       await connection.close();
     });
 
@@ -405,7 +429,10 @@ describe("Session", () => {
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
-      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
+      assert.isUndefined(
+        extractLink(session),
+        "Expected the session to not have any links.",
+      );
       await connection.close();
     });
 
@@ -423,7 +450,7 @@ describe("Session", () => {
       // Abort the signal after passing it to createReceiver()
       const createReceiverPromise = session.createReceiver({ abortSignal });
       abortController.abort();
-      
+
       const link = extractLink(session)!;
 
       let abortErrorThrown = false;
@@ -438,12 +465,15 @@ describe("Session", () => {
       // Cancelling link creation should guarantee that the underlying
       // link is closed and removed from the session.
       if (!link.is_closed()) {
-        await new Promise(resolve => {
+        await new Promise((resolve) => {
           link.once(rhea.ReceiverEvents.receiverClose, resolve);
         });
       }
       assert.isTrue(link.is_closed(), "Link should be closed.");
-      assert.isUndefined(extractLink(session), "Expected the session to not have any links.")
+      assert.isUndefined(
+        extractLink(session),
+        "Expected the session to not have any links.",
+      );
 
       await connection.close();
     });

@@ -63,7 +63,7 @@ export class Receiver extends Link {
   constructor(
     session: Session,
     receiver: RheaReceiver,
-    options?: ReceiverOptions
+    options?: ReceiverOptions,
   ) {
     super(LinkType.receiver, session, receiver, options);
   }

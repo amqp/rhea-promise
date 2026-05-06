@@ -51,7 +51,7 @@
     "extract-api": "api-extractor run --local",
     "format": "prettier --write \"lib/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\" \"*.{js,json}\"",
     "test": "npm run build && mocha -r ts-node/register ./test/*.spec.ts",
-    "prepack": "npm i && npm run build"
+    "prepack": "npm ci && npm run build"
   },
   "homepage": "https://github.com/amqp/rhea-promise",
   "repository": {

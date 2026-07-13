@@ -1,6 +1,6 @@
 {
   "name": "rhea-promise",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "A Promisified layer over rhea AMQP client",
   "license": "Apache-2.0",
   "main": "./dist/lib/index.js",
@@ -28,7 +28,7 @@
     "@eslint/js": "^10.0.1",
     "@microsoft/api-extractor": "^7.58.7",
     "@types/debug": "^4.1.13",
-    "@types/node": "^20.0.0",
+    "@types/node": "^22.0.0",
     "dotenv": "^17.4.2",
     "eslint": "^10.3.0",
     "eslint-plugin-jsdoc": "^62.9.0",

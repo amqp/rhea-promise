@@ -41,12 +41,13 @@
   "scripts": {
     "lint": "eslint .",
     "tsc": "tsc",
-    "prebuild": "rimraf dist && rimraf typings",
-    "build": "npm run check-format && npm run lint && npm run tsc && npm run extract-api",
+    "clean": "rimraf dist && rimraf typings",
+    "build": "npm run clean && npm run tsc && npm run extract-api",
     "check-format": "prettier --list-different \"lib/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\" \"*.{js,json}\"",
     "extract-api": "api-extractor run --local",
     "format": "prettier --write \"lib/**/*.ts\" \"test/**/*.ts\" \"examples/**/*.ts\" \"*.{js,json}\"",
-    "test": "npm run build && vitest run",
+    "test": "vitest run",
+    "check": "npm run check-format && npm run lint && npm run test",
     "prepack": "npm ci && npm run build"
   },
   "homepage": "https://github.com/amqp/rhea-promise",

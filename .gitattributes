@@ -13,6 +13,12 @@
 # Declare files that will always have LF line endings on checkout. E.g.,
 *.sh text eol=lf
 *.json text eol=lf
+# Prettier defaults to LF (endOfLine: "lf"). Pin the sources it checks so
+# Windows checkouts don't get CRLF and fail `check-format`.
+*.ts text eol=lf
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
 
 # Denote all files that should not have line endings normalized, should not be
 # merged, and should not show in a textual diff.

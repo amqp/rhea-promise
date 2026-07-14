@@ -1,8 +1,9 @@
 ### 3.0.4 - (Unreleased)
 
+- Fix `AwaitableSender.send()` to reject with a clear error when the sender link is closed (e.g. due to a disconnection) while sending, instead of failing with a generic operation timeout.
+- Update minimum supported Node.js version to 22.x. Node 16, 18, and 20 are no longer supported.
 - Upgrade TypeScript to 6.0 and switch `module` to `nodenext` to remove auto-generated `/// <reference types="node" />` directives from typings.
-- Update minimum Node.js version to 20.x (Node 16 and 18 are EOL).
-- Update `@types/node` to ^20.0.0.
+- Update `@types/node` to ^22.0.0.
 
 ### 3.0.3 - (2024-06-12)
 

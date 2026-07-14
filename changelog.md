@@ -1,8 +1,4 @@
-### 4.0.0 - (2026-07-15)
-
-#### Breaking changes
-
-- Update minimum supported Node.js version to 22.x. Node 16, 18, and 20 are no longer supported.
+### 3.1.0 - (2026-07-15)
 
 #### Bug fixes
 
@@ -11,9 +7,10 @@
 
 #### Other changes
 
-- Upgrade TypeScript to 6.0 and switch `module` to `nodenext` to remove auto-generated `/// <reference types="node" />` directives from typings.
+- Upgrade TypeScript to 6.0 and switch `module` to `nodenext` to remove auto-generated `/// <reference types="node" />` directives from the emitted typings. This prevents the `@types/node` global namespace from leaking into consumers, fixing type conflicts in non-Node environments (React Native, browser, Cloudflare Workers) [#121](https://github.com/amqp/rhea-promise/pull/121).
 - Update `@types/node` to ^22.0.0.
 - Update minimum `rhea` version to ^3.0.5.
+- Development and CI now target Node.js 22.x. Node 16, 18, and 20 are no longer tested; the runtime output still targets `es2015` and no `engines` restriction is enforced.
 
 ### 3.0.3 - (2024-06-12)
 

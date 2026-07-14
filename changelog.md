@@ -1,9 +1,11 @@
 ### 3.0.4 - (2026-07-15)
 
 - Fix `AwaitableSender.send()` to reject with a clear error when the sender link is closed (e.g. due to a disconnection) while sending, instead of failing with a generic operation timeout.
+- Fix `Connection` constructor so that a caller-provided `operationTimeoutInSeconds` is no longer overwritten with the default value [#112](https://github.com/amqp/rhea-promise/pull/112).
 - Update minimum supported Node.js version to 22.x. Node 16, 18, and 20 are no longer supported.
 - Upgrade TypeScript to 6.0 and switch `module` to `nodenext` to remove auto-generated `/// <reference types="node" />` directives from typings.
 - Update `@types/node` to ^22.0.0.
+- Update minimum `rhea` version to ^3.0.5.
 
 ### 3.0.3 - (2024-06-12)
 

@@ -253,7 +253,7 @@ export class Connection extends Entity {
     }
 
     this.options = this._connection.options;
-    this.options.operationTimeoutInSeconds = this.options?.operationTimeoutInSeconds ?? defaultOperationTimeoutInSeconds;
+    this.options.operationTimeoutInSeconds = options?.operationTimeoutInSeconds ?? this.options.operationTimeoutInSeconds ?? defaultOperationTimeoutInSeconds;
 
     this._initializeEventListeners();
   }

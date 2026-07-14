@@ -2,7 +2,14 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import {
-  Connection, Receiver, EventContext, ConnectionOptions, ReceiverOptions, delay, ReceiverEvents, types
+  Connection,
+  Receiver,
+  EventContext,
+  ConnectionOptions,
+  ReceiverOptions,
+  delay,
+  ReceiverEvents,
+  types,
 } from "../lib";
 
 import * as dotenv from "dotenv"; // Optional for loading environment configuration from a .env (config) file
@@ -22,7 +29,7 @@ async function main(): Promise<void> {
     username: username,
     password: password,
     port: port,
-    reconnect: false
+    reconnect: false,
   };
   const connection: Connection = new Connection(connectionOptions);
   const receiverName = "receiver-1";
@@ -33,16 +40,23 @@ async function main(): Promise<void> {
     source: {
       address: receiverAddress,
       filter: {
-        "apache.org:selector-filter:string": types.wrap_described(filterClause, 0x468C00000004)
-      }
+        "apache.org:selector-filter:string": types.wrap_described(
+          filterClause,
+          0x468c00000004,
+        ),
+      },
     },
     onSessionError: (context: EventContext) => {
       const sessionError = context.session && context.session.error;
       if (sessionError) {
-        console.log(">>>>> [%s] An error occurred for session of receiver '%s': %O.",
-          connection.id, receiverName, sessionError);
+        console.log(
+          ">>>>> [%s] An error occurred for session of receiver '%s': %O.",
+          connection.id,
+          receiverName,
+          sessionError,
+        );
       }
-    }
+    },
   };
 
   await connection.open();
@@ -53,8 +67,12 @@ async function main(): Promise<void> {
   receiver.on(ReceiverEvents.receiverError, (context: EventContext) => {
     const receiverError = context.receiver && context.receiver.error;
     if (receiverError) {
-      console.log(">>>>> [%s] An error occurred for receiver '%s': %O.",
-        connection.id, receiverName, receiverError);
+      console.log(
+        ">>>>> [%s] An error occurred for receiver '%s': %O.",
+        connection.id,
+        receiverName,
+        receiverError,
+      );
     }
   });
   // sleeping for 2 mins to let the receiver receive messages and then closing it.

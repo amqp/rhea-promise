@@ -1,7 +1,11 @@
-import * as rhea from "rhea";
-import { assert } from "chai";
-import { Connection, ConnectionEvents, ConnectionOptions, Container } from "../lib/index";
-import { AbortController } from "@azure/abort-controller";
+import rhea from "rhea";
+import { describe, it, beforeEach, afterEach, assert } from "vitest";
+import {
+  Connection,
+  ConnectionEvents,
+  ConnectionOptions,
+  Container,
+} from "../lib/index";
 import { abortErrorName } from "../lib/util/utils";
 import { CreatedRheaConnectionOptions } from "../lib/connection";
 import { AddressInfo } from "net";
@@ -11,13 +15,15 @@ describe("Connection", () => {
   let mockServiceListener: ReturnType<rhea.Container["listen"]>;
   let listeningPort: number;
 
-  beforeEach((done: Function) => {
+  beforeEach(async () => {
     mockService = rhea.create_container();
     mockServiceListener = mockService.listen({ port: 0 });
     listeningPort = (mockServiceListener.address() as AddressInfo).port;
 
-    mockServiceListener.on("listening", () => {
-      done();
+    await new Promise<void>((resolve) => {
+      mockServiceListener.on("listening", () => {
+        resolve();
+      });
     });
   });
 
@@ -34,12 +40,12 @@ describe("Connection", () => {
     assert.isTrue(connection.isOpen(), "Connection should be open.");
     assert.isTrue(
       connection.isRemoteOpen(),
-      "Connection should be established."
+      "Connection should be established.",
     );
     await connection.close();
     assert.isFalse(
       connection.isRemoteOpen(),
-      "Connection should be disconnected."
+      "Connection should be disconnected.",
     );
     assert.isFalse(connection.isOpen(), "Connection should be closed.");
   });
@@ -56,7 +62,10 @@ describe("Connection", () => {
     assert.isTrue(session.isOpen(), "Session should be open.");
 
     await connection.close();
-    assert.isFalse(session.isOpen(), "Session should be not be open after connection closed.");
+    assert.isFalse(
+      session.isOpen(),
+      "Session should be not be open after connection closed.",
+    );
   });
 
   it("createSender()", async () => {
@@ -71,7 +80,10 @@ describe("Connection", () => {
     assert.isTrue(sender.isOpen(), "Sender should be open.");
 
     await connection.close();
-    assert.isFalse(sender.isOpen(), "Sender should be not be open after connection closed.");
+    assert.isFalse(
+      sender.isOpen(),
+      "Sender should be not be open after connection closed.",
+    );
   });
 
   it("createSender() with given session", async () => {
@@ -87,10 +99,17 @@ describe("Connection", () => {
 
     const sender = await connection.createSender({ session });
     assert.isTrue(sender.isOpen(), "Sender should be open.");
-    assert.equal(sender.session, session, "Session of sender should be the same as the session passed to createSender()");
+    assert.equal(
+      sender.session,
+      session,
+      "Session of sender should be the same as the session passed to createSender()",
+    );
 
     await connection.close();
-    assert.isFalse(sender.isOpen(), "Sender should be not be open after connection closed.");
+    assert.isFalse(
+      sender.isOpen(),
+      "Sender should be not be open after connection closed.",
+    );
   });
 
   it("createAwaitableSender()", async () => {
@@ -105,7 +124,10 @@ describe("Connection", () => {
     assert.isTrue(sender.isOpen(), "Sender should be open.");
 
     await connection.close();
-    assert.isFalse(sender.isOpen(), "Sender should be not be open after connection closed.");
+    assert.isFalse(
+      sender.isOpen(),
+      "Sender should be not be open after connection closed.",
+    );
   });
 
   it("createAwaitableSender() with given session", async () => {
@@ -121,10 +143,17 @@ describe("Connection", () => {
 
     const sender = await connection.createAwaitableSender({ session });
     assert.isTrue(sender.isOpen(), "Sender should be open.");
-    assert.equal(sender.session, session, "Session of sender should be the same as the session passed to createSender()");
+    assert.equal(
+      sender.session,
+      session,
+      "Session of sender should be the same as the session passed to createSender()",
+    );
 
     await connection.close();
-    assert.isFalse(sender.isOpen(), "Sender should be not be open after connection closed.");
+    assert.isFalse(
+      sender.isOpen(),
+      "Sender should be not be open after connection closed.",
+    );
   });
 
   it("createReceiver()", async () => {
@@ -139,7 +168,10 @@ describe("Connection", () => {
     assert.isTrue(receiver.isOpen(), "Receiver should be open.");
 
     await connection.close();
-    assert.isFalse(receiver.isOpen(), "Receiver should be not be open after connection closed.");
+    assert.isFalse(
+      receiver.isOpen(),
+      "Receiver should be not be open after connection closed.",
+    );
   });
 
   it("createReceiver() with given session", async () => {
@@ -155,10 +187,17 @@ describe("Connection", () => {
 
     const receiver = await connection.createReceiver({ session });
     assert.isTrue(receiver.isOpen(), "Receiver should be open.");
-    assert.equal(receiver.session, session, "Session of receiver should be the same as the session passed to createReceiver()");
+    assert.equal(
+      receiver.session,
+      session,
+      "Session of receiver should be the same as the session passed to createReceiver()",
+    );
 
     await connection.close();
-    assert.isFalse(receiver.isOpen(), "Receiver should be not be open after connection closed.");
+    assert.isFalse(
+      receiver.isOpen(),
+      "Receiver should be not be open after connection closed.",
+    );
   });
 
   it("createRequestResponseLink()", async () => {
@@ -169,16 +208,37 @@ describe("Connection", () => {
     await connection.open();
     assert.isTrue(connection.isOpen(), "Connection should be open.");
 
-    const requestResponseLink = await connection.createRequestResponseLink({}, {});
+    const requestResponseLink = await connection.createRequestResponseLink(
+      {},
+      {},
+    );
 
-    assert.isTrue(requestResponseLink.session.isOpen(), "Session should be open.");
-    assert.isTrue(requestResponseLink.receiver.isOpen(), "Receiver should be open.");
-    assert.isTrue(requestResponseLink.sender.isOpen(), "Sender should be open.");
+    assert.isTrue(
+      requestResponseLink.session.isOpen(),
+      "Session should be open.",
+    );
+    assert.isTrue(
+      requestResponseLink.receiver.isOpen(),
+      "Receiver should be open.",
+    );
+    assert.isTrue(
+      requestResponseLink.sender.isOpen(),
+      "Sender should be open.",
+    );
 
     await connection.close();
-    assert.isFalse(requestResponseLink.session.isOpen(), "Session should be not be open after connection closed.");
-    assert.isFalse(requestResponseLink.receiver.isOpen(), "Receiver should be not be open after connection closed.");
-    assert.isFalse(requestResponseLink.sender.isOpen(), "Sender should be not be open after connection closed.");
+    assert.isFalse(
+      requestResponseLink.session.isOpen(),
+      "Session should be not be open after connection closed.",
+    );
+    assert.isFalse(
+      requestResponseLink.receiver.isOpen(),
+      "Receiver should be not be open after connection closed.",
+    );
+    assert.isFalse(
+      requestResponseLink.sender.isOpen(),
+      "Sender should be not be open after connection closed.",
+    );
   });
 
   it("createRequestResponseLink() with given session", async () => {
@@ -192,50 +252,81 @@ describe("Connection", () => {
     const session = await connection.createSession();
     assert.isTrue(session.isOpen(), "Session should be open.");
 
-    const requestResponseLink = await connection.createRequestResponseLink({}, {}, {session});
+    const requestResponseLink = await connection.createRequestResponseLink(
+      {},
+      {},
+      { session },
+    );
 
-    assert.isTrue(requestResponseLink.session.isOpen(), "Session should be open.");
-    assert.isTrue(requestResponseLink.receiver.isOpen(), "Receiver should be open.");
-    assert.isTrue(requestResponseLink.sender.isOpen(), "Sender should be open.");
-    assert.equal(requestResponseLink.session, session, "Session of requestResponseLink should be the same as the session passed to createRequestResponseLink()");
+    assert.isTrue(
+      requestResponseLink.session.isOpen(),
+      "Session should be open.",
+    );
+    assert.isTrue(
+      requestResponseLink.receiver.isOpen(),
+      "Receiver should be open.",
+    );
+    assert.isTrue(
+      requestResponseLink.sender.isOpen(),
+      "Sender should be open.",
+    );
+    assert.equal(
+      requestResponseLink.session,
+      session,
+      "Session of requestResponseLink should be the same as the session passed to createRequestResponseLink()",
+    );
 
     await connection.close();
-    assert.isFalse(requestResponseLink.session.isOpen(), "Session should be not be open after connection closed.");
-    assert.isFalse(requestResponseLink.receiver.isOpen(), "Receiver should be not be open after connection closed.");
-    assert.isFalse(requestResponseLink.sender.isOpen(), "Sender should be not be open after connection closed.");
+    assert.isFalse(
+      requestResponseLink.session.isOpen(),
+      "Session should be not be open after connection closed.",
+    );
+    assert.isFalse(
+      requestResponseLink.receiver.isOpen(),
+      "Receiver should be not be open after connection closed.",
+    );
+    assert.isFalse(
+      requestResponseLink.sender.isOpen(),
+      "Sender should be not be open after connection closed.",
+    );
   });
 
   describe("supports events", () => {
-    it("connectionOpen", (done: Function) => {
+    it("connectionOpen", async () => {
       const connection = new Connection({
         port: listeningPort,
       });
 
-      connection.on(ConnectionEvents.connectionOpen, async (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        await connection.close();
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        connection.on(ConnectionEvents.connectionOpen, async (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          await connection.close();
+          resolve();
+        });
       });
+
       connection.open();
+      await eventPromise;
     });
 
-    it("connectionClose", (done: Function) => {
+    it("connectionClose", async () => {
       const connection = new Connection({
         port: listeningPort,
       });
 
-      connection.on(ConnectionEvents.connectionClose, (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        connection.on(ConnectionEvents.connectionClose, (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          resolve();
+        });
       });
 
-      (async function run() {
-        await connection.open();
-        await connection.close();
-      })();
+      await connection.open();
+      await connection.close();
+      await eventPromise;
     });
 
-    it("connectionError on connection open", (done: Function) => {
+    it("connectionError on connection open", async () => {
       const errorCondition = "amqp:connection:forced";
       const errorDescription = "testing error on close";
       mockService.on(
@@ -245,7 +336,7 @@ describe("Connection", () => {
             condition: errorCondition,
             description: errorDescription,
           });
-        }
+        },
       );
 
       const connection = new Connection({
@@ -253,20 +344,23 @@ describe("Connection", () => {
         reconnect: false,
       });
 
-      connection.on(ConnectionEvents.connectionError, async (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        const error = event.error as rhea.ConnectionError;
-        assert.exists(error, "Expected an AMQP error.");
-        assert.strictEqual(error.condition, errorCondition);
-        assert.strictEqual(error.description, errorDescription);
-        await connection.close();
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        connection.on(ConnectionEvents.connectionError, async (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          const error = event.error as rhea.ConnectionError;
+          assert.exists(error, "Expected an AMQP error.");
+          assert.strictEqual(error.condition, errorCondition);
+          assert.strictEqual(error.description, errorDescription);
+          await connection.close();
+          resolve();
+        });
       });
 
       connection.open();
+      await eventPromise;
     });
 
-    it("disconnected", (done: Function) => {
+    it("disconnected", async () => {
       mockService.on(
         rhea.ConnectionEvents.connectionOpen,
         (context: rhea.EventContext) => {
@@ -274,7 +368,7 @@ describe("Connection", () => {
             condition: "amqp:connection:forced",
             description: "testing error on close",
           });
-        }
+        },
       );
 
       const connection = new Connection({
@@ -282,16 +376,19 @@ describe("Connection", () => {
         reconnect: false,
       });
 
-      connection.on(ConnectionEvents.disconnected, async (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        await connection.close();
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        connection.on(ConnectionEvents.disconnected, async (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          await connection.close();
+          resolve();
+        });
       });
 
       connection.open();
+      await eventPromise;
     });
 
-    it("connectionError on connection.close() is bubbled up", (done: Function) => {
+    it("connectionError on connection.close() is bubbled up", async () => {
       const errorCondition = "amqp:connection:forced";
       const errorDescription = "testing error on close";
       mockService.on(
@@ -301,7 +398,7 @@ describe("Connection", () => {
             condition: errorCondition,
             description: errorDescription,
           });
-        }
+        },
       );
 
       const connection = new Connection({
@@ -309,23 +406,23 @@ describe("Connection", () => {
         reconnect: false,
       });
 
-      connection.on(ConnectionEvents.connectionOpen, async (event) => {
-        assert.exists(event, "Expected an AMQP event.");
-        try {
-          await connection.close();
-          throw new Error("boo")
-        } catch (error) {
-          assert.exists(error, "Expected an AMQP error.");
-          assert.strictEqual(error.condition, errorCondition);
-          assert.strictEqual(error.description, errorDescription);
-        }
-        done();
+      const eventPromise = new Promise<void>((resolve) => {
+        connection.on(ConnectionEvents.connectionOpen, async (event) => {
+          assert.exists(event, "Expected an AMQP event.");
+          try {
+            await connection.close();
+            throw new Error("boo");
+          } catch (error) {
+            assert.exists(error, "Expected an AMQP error.");
+            assert.strictEqual(error.condition, errorCondition);
+            assert.strictEqual(error.description, errorDescription);
+          }
+          resolve();
+        });
       });
 
       connection.open();
-
-
-
+      await eventPromise;
     });
   });
 
@@ -350,7 +447,7 @@ describe("Connection", () => {
         abortErrorThrown = error.name === abortErrorName;
       }
 
-      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
       assert.isFalse(connection.isOpen(), "Connection should not be open.");
     });
 
@@ -374,7 +471,7 @@ describe("Connection", () => {
         abortErrorThrown = error.name === abortErrorName;
       }
 
-      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
       assert.isFalse(connection.isOpen(), "Connection should not be open.");
     });
 
@@ -401,9 +498,12 @@ describe("Connection", () => {
         abortErrorThrown = error.name === abortErrorName;
       }
 
-      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
       assert.isFalse(connection.isOpen(), "Connection should not be open.");
-      assert.isTrue(connection.isRemoteOpen(), "Connection remote endpoint should not have gotten a chance to close.");
+      assert.isTrue(
+        connection.isRemoteOpen(),
+        "Connection remote endpoint should not have gotten a chance to close.",
+      );
     });
 
     it("connection.close() fails when abort signal is fired", async () => {
@@ -429,9 +529,12 @@ describe("Connection", () => {
         abortErrorThrown = error.name === abortErrorName;
       }
 
-      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.")
+      assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
       assert.isFalse(connection.isOpen(), "Connection should not be open.");
-      assert.isTrue(connection.isRemoteOpen(), "Connection remote endpoint should not have gotten a chance to close.");
+      assert.isTrue(
+        connection.isRemoteOpen(),
+        "Connection remote endpoint should not have gotten a chance to close.",
+      );
     });
 
     it("createSession() fails with aborted signal", async () => {
@@ -450,13 +553,15 @@ describe("Connection", () => {
 
       let abortErrorThrown = false;
       try {
-        await createSessionPromise
+        await createSessionPromise;
       } catch (error) {
         abortErrorThrown = error.name === abortErrorName;
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
-      const sessionMap = (connection["_connection"] as any)["local_channel_map"];
+      const sessionMap = (connection["_connection"] as any)[
+        "local_channel_map"
+      ];
       assert.deepEqual(sessionMap, {});
       await connection.close();
     });
@@ -477,18 +582,20 @@ describe("Connection", () => {
 
       let abortErrorThrown = false;
       try {
-        await createSessionPromise
+        await createSessionPromise;
       } catch (error) {
         abortErrorThrown = error.name === abortErrorName;
       }
 
       assert.isTrue(abortErrorThrown, "AbortError should have been thrown.");
-      const sessionMap = (connection["_connection"] as any)["local_channel_map"];
+      const sessionMap = (connection["_connection"] as any)[
+        "local_channel_map"
+      ];
       // There should be at most 1 session.
       const [sessionName] = Object.keys(sessionMap);
       const session = sessionName && sessionMap[sessionName];
       if (!session.is_closed()) {
-        await new Promise(resolve => {
+        await new Promise((resolve) => {
           session.once(rhea.SessionEvents.sessionClose, resolve);
         });
       }
@@ -559,7 +666,9 @@ describe("Connection", () => {
 
       // Pass an already aborted signal to createAwaitableSender()
       abortController.abort();
-      const createAwaitableSenderPromise = connection.createAwaitableSender({ abortSignal });
+      const createAwaitableSenderPromise = connection.createAwaitableSender({
+        abortSignal,
+      });
 
       let abortErrorThrown = false;
       try {
@@ -583,7 +692,9 @@ describe("Connection", () => {
       const abortSignal = abortController.signal;
 
       // Abort the signal after passing it to createAwaitableSender()
-      const createAwaitableSenderPromise = connection.createAwaitableSender({ abortSignal });
+      const createAwaitableSenderPromise = connection.createAwaitableSender({
+        abortSignal,
+      });
       abortController.abort();
 
       let abortErrorThrown = false;
@@ -659,7 +770,11 @@ describe("Connection", () => {
 
       // Pass an already aborted signal to createReceiver()
       abortController.abort();
-      const createPromise = connection.createRequestResponseLink({}, {}, {abortSignal});
+      const createPromise = connection.createRequestResponseLink(
+        {},
+        {},
+        { abortSignal },
+      );
 
       let abortErrorThrown = false;
       try {
@@ -683,7 +798,11 @@ describe("Connection", () => {
       const abortSignal = abortController.signal;
 
       // Abort the signal after passing it to createReceiver()
-      const createPromise = connection.createRequestResponseLink({}, {}, {abortSignal});
+      const createPromise = connection.createRequestResponseLink(
+        {},
+        {},
+        { abortSignal },
+      );
       abortController.abort();
 
       let abortErrorThrown = false;
@@ -701,7 +820,7 @@ describe("Connection", () => {
       const connectionOptions: ConnectionOptions = {
         operationTimeoutInSeconds: 30,
         transport: "tls",
-      }
+      };
       const connection = new Connection(connectionOptions);
       assert.equal(30, connection["options"].operationTimeoutInSeconds);
     });
@@ -709,7 +828,7 @@ describe("Connection", () => {
     it("constructor sets operationTimeoutInSeconds option when passing a ConnectionOptions with undefined operationTimeoutInSeconds", () => {
       const connectionOptions: ConnectionOptions = {
         transport: "tls",
-      }
+      };
       const connection = new Connection(connectionOptions);
       assert.equal(60, connection["options"].operationTimeoutInSeconds);
     });
@@ -741,5 +860,5 @@ describe("Connection", () => {
       const connection2 = new Connection(createdRheaConnectionOptions);
       assert.equal(60, connection2["options"].operationTimeoutInSeconds);
     });
-  })
+  });
 });

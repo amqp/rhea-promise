@@ -1,4 +1,19 @@
-### 3.0.1 - (Unreleased)
+### 3.0.4 - (Unreleased)
+
+- Fix `AwaitableSender.send()` to reject with a clear error when the sender link is closed (e.g. due to a disconnection) while sending, instead of failing with a generic operation timeout.
+- Update minimum supported Node.js version to 22.x. Node 16, 18, and 20 are no longer supported.
+- Upgrade TypeScript to 6.0 and switch `module` to `nodenext` to remove auto-generated `/// <reference types="node" />` directives from typings.
+- Update `@types/node` to ^22.0.0.
+
+### 3.0.3 - (2024-06-12)
+
+- Release the resources if `Session.createReceiver()` rejects due to timeout.
+
+### 3.0.2 - (2024-05-02)
+
+- Set the max listener limit to 1000 for `RheaConnection`
+
+### 3.0.1 - (2023-05-05)
 
 - Fix a bug where `Connection` constructor isn't setting `operationTimeoutInSeconds` correctly.
 

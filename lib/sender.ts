@@ -2,11 +2,14 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import {
-  SenderOptions as RheaSenderOptions, Delivery, Message, Sender as RheaSender
+  SenderOptions as RheaSenderOptions,
+  Delivery,
+  Message,
+  Sender as RheaSender,
 } from "rhea";
 import { Session } from "./session";
 import { SenderEvents } from "rhea";
-import { Link, LinkType } from './link';
+import { Link, LinkType } from "./link";
 import { OnAmqpEvent } from "./eventContext";
 
 /**
@@ -76,8 +79,11 @@ export declare interface Sender {
  * @class BaseSender
  */
 export class BaseSender extends Link {
-
-  constructor(session: Session, sender: RheaSender, options?: BaseSenderOptions) {
+  constructor(
+    session: Session,
+    sender: RheaSender,
+    options?: BaseSenderOptions,
+  ) {
     super(LinkType.sender, session, sender, options);
   }
 
@@ -112,7 +118,6 @@ export class SenderSendOptions {
  * @class Sender
  */
 export class Sender extends BaseSender {
-
   constructor(session: Session, sender: RheaSender, options?: SenderOptions) {
     super(session, sender, options);
   }

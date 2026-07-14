@@ -9,11 +9,26 @@ import { Sender, SenderOptions } from "./sender";
 import { Receiver, ReceiverOptions } from "./receiver";
 import { Container } from "./container";
 import { defaultOperationTimeoutInSeconds } from "./util/constants";
-import { Func, EmitParameters, emitEvent, AbortSignalLike, createAbortError } from "./util/utils";
 import {
-  ConnectionEvents, SessionEvents, SenderEvents, ReceiverEvents, create_connection, websocket_connect,
-  ConnectionOptions as RheaConnectionOptions, Connection as RheaConnection, AmqpError, Dictionary,
-  ConnectionError, EventContext as RheaEventContext
+  Func,
+  EmitParameters,
+  emitEvent,
+  AbortSignalLike,
+  createAbortError,
+} from "./util/utils";
+import {
+  ConnectionEvents,
+  SessionEvents,
+  SenderEvents,
+  ReceiverEvents,
+  create_connection,
+  websocket_connect,
+  ConnectionOptions as RheaConnectionOptions,
+  Connection as RheaConnection,
+  AmqpError,
+  Dictionary,
+  ConnectionError,
+  EventContext as RheaEventContext,
 } from "rhea";
 
 import { OnAmqpEvent } from "./eventContext";
@@ -143,8 +158,6 @@ export type ConnectionOptions = RheaConnectionOptions & {
   };
 };
 
-
-
 /**
  * Describes the options that can be provided while creating a rhea-promise connection from an
  * already created rhea connection object.
@@ -168,8 +181,14 @@ export interface CreatedRheaConnectionOptions {
 }
 
 // Determines whether the given object is a CreatedRheConnectionOptions object.
-function isCreatedRheaConnectionOptions(obj: any): obj is CreatedRheaConnectionOptions {
-  return (obj && typeof obj.container === "object" && typeof obj.rheaConnection === "object");
+function isCreatedRheaConnectionOptions(
+  obj: any,
+): obj is CreatedRheaConnectionOptions {
+  return (
+    obj &&
+    typeof obj.container === "object" &&
+    typeof obj.rheaConnection === "object"
+  );
 }
 
 /**
@@ -202,6 +221,8 @@ export declare interface Connection {
   on(event: ConnectionEvents, listener: OnAmqpEvent): this;
 }
 
+const maxListenerLimit = 1000;
+
 /**
  * Describes the AMQP Connection.
  * @class Connection
@@ -232,30 +253,45 @@ export class Connection extends Entity {
     super();
 
     if (isCreatedRheaConnectionOptions(options)) {
-      this._connection = (options as CreatedRheaConnectionOptions).rheaConnection;
+      this._connection = (
+        options as CreatedRheaConnectionOptions
+      ).rheaConnection;
       this.container = (options as CreatedRheaConnectionOptions).container;
     } else {
       let connectionOptions = options as ConnectionOptions;
       if (!connectionOptions) connectionOptions = { transport: "tls" };
       if (!connectionOptions.operationTimeoutInSeconds) {
-        connectionOptions.operationTimeoutInSeconds = defaultOperationTimeoutInSeconds;
+        connectionOptions.operationTimeoutInSeconds =
+          defaultOperationTimeoutInSeconds;
       }
       if (connectionOptions.webSocketOptions) {
-        const ws = websocket_connect(connectionOptions.webSocketOptions.webSocket);
+        const ws = websocket_connect(
+          connectionOptions.webSocketOptions.webSocket,
+        );
         (connectionOptions.connection_details as any) = ws(
           connectionOptions.webSocketOptions.url,
           connectionOptions.webSocketOptions.protocol,
-          connectionOptions.webSocketOptions.options);
+          connectionOptions.webSocketOptions.options,
+        );
       }
       this._connection = create_connection(connectionOptions);
-      this.container = Container.copyFromContainerInstance(this._connection.container);
+      this.container = Container.copyFromContainerInstance(
+        this._connection.container,
+      );
       options = connectionOptions;
     }
 
     this.options = this._connection.options;
-    this.options.operationTimeoutInSeconds = options?.operationTimeoutInSeconds ?? this.options.operationTimeoutInSeconds ?? defaultOperationTimeoutInSeconds;
+    this.options.operationTimeoutInSeconds =
+      options?.operationTimeoutInSeconds ??
+      this.options.operationTimeoutInSeconds ??
+      defaultOperationTimeoutInSeconds;
 
     this._initializeEventListeners();
+
+    // Set max listeners on the connection to 1000 because Session and Link add their own listeners
+    // and the default value of 10 in NodeJS is too low.
+    this._connection.setMaxListeners(maxListenerLimit);
   }
 
   /**
@@ -326,15 +362,23 @@ export class Connection extends Entity {
   open(options?: ConnectionOpenOptions): Promise<Connection> {
     return new Promise((resolve, reject) => {
       if (!this.isOpen()) {
-
         const abortSignal = options && options.abortSignal;
 
         const removeListeners = () => {
           clearTimeout(waitTimer);
           this.actionInitiated--;
-          this._connection.removeListener(ConnectionEvents.connectionOpen, onOpen);
-          this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
-          this._connection.removeListener(ConnectionEvents.disconnected, onClose);
+          this._connection.removeListener(
+            ConnectionEvents.connectionOpen,
+            onOpen,
+          );
+          this._connection.removeListener(
+            ConnectionEvents.connectionClose,
+            onClose,
+          );
+          this._connection.removeListener(
+            ConnectionEvents.disconnected,
+            onClose,
+          );
           if (abortSignal) {
             abortSignal.removeEventListener("abort", onAbort);
           }
@@ -342,15 +386,24 @@ export class Connection extends Entity {
 
         const onOpen = (context: RheaEventContext) => {
           removeListeners();
-          log.connection("[%s] Resolving the promise with amqp connection.", this.id);
+          log.connection(
+            "[%s] Resolving the promise with amqp connection.",
+            this.id,
+          );
           return resolve(this);
         };
 
         const onClose = (context: RheaEventContext) => {
           removeListeners();
-          const err = context.error || context.connection.error || Error('Failed to connect');
-          log.error("[%s] Error occurred while establishing amqp connection: %O",
-            this.id, err);
+          const err =
+            context.error ||
+            context.connection.error ||
+            Error("Failed to connect");
+          log.error(
+            "[%s] Error occurred while establishing amqp connection: %O",
+            this.id,
+            err,
+          );
           return reject(err);
         };
 
@@ -373,7 +426,10 @@ export class Connection extends Entity {
         this._connection.once(ConnectionEvents.connectionOpen, onOpen);
         this._connection.once(ConnectionEvents.connectionClose, onClose);
         this._connection.once(ConnectionEvents.disconnected, onClose);
-        const waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
+        const waitTimer = setTimeout(
+          actionAfterTimeout,
+          this.options!.operationTimeoutInSeconds! * 1000,
+        );
         log.connection("[%s] Trying to create a new amqp connection.", this.id);
         this._connection.connect();
         this.actionInitiated++;
@@ -390,7 +446,6 @@ export class Connection extends Entity {
       }
     });
   }
-
 
   /**
    * Closes the amqp connection.
@@ -412,9 +467,18 @@ export class Connection extends Entity {
         const removeListeners = () => {
           clearTimeout(waitTimer);
           this.actionInitiated--;
-          this._connection.removeListener(ConnectionEvents.connectionError, onError);
-          this._connection.removeListener(ConnectionEvents.connectionClose, onClose);
-          this._connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
+          this._connection.removeListener(
+            ConnectionEvents.connectionError,
+            onError,
+          );
+          this._connection.removeListener(
+            ConnectionEvents.connectionClose,
+            onClose,
+          );
+          this._connection.removeListener(
+            ConnectionEvents.disconnected,
+            onDisconnected,
+          );
           if (abortSignal) {
             abortSignal.removeEventListener("abort", onAbort);
           }
@@ -422,24 +486,34 @@ export class Connection extends Entity {
 
         const onClose = (context: RheaEventContext) => {
           removeListeners();
-          log.connection("[%s] Resolving the promise as the connection has been successfully closed.",
-            this.id);
+          log.connection(
+            "[%s] Resolving the promise as the connection has been successfully closed.",
+            this.id,
+          );
           return resolve();
         };
 
         const onError = (context: RheaEventContext) => {
           removeListeners();
-          log.error("[%s] Error occurred while closing amqp connection: %O.",
-            this.id, context.connection.error);
+          log.error(
+            "[%s] Error occurred while closing amqp connection: %O.",
+            this.id,
+            context.connection.error,
+          );
           return reject(context.connection.error);
         };
 
         const onDisconnected = (context: RheaEventContext) => {
           removeListeners();
-          const error = context.connection && context.connection.error
-            ? context.connection.error
-            : context.error;
-          log.error("[%s] Connection got disconnected while closing itself: %O.", this.id, error);
+          const error =
+            context.connection && context.connection.error
+              ? context.connection.error
+              : context.error;
+          log.error(
+            "[%s] Connection got disconnected while closing itself: %O.",
+            this.id,
+            error,
+          );
         };
 
         const onAbort = () => {
@@ -460,7 +534,10 @@ export class Connection extends Entity {
         this._connection.once(ConnectionEvents.connectionClose, onClose);
         this._connection.once(ConnectionEvents.connectionError, onError);
         this._connection.once(ConnectionEvents.disconnected, onDisconnected);
-        const waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
+        const waitTimer = setTimeout(
+          actionAfterTimeout,
+          this.options!.operationTimeoutInSeconds! * 1000,
+        );
         this._connection.close();
         this.actionInitiated++;
 
@@ -483,7 +560,11 @@ export class Connection extends Entity {
    */
   isOpen(): boolean {
     let result = false;
-    if (this._connection && this._connection.is_open && this._connection.is_open()) {
+    if (
+      this._connection &&
+      this._connection.is_open &&
+      this._connection.is_open()
+    ) {
       result = true;
     }
     return result;
@@ -597,7 +678,10 @@ export class Connection extends Entity {
         session.actionInitiated--;
         rheaSession.removeListener(SessionEvents.sessionOpen, onOpen);
         rheaSession.removeListener(SessionEvents.sessionClose, onClose);
-        rheaSession.connection.removeListener(ConnectionEvents.disconnected, onDisconnected);
+        rheaSession.connection.removeListener(
+          ConnectionEvents.disconnected,
+          onDisconnected,
+        );
         if (abortSignal) {
           abortSignal.removeEventListener("abort", onAbort);
         }
@@ -605,24 +689,36 @@ export class Connection extends Entity {
 
       const onOpen = (context: RheaEventContext) => {
         removeListeners();
-        log.session("[%s] Resolving the promise with amqp session '%s'.", this.id, session.id);
+        log.session(
+          "[%s] Resolving the promise with amqp session '%s'.",
+          this.id,
+          session.id,
+        );
         return resolve(session);
       };
 
       const onClose = (context: RheaEventContext) => {
         removeListeners();
-        log.error("[%s] Error occurred while establishing a session over amqp connection: %O.",
-          this.id, context.session!.error);
+        log.error(
+          "[%s] Error occurred while establishing a session over amqp connection: %O.",
+          this.id,
+          context.session!.error,
+        );
         return reject(context.session!.error);
       };
 
       const onDisconnected = (context: RheaEventContext) => {
         removeListeners();
-        const error = context.connection && context.connection.error
-          ? context.connection.error
-          : context.error;
-        log.error("[%s] Connection got disconnected while creating amqp session '%s': %O.",
-          this.id, session.id, error);
+        const error =
+          context.connection && context.connection.error
+            ? context.connection.error
+            : context.error;
+        log.error(
+          "[%s] Connection got disconnected while creating amqp session '%s': %O.",
+          this.id,
+          session.id,
+          error,
+        );
         return reject(error);
       };
 
@@ -636,9 +732,15 @@ export class Connection extends Entity {
       // listeners that we add for completing the operation are added directly to rhea's objects.
       rheaSession.once(SessionEvents.sessionOpen, onOpen);
       rheaSession.once(SessionEvents.sessionClose, onClose);
-      rheaSession.connection.once(ConnectionEvents.disconnected, onDisconnected);
+      rheaSession.connection.once(
+        ConnectionEvents.disconnected,
+        onDisconnected,
+      );
       log.session("[%s] Calling amqp session.begin().", this.id);
-      const waitTimer = setTimeout(actionAfterTimeout, this.options!.operationTimeoutInSeconds! * 1000);
+      const waitTimer = setTimeout(
+        actionAfterTimeout,
+        this.options!.operationTimeoutInSeconds! * 1000,
+      );
       rheaSession.begin();
     });
   }
@@ -655,7 +757,9 @@ export class Connection extends Entity {
     if (options && options.session && options.session.createSender) {
       return options.session.createSender(options);
     }
-    const session = await this.createSession({ abortSignal: options && options.abortSignal });
+    const session = await this.createSession({
+      abortSignal: options && options.abortSignal,
+    });
     return session.createSender(options);
   }
 
@@ -671,11 +775,15 @@ export class Connection extends Entity {
    *
    * @return Promise<AwaitableSender>.
    */
-  async createAwaitableSender(options?: CreateAwaitableSenderOptions): Promise<AwaitableSender> {
+  async createAwaitableSender(
+    options?: CreateAwaitableSenderOptions,
+  ): Promise<AwaitableSender> {
     if (options && options.session && options.session.createAwaitableSender) {
       return options.session.createAwaitableSender(options);
     }
-    const session = await this.createSession({ abortSignal: options && options.abortSignal });
+    const session = await this.createSession({
+      abortSignal: options && options.abortSignal,
+    });
     return session.createAwaitableSender(options);
   }
 
@@ -691,7 +799,9 @@ export class Connection extends Entity {
     if (options && options.session && options.session.createReceiver) {
       return options.session.createReceiver(options);
     }
-    const session = await this.createSession({ abortSignal: options && options.abortSignal });
+    const session = await this.createSession({
+      abortSignal: options && options.abortSignal,
+    });
     return session.createReceiver(options);
   }
 
@@ -704,8 +814,11 @@ export class Connection extends Entity {
    * @param {CreateRequestResponseLinkOptions} [options] Optional parameters to control how sender and receiver link creation.
    * @return {Promise<ReqResLink>} Promise<ReqResLink>
    */
-  async createRequestResponseLink(senderOptions: SenderOptions, receiverOptions: ReceiverOptions,
-    options: CreateRequestResponseLinkOptions = {}): Promise<ReqResLink> {
+  async createRequestResponseLink(
+    senderOptions: SenderOptions,
+    receiverOptions: ReceiverOptions,
+    options: CreateRequestResponseLinkOptions = {},
+  ): Promise<ReqResLink> {
     if (!senderOptions) {
       throw new Error(`Please provide sender options.`);
     }
@@ -713,17 +826,24 @@ export class Connection extends Entity {
       throw new Error(`Please provide receiver options.`);
     }
     const { session: providedSession, abortSignal } = options;
-    const session = providedSession || await this.createSession({ abortSignal });
+    const session =
+      providedSession || (await this.createSession({ abortSignal }));
     const [sender, receiver] = await Promise.all([
       session.createSender({ ...senderOptions, abortSignal }),
-      session.createReceiver({ ...receiverOptions, abortSignal })
+      session.createReceiver({ ...receiverOptions, abortSignal }),
     ]);
-    log.connection("[%s] Successfully created the sender '%s' and receiver '%s' on the same " +
-      "amqp session '%s'.", this.id, sender.name, receiver.name, session.id);
+    log.connection(
+      "[%s] Successfully created the sender '%s' and receiver '%s' on the same " +
+        "amqp session '%s'.",
+      this.id,
+      sender.name,
+      receiver.name,
+      session.id,
+    );
     return {
       session: session,
       sender: sender,
-      receiver: receiver
+      receiver: receiver,
     };
   }
 
@@ -734,14 +854,16 @@ export class Connection extends Entity {
    * @returns {void} void
    */
   private _initializeEventListeners(): void {
-    for (const eventName of Object.keys(ConnectionEvents) as Array<keyof typeof ConnectionEvents>) {
+    for (const eventName of Object.keys(ConnectionEvents) as Array<
+      keyof typeof ConnectionEvents
+    >) {
       this._connection.on(ConnectionEvents[eventName], (context) => {
         const params: EmitParameters = {
           rheaContext: context,
           emitter: this,
           eventName: ConnectionEvents[eventName],
           emitterType: "connection",
-          connectionId: this.id
+          connectionId: this.id,
         };
         if (ConnectionEvents[eventName] === ConnectionEvents.protocolError) {
           log.connection("[%s] ProtocolError is: %O.", this.id, context);
@@ -760,7 +882,7 @@ export class Connection extends Entity {
         emitter: this,
         eventName: SenderEvents.senderError,
         emitterType: "connection",
-        connectionId: this.id
+        connectionId: this.id,
       };
       emitEvent(params);
     });
@@ -770,7 +892,7 @@ export class Connection extends Entity {
         emitter: this,
         eventName: SenderEvents.senderClose,
         emitterType: "connection",
-        connectionId: this.id
+        connectionId: this.id,
       };
       emitEvent(params);
     });
@@ -782,7 +904,7 @@ export class Connection extends Entity {
         emitter: this,
         eventName: ReceiverEvents.receiverError,
         emitterType: "connection",
-        connectionId: this.id
+        connectionId: this.id,
       };
       emitEvent(params);
     });
@@ -792,7 +914,7 @@ export class Connection extends Entity {
         emitter: this,
         eventName: ReceiverEvents.receiverClose,
         emitterType: "connection",
-        connectionId: this.id
+        connectionId: this.id,
       };
       emitEvent(params);
     });
@@ -804,7 +926,7 @@ export class Connection extends Entity {
         emitter: this,
         eventName: SessionEvents.sessionError,
         emitterType: "connection",
-        connectionId: this.id
+        connectionId: this.id,
       };
       emitEvent(params);
     });
@@ -814,13 +936,17 @@ export class Connection extends Entity {
         emitter: this,
         eventName: SessionEvents.sessionClose,
         emitterType: "connection",
-        connectionId: this.id
+        connectionId: this.id,
       };
       emitEvent(params);
     });
     if (typeof this._connection.eventNames === "function") {
-      log.eventHandler("[%s] rhea-promise 'connection' object is listening for events: %o " +
-        "emitted by rhea's 'connection' object.", this.id, this._connection.eventNames());
+      log.eventHandler(
+        "[%s] rhea-promise 'connection' object is listening for events: %o " +
+          "emitted by rhea's 'connection' object.",
+        this.id,
+        this._connection.eventNames(),
+      );
     }
   }
 }

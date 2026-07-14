@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "preserveConstEnums": true,
     "sourceMap": true,
     "newLine": "LF",
     "target": "es2015",
     "importHelpers": true,
-    "moduleResolution": "node",
+    "types": ["node"],
     "noImplicitReturns": true,
     "outDir": "dist",
     "allowJs": false,
@@ -19,10 +20,5 @@
   },
   "compileOnSave": true,
   "exclude": ["node_modules", "typings/**"],
-  "include": [
-    "./lib/**/*.ts",
-    "./examples/**/*.ts",
-    "./test/**/*.ts",
-    "./.eslintrc.js"
-  ]
+  "include": ["./lib/**/*.ts", "./examples/**/*.ts", "./test/**/*.ts"]
 }

@@ -23,7 +23,6 @@
       "editor.detectIndentation": false
     },
     "editor.rulers": [100],
-    "typescript.tsdk": "./node_modules/typescript/lib",
-    "typescript.preferences.quoteStyle": "double",
-    "javascript.preferences.quoteStyle": "double"
+    "js/ts.tsdk.path": "./node_modules/typescript/lib",
+    "js/ts.preferences.quoteStyle": "double"
   }

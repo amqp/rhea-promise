@@ -52,11 +52,17 @@ export class SendOperationFailedError extends Error {
      * at the [AMQP 1.0 specification - "Section 3.4 Delivery State"](http://www.amqp.org/sites/amqp.org/files/amqp.pdf)
      * for details about `"rejected"` | `"released"` | `"modified"` disposition.
      */
-    readonly code: "rejected" | "released" | "modified" | "sender_error" | "session_error",
+    readonly code:
+      | "rejected"
+      | "released"
+      | "modified"
+      | "sender_error"
+      | "session_error",
     /**
      * Describes the underlying error that caused the send operation to fail.
      */
-    readonly innerError?: Error) {
+    readonly innerError?: Error,
+  ) {
     super(message);
     this.code = code;
     this.innerError = innerError;

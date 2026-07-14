@@ -6,7 +6,7 @@ import { Link } from "../link";
 import { Session } from "../session";
 import { Connection } from "../connection";
 import * as log from "../log";
-import { EventContext } from '../eventContext';
+import { EventContext } from "../eventContext";
 
 /**
  * Defines a mapping for Http like response status codes for different status-code values
@@ -60,23 +60,37 @@ export enum AmqpResponseStatusCode {
   BadGateway = 502,
   ServiceUnavailable = 503,
   GatewayTimeout = 504,
-  HttpVersionNotSupported = 505
+  HttpVersionNotSupported = 505,
 }
 
 /**
  * Provides a list of predefined (amqp) protocol level properties for an amqp message.
  */
 export const messageProperties: string[] = [
-  "message_id", "reply_to", "to", "correlation_id", "content_type", "absolute_expiry_time",
-  "group_id", "group_sequence", "reply_to_group_id", "content_encoding", "creation_time", "subject",
-  "user_id"
+  "message_id",
+  "reply_to",
+  "to",
+  "correlation_id",
+  "content_type",
+  "absolute_expiry_time",
+  "group_id",
+  "group_sequence",
+  "reply_to_group_id",
+  "content_encoding",
+  "creation_time",
+  "subject",
+  "user_id",
 ];
 
 /**
  * Provides a list of predefined (amqp) protocol level properties for an amqp message header.
  */
 export const messageHeader: string[] = [
-  "first_acquirer", "delivery_count", "ttl", "durable", "priority"
+  "first_acquirer",
+  "delivery_count",
+  "ttl",
+  "durable",
+  "priority",
 ];
 
 /**
@@ -91,12 +105,19 @@ export type Func<T, V> = (a: T) => V;
  */
 export function isAmqpError(err: any): boolean {
   if (!err || typeof err !== "object") {
-    throw new Error("err is a required parameter and must be of type 'object'.");
+    throw new Error(
+      "err is a required parameter and must be of type 'object'.",
+    );
   }
   let result = false;
-  if (((err.condition && typeof err.condition === "string") && (err.description && typeof err.description === "string"))
-    || (err.value && Array.isArray(err.value))
-    || (err.constructor && err.constructor.name === "c")) {
+  if (
+    (err.condition &&
+      typeof err.condition === "string" &&
+      err.description &&
+      typeof err.description === "string") ||
+    (err.value && Array.isArray(err.value)) ||
+    (err.constructor && err.constructor.name === "c")
+  ) {
     result = true;
   }
   return result;
@@ -143,7 +164,10 @@ export function delay<T>(t: number, value?: T): Promise<T | void> {
  * @param {string} connectionString The connection string to be parsed.
  * @returns {ParsedOutput<T>} ParsedOutput<T>.
  */
-export function parseConnectionString<T>(connectionString: string, options?: ConnectionStringParseOptions): ParsedOutput<T> {
+export function parseConnectionString<T>(
+  connectionString: string,
+  options?: ConnectionStringParseOptions,
+): ParsedOutput<T> {
   if (!options) options = {};
   const entitySeperator = options.entitySeperator || ";";
   const keyValueSeparator = options.keyValueSeparator || "=";
@@ -152,7 +176,7 @@ export function parseConnectionString<T>(connectionString: string, options?: Con
     const splitIndex = part.indexOf(keyValueSeparator);
     return {
       ...acc,
-      [part.substring(0, splitIndex)]: part.substring(splitIndex + 1)
+      [part.substring(0, splitIndex)]: part.substring(splitIndex + 1),
     };
   }, {} as any);
 }
@@ -178,17 +202,37 @@ export interface EmitParameters {
  */
 export function emitEvent(params: EmitParameters): void {
   const emit = () => {
-    const id = params.emitter &&
-      ((params.emitter as Connection | Session).id || (params.emitter as Link).name);
-    log[params.emitterType]("[%s] %s '%s' got event: '%s'. Re-emitting the translated context.",
-      params.connectionId, params.emitterType, id, params.eventName);
-    params.emitter.emit(params.eventName,
-      EventContext.translate(params.rheaContext, params.emitter, params.eventName));
+    const id =
+      params.emitter &&
+      ((params.emitter as Connection | Session).id ||
+        (params.emitter as Link).name);
+    log[params.emitterType](
+      "[%s] %s '%s' got event: '%s'. Re-emitting the translated context.",
+      params.connectionId,
+      params.emitterType,
+      id,
+      params.eventName,
+    );
+    params.emitter.emit(
+      params.eventName,
+      EventContext.translate(
+        params.rheaContext,
+        params.emitter,
+        params.eventName,
+      ),
+    );
   };
-  if (params.eventName.indexOf("error") !== -1 && params.emitter.actionInitiated > 0) {
-    log[params.emitterType]("[%s] %s got event: '%s'. Will re-emit in the next tick, since " +
-      "this happened before the promise for create/close was resolved.", params.connectionId,
-    params.emitterType, params.eventName);
+  if (
+    params.eventName.indexOf("error") !== -1 &&
+    params.emitter.actionInitiated > 0
+  ) {
+    log[params.emitterType](
+      "[%s] %s got event: '%s'. Will re-emit in the next tick, since " +
+        "this happened before the promise for create/close was resolved.",
+      params.connectionId,
+      params.emitterType,
+      params.eventName,
+    );
     // setTimeout() without any time is equivalent to process.nextTick() and works in node.js and
     // browsers. We wait for a tick to emit error events in general. This should give enough
     // time for promises to resolve on *_open (create) and *_close (close).
@@ -209,7 +253,7 @@ export interface AbortSignalLike {
   addEventListener(
     type: "abort",
     listener: (this: AbortSignalLike, ev: any) => any,
-    options?: any
+    options?: any,
   ): void;
   /**
    * Remove "abort" event listener, only support "abort" event.
@@ -217,7 +261,7 @@ export interface AbortSignalLike {
   removeEventListener(
     type: "abort",
     listener: (this: AbortSignalLike, ev: any) => any,
-    options?: any
+    options?: any,
   ): void;
 }
 

@@ -1,7 +1,6 @@
-import * as rhea from "rhea";
-import { assert } from "chai";
+import rhea from "rhea";
+import { describe, it, beforeEach, afterEach, assert } from "vitest";
 import { Connection, InsufficientCreditError } from "../lib/index";
-import { AbortController } from "@azure/abort-controller";
 import { abortErrorName } from "../lib/util/utils";
 import { AddressInfo } from "net";
 
@@ -11,17 +10,19 @@ describe("Sender", () => {
   let connection: Connection;
   let listeningPort: number;
 
-  beforeEach((done: Function) => {
+  beforeEach(async () => {
     mockService = rhea.create_container();
     mockServiceListener = mockService.listen({ port: 0 });
     listeningPort = (mockServiceListener.address() as AddressInfo).port;
-    mockServiceListener.on("listening", async () => {
-      connection = new Connection({
-        port: listeningPort,
-        reconnect: false,
+    await new Promise<void>((resolve) => {
+      mockServiceListener.on("listening", async () => {
+        connection = new Connection({
+          port: listeningPort,
+          reconnect: false,
+        });
+        await connection.open();
+        resolve();
       });
-      await connection.open();
-      done();
     });
   });
 
@@ -36,7 +37,7 @@ describe("Sender", () => {
     assert.isFalse(sender.isClosed(), "Sender should not be closed.");
     assert.isFalse(
       sender.isItselfClosed(),
-      "Sender should not be fully closed."
+      "Sender should not be fully closed.",
     );
 
     await sender.close();
@@ -47,14 +48,17 @@ describe("Sender", () => {
 
   it("Delivery returned from `AwaitableSender.send()` is not undefined", async () => {
     const sender = await connection.createAwaitableSender();
-    const response = await sender.send({ body: "message" }, { timeoutInSeconds: 1});
+    const response = await sender.send(
+      { body: "message" },
+      { timeoutInSeconds: 1 },
+    );
     assert.exists(
       response,
-      "Response from the AwaitableSender.send() is undefined"
+      "Response from the AwaitableSender.send() is undefined",
     );
     assert.exists(
       response.id,
-      "Delivery returned from the AwaitableSender.send() is undefined"
+      "Delivery returned from the AwaitableSender.send() is undefined",
     );
     await sender.close();
   });
@@ -96,7 +100,7 @@ describe("Sender", () => {
             condition: errorCondition,
             description: errorDescription,
           });
-      }
+      },
     );
 
     try {
@@ -129,7 +133,7 @@ describe("Sender", () => {
 
     assert.isTrue(
       insufficientCreditErrorThrown,
-      "AbortError should have been thrown."
+      "AbortError should have been thrown.",
     );
     await connection.close();
   });
@@ -146,7 +150,7 @@ describe("Sender", () => {
               condition: errorCondition,
               description: errorDescription,
             });
-        }
+        },
       );
 
       const sender = await connection.createSender();
@@ -176,9 +180,12 @@ describe("Sender", () => {
 
       // Pass an already aborted signal to send()
       abortController.abort();
-      const sendPromise = sender.send({ body: "hello" }, {
-        abortSignal,
-      });
+      const sendPromise = sender.send(
+        { body: "hello" },
+        {
+          abortSignal,
+        },
+      );
 
       let abortErrorThrown = false;
       try {
@@ -207,9 +214,12 @@ describe("Sender", () => {
 
       // Pass an already aborted signal to send()
       abortController.abort();
-      const sendPromise = sender.send({ body: "hello" }, {
-        abortSignal,
-      });
+      const sendPromise = sender.send(
+        { body: "hello" },
+        {
+          abortSignal,
+        },
+      );
 
       let abortErrorThrown = false;
       try {
@@ -234,9 +244,12 @@ describe("Sender", () => {
       const abortSignal = abortController.signal;
 
       // Fire abort signal after passing it to send()
-      const sendPromise = sender.send({ body: "hello" }, {
-        abortSignal,
-      });
+      const sendPromise = sender.send(
+        { body: "hello" },
+        {
+          abortSignal,
+        },
+      );
       abortController.abort();
 
       let abortErrorThrown = false;

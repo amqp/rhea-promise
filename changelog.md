@@ -1,4 +1,4 @@
-### 3.0.4 - (Unreleased)
+### 3.0.4 - (2026-07-15)
 
 - Fix `AwaitableSender.send()` to reject with a clear error when the sender link is closed (e.g. due to a disconnection) while sending, instead of failing with a generic operation timeout.
 - Update minimum supported Node.js version to 22.x. Node 16, 18, and 20 are no longer supported.

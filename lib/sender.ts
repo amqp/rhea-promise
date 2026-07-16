@@ -7,6 +7,7 @@ import {
   Message,
   Sender as RheaSender,
 } from "rhea";
+import type { Buffer } from "buffer";
 import { Session } from "./session";
 import { SenderEvents } from "rhea";
 import { Link, LinkType } from "./link";

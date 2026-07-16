@@ -10,15 +10,27 @@ import {
   MessageUtil,
   Sasl,
 } from "rhea";
+import type { Buffer } from "buffer";
 import { EventEmitter } from "events";
 import { ConnectionOptions, Connection } from "./connection";
-import {
-  TlsOptions,
-  Server as TlsServer,
-  ConnectionOptions as TlsConnectionOptions,
-} from "tls";
-import { ListenOptions, Server, Socket } from "net";
-import { TlsServerConnectionOptions } from "rhea/typings/connection";
+import type {
+  EventEmitterLikeConstructor,
+  ListenOptions,
+  Server,
+  Socket,
+  TlsConnectionOptions,
+  TlsServer,
+  TlsServerOptions,
+} from "./util/typeShims";
+
+/**
+ * Node's `EventEmitter` used as the runtime base class, but typed through the
+ * browser-safe {@link EventEmitterLikeConstructor} so that the generated
+ * typings do not depend on `@types/node`. At runtime this is Node's
+ * `EventEmitter` (or its polyfill in non-Node environments).
+ */
+export const EventEmitterBase: EventEmitterLikeConstructor =
+  EventEmitter as unknown as EventEmitterLikeConstructor;
 
 /**
  * Descibes the options that can be provided while creating the Container.
@@ -33,7 +45,7 @@ export interface ContainerOptions extends ContainerOptionsBase {
  * to which incoming connections can be accepted.
  * @class Container
  */
-export class Container extends EventEmitter {
+export class Container extends EventEmitterBase {
   /**
    * @property {options} ContainerOptions Container options.
    */
@@ -90,10 +102,8 @@ export class Container extends EventEmitter {
     return this.createConnection(options).open();
   }
 
-  listen(
-    options: ListenOptions | (TlsOptions & TlsServerConnectionOptions),
-  ): Server | TlsServer {
-    return this._container.listen(options);
+  listen(options: ListenOptions | TlsServerOptions): Server | TlsServer {
+    return this._container.listen(options as any);
   }
 
   generateUUid(): string {
@@ -109,7 +119,7 @@ export class Container extends EventEmitter {
   }
 
   websocketAccept(socket: Socket, options: TlsConnectionOptions): void {
-    return this._container.websocket_accept(socket, options);
+    return this._container.websocket_accept(socket as any, options as any);
   }
 
   websocketConnect(impl: any): any {

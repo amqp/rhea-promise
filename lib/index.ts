@@ -79,3 +79,14 @@ export {
   OperationTimeoutError,
   SendOperationFailedError,
 } from "./errorDefinitions";
+export {
+  EventEmitterLike,
+  EventEmitterLikeConstructor,
+  ListenOptions,
+  PeerCertificate,
+  Server,
+  Socket,
+  TlsConnectionOptions,
+  TlsServer,
+  TlsServerOptions,
+} from "./util/typeShims";

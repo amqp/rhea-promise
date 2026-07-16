@@ -1,8 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the Apache License. See License in the project root for license information.
 
-import { PeerCertificate } from "tls";
-import { Socket } from "net";
+import type { PeerCertificate, Socket } from "./util/typeShims";
 import * as log from "./log";
 import { Session } from "./session";
 import { Sender, SenderOptions } from "./sender";
@@ -602,7 +601,9 @@ export class Connection extends Entity {
    * @returns {PeerCertificate | undefined} PeerCertificate | undefined
    */
   getPeerCertificate(): PeerCertificate | undefined {
-    return this._connection.get_peer_certificate();
+    return this._connection.get_peer_certificate() as
+      | PeerCertificate
+      | undefined;
   }
 
   /**
@@ -610,7 +611,7 @@ export class Connection extends Entity {
    * @returns {Socket | undefined} Socket | undefined
    */
   getTlsSocket(): Socket | undefined {
-    return this._connection.get_tls_socket();
+    return this._connection.get_tls_socket() as Socket | undefined;
   }
 
   /**

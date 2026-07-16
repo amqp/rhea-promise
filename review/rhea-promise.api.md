@@ -5,10 +5,10 @@
 ```ts
 
 import { AmqpError } from 'rhea';
+import type { Buffer as Buffer_2 } from 'buffer';
 import { Connection as Connection_2 } from 'rhea';
 import { ConnectionError } from 'rhea';
 import { ConnectionEvents } from 'rhea';
-import { ConnectionOptions as ConnectionOptions_2 } from 'tls';
 import { ConnectionOptions as ConnectionOptionsBase } from 'rhea';
 import { Container as Container_2 } from 'rhea';
 import { ContainerOptions as ContainerOptionsBase } from 'rhea';
@@ -16,21 +16,18 @@ import { Delivery } from 'rhea';
 import { DeliveryAnnotations } from 'rhea';
 import { Dictionary } from 'rhea';
 import { EndpointOptions } from 'rhea';
-import { EventEmitter } from 'events';
 import { Filter } from 'rhea';
 import { filter } from 'rhea';
 import { generate_uuid } from 'rhea';
 import { link } from 'rhea';
 import { LinkError } from 'rhea';
 import { LinkOptions } from 'rhea';
-import { ListenOptions } from 'net';
 import { Message } from 'rhea';
 import { message } from 'rhea';
 import { MessageAnnotations } from 'rhea';
 import { MessageHeader } from 'rhea';
 import { MessageProperties } from 'rhea';
 import { MessageUtil } from 'rhea';
-import { PeerCertificate } from 'tls';
 import { ProtocolError } from 'rhea';
 import { Receiver as Receiver_2 } from 'rhea';
 import { ReceiverEvents } from 'rhea';
@@ -40,18 +37,13 @@ import { Sasl } from 'rhea';
 import { Sender as Sender_2 } from 'rhea';
 import { SenderEvents } from 'rhea';
 import { SenderOptions as SenderOptions_2 } from 'rhea';
-import { Server } from 'net';
-import { Server as Server_2 } from 'tls';
 import { Session as Session_2 } from 'rhea';
 import { SessionEvents } from 'rhea';
 import { SimpleError } from 'rhea';
-import { Socket } from 'net';
 import { Source } from 'rhea';
 import { string_to_uuid } from 'rhea';
 import { TargetTerminusOptions } from 'rhea';
 import { TerminusOptions } from 'rhea';
-import { TlsOptions } from 'tls';
-import { TlsServerConnectionOptions } from 'rhea/typings/connection';
 import { Typed } from 'rhea';
 import { TypeError as TypeError_2 } from 'rhea';
 import { Types } from 'rhea';
@@ -172,7 +164,7 @@ export interface AwaitableSender {
 export class AwaitableSender extends BaseSender {
     constructor(session: Session, sender: Sender_2, options?: AwaitableSenderOptions);
     deliveryDispositionMap: Map<number, PromiseLike_2>;
-    send(msg: Message | Buffer, options?: AwaitableSendOptions): Promise<Delivery>;
+    send(msg: Message | Buffer_2, options?: AwaitableSendOptions): Promise<Delivery>;
 }
 
 // Warning: (ae-forgotten-export) The symbol "BaseSenderOptions" needs to be exported by the entry point index.d.ts
@@ -185,7 +177,7 @@ export interface AwaitableSendOptions {
     // Warning: (ae-forgotten-export) The symbol "AbortSignalLike" needs to be exported by the entry point index.d.ts
     abortSignal?: AbortSignalLike;
     format?: number;
-    tag?: Buffer | string;
+    tag?: Buffer_2 | string;
     timeoutInSeconds?: number;
 }
 
@@ -252,8 +244,10 @@ export interface ConnectionStringParseOptions {
     keyValueSeparator?: string;
 }
 
+// Warning: (ae-forgotten-export) The symbol "EventEmitterBase_2" needs to be exported by the entry point index.d.ts
+//
 // @public
-export class Container extends EventEmitter {
+export class Container extends EventEmitterBase_2 {
     constructor(options?: ContainerOptions);
     // (undocumented)
     connect(options?: ConnectionOptions): Promise<Connection>;
@@ -270,7 +264,7 @@ export class Container extends EventEmitter {
     // (undocumented)
     get id(): string;
     // (undocumented)
-    listen(options: ListenOptions | (TlsOptions & TlsServerConnectionOptions)): Server | Server_2;
+    listen(options: ListenOptions | TlsServerOptions): Server | TlsServer;
     // (undocumented)
     get message(): MessageUtil;
     options: ContainerOptions;
@@ -279,13 +273,13 @@ export class Container extends EventEmitter {
     // (undocumented)
     get saslServerMechanisms(): any;
     // (undocumented)
-    stringToUuid(uuidString: string): Buffer;
+    stringToUuid(uuidString: string): Buffer_2;
     // (undocumented)
     get types(): Types;
     // (undocumented)
-    uuidToString(buffer: Buffer): string;
+    uuidToString(buffer: Buffer_2): string;
     // (undocumented)
-    websocketAccept(socket: Socket, options: ConnectionOptions_2): void;
+    websocketAccept(socket: Socket, options: TlsConnectionOptions): void;
     // (undocumented)
     websocketConnect(impl: any): any;
 }
@@ -357,6 +351,43 @@ export namespace EventContext {
     export function translate(rheaContext: RheaEventContext, emitter: Link | Session | Connection, eventName: string): EventContext;
 }
 
+// @public
+export interface EventEmitterLike {
+    // (undocumented)
+    addListener(event: string | symbol, listener: (...args: any[]) => void): this;
+    // (undocumented)
+    emit(event: string | symbol, ...args: any[]): boolean;
+    // (undocumented)
+    eventNames(): Array<string | symbol>;
+    // (undocumented)
+    getMaxListeners(): number;
+    // (undocumented)
+    listenerCount(event: string | symbol, listener?: (...args: any[]) => void): number;
+    // (undocumented)
+    listeners(event: string | symbol): Array<(...args: any[]) => void>;
+    // (undocumented)
+    off(event: string | symbol, listener: (...args: any[]) => void): this;
+    // (undocumented)
+    on(event: string | symbol, listener: (...args: any[]) => void): this;
+    // (undocumented)
+    once(event: string | symbol, listener: (...args: any[]) => void): this;
+    // (undocumented)
+    prependListener(event: string | symbol, listener: (...args: any[]) => void): this;
+    // (undocumented)
+    prependOnceListener(event: string | symbol, listener: (...args: any[]) => void): this;
+    // (undocumented)
+    rawListeners(event: string | symbol): Array<(...args: any[]) => void>;
+    // (undocumented)
+    removeAllListeners(event?: string | symbol): this;
+    // (undocumented)
+    removeListener(event: string | symbol, listener: (...args: any[]) => void): this;
+    // (undocumented)
+    setMaxListeners(n: number): this;
+}
+
+// @public
+export type EventEmitterLikeConstructor = new () => EventEmitterLike;
+
 export { Filter }
 
 export { filter }
@@ -383,6 +414,22 @@ export interface LinkCloseOptions {
 export { LinkError }
 
 export { LinkOptions }
+
+// @public
+export interface ListenOptions {
+    // (undocumented)
+    [key: string]: unknown;
+    // (undocumented)
+    backlog?: number;
+    // (undocumented)
+    exclusive?: boolean;
+    // (undocumented)
+    host?: string;
+    // (undocumented)
+    path?: string;
+    // (undocumented)
+    port?: number;
+}
 
 export { Message }
 
@@ -418,6 +465,28 @@ export function parseConnectionString<T>(connectionString: string, options?: Con
 export type ParsedOutput<T> = {
     [P in keyof T]: T[P];
 };
+
+// @public
+export interface PeerCertificate {
+    // (undocumented)
+    [key: string]: unknown;
+    // (undocumented)
+    fingerprint: string;
+    // (undocumented)
+    issuer: Record<string, string>;
+    // (undocumented)
+    raw: Uint8Array;
+    // (undocumented)
+    serialNumber: string;
+    // (undocumented)
+    subject: Record<string, string>;
+    // (undocumented)
+    subjectaltname?: string;
+    // (undocumented)
+    valid_from: string;
+    // (undocumented)
+    valid_to: string;
+}
 
 // @public
 interface PromiseLike_2 {
@@ -484,7 +553,7 @@ export interface Sender {
 // @public
 export class Sender extends BaseSender {
     constructor(session: Session, sender: Sender_2, options?: SenderOptions);
-    send(msg: Message | Buffer, options?: SenderSendOptions): Delivery;
+    send(msg: Message | Buffer_2, options?: SenderSendOptions): Delivery;
 }
 
 export { SenderEvents }
@@ -500,7 +569,7 @@ export interface SenderOptions extends BaseSenderOptions {
 // @public (undocumented)
 export class SenderSendOptions {
     format?: number;
-    tag?: Buffer | string;
+    tag?: Buffer_2 | string;
 }
 
 // @public
@@ -513,6 +582,20 @@ export class SendOperationFailedError extends Error {
     readonly innerError?: Error | undefined;
     readonly message: string;
     readonly name: string;
+}
+
+// @public
+export interface Server {
+    // (undocumented)
+    address(): string | {
+        port: number;
+        family: string;
+        address: string;
+    } | null;
+    // (undocumented)
+    close(callback?: (err?: Error) => void): void;
+    // (undocumented)
+    listening: boolean;
 }
 
 // @public
@@ -560,6 +643,24 @@ export { SessionEvents }
 
 export { SimpleError }
 
+// @public
+export interface Socket {
+    // (undocumented)
+    destroy(error?: Error): void;
+    // (undocumented)
+    end(): void;
+    // (undocumented)
+    readonly localAddress?: string;
+    // (undocumented)
+    readonly localPort?: number;
+    // (undocumented)
+    readonly remoteAddress?: string;
+    // (undocumented)
+    readonly remotePort?: number;
+    // (undocumented)
+    write(data: Uint8Array | string): boolean;
+}
+
 export { Source }
 
 export { string_to_uuid }
@@ -567,6 +668,36 @@ export { string_to_uuid }
 export { TargetTerminusOptions }
 
 export { TerminusOptions }
+
+// @public
+export interface TlsConnectionOptions {
+    // (undocumented)
+    [key: string]: unknown;
+    // (undocumented)
+    host?: string;
+    // (undocumented)
+    port?: number;
+    // (undocumented)
+    servername?: string;
+}
+
+// @public
+export interface TlsServer extends Server {
+    // (undocumented)
+    addContext(hostname: string, credentials: unknown): void;
+}
+
+// @public
+export interface TlsServerOptions extends ListenOptions {
+    // (undocumented)
+    [key: string]: unknown;
+    // (undocumented)
+    ca?: unknown;
+    // (undocumented)
+    cert?: unknown;
+    // (undocumented)
+    key?: unknown;
+}
 
 export { Typed }
 

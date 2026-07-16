@@ -2,6 +2,7 @@
 // Licensed under the Apache License. See License in the project root for license information.
 
 import { Delivery, Message, Sender as RheaSender, SessionEvents } from "rhea";
+import type { Buffer } from "buffer";
 import * as log from "./log";
 import { BaseSender, BaseSenderOptions } from "./sender";
 import { SenderEvents } from "rhea";

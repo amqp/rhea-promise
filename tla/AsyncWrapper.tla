@@ -92,6 +92,8 @@ Send(d) ==
 SettleDelivery(d, outcome, cause) ==
   /\ deliveryState[d] = "pending"
   /\ outcome \in {"resolved", "rejected"}
+  \* senderOrSessionError is reserved for the bulk default error handler below,
+  \* which rejects every pending awaitable send in deliveryDispositionMap.
   /\ cause \in DeliveryCauses \ {"none", "senderOrSessionError"}
   /\ deliveryState' = [deliveryState EXCEPT ![d] = outcome]
   /\ deliveryTerminalCause' = [deliveryTerminalCause EXCEPT ![d] = cause]
@@ -142,6 +144,9 @@ Next ==
 Spec ==
   /\ Init
   /\ [][Next]_vars
+  \* Timeout actions model the operationTimeoutInSeconds / send timeout fallback.
+  \* Under weak fairness, they guarantee pending promises eventually settle even
+  \* when no success, AMQP error, or abort event arrives from the environment.
   /\ \A a \in OPS : WF_vars(OperationTimeout(a))
   /\ \A d \in DELIVERY_IDS : WF_vars(DeliveryTimeout(d))
 

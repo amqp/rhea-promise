@@ -133,6 +133,9 @@ ResetDelivery(d) ==
   /\ UNCHANGED << opState, opTerminalCause, listeners, timers, abortListeners, actionCount >>
 
 DefaultSenderOrSessionError ==
+  \* This action models AwaitableSender's default sender_error/session_error
+  \* handler, which rejects all pending sends in deliveryDispositionMap.
+  \* Operation-level failures are modeled separately by OperationFailure(a).
   /\ \E d \in DELIVERY_IDS : deliveryState[d] = "pending"
   /\ deliveryState' =
        [d \in DELIVERY_IDS |->

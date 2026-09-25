@@ -7,7 +7,7 @@ EXTENDS Naturals
 \* - AwaitableSender tracks deliveries in deliveryDispositionMap until a disposition,
 \*   timeout, abort, sender_error, or session_error settles the send promise.
 
-CONSTANTS ACTIONS, DELIVERIES
+CONSTANTS OPS, DELIVERY_IDS
 
 OpStates == {"idle", "pending", "resolved", "rejected"}
 DeliveryStates == {"unsent", "pending", "resolved", "rejected"}
@@ -35,15 +35,15 @@ vars ==
      deliveryAbortListener >>
 
 Init ==
-  /\ opState = [a \in ACTIONS |-> "idle"]
-  /\ listeners = [a \in ACTIONS |-> FALSE]
-  /\ timers = [a \in ACTIONS |-> FALSE]
-  /\ abortListeners = [a \in ACTIONS |-> FALSE]
-  /\ actionCount = [a \in ACTIONS |-> 0]
-  /\ deliveryState = [d \in DELIVERIES |-> "unsent"]
-  /\ deliveryInMap = [d \in DELIVERIES |-> FALSE]
-  /\ deliveryTimer = [d \in DELIVERIES |-> FALSE]
-  /\ deliveryAbortListener = [d \in DELIVERIES |-> FALSE]
+  /\ opState = [a \in OPS |-> "idle"]
+  /\ listeners = [a \in OPS |-> FALSE]
+  /\ timers = [a \in OPS |-> FALSE]
+  /\ abortListeners = [a \in OPS |-> FALSE]
+  /\ actionCount = [a \in OPS |-> 0]
+  /\ deliveryState = [d \in DELIVERY_IDS |-> "unsent"]
+  /\ deliveryInMap = [d \in DELIVERY_IDS |-> FALSE]
+  /\ deliveryTimer = [d \in DELIVERY_IDS |-> FALSE]
+  /\ deliveryAbortListener = [d \in DELIVERY_IDS |-> FALSE]
 
 StartOperation(a) ==
   /\ opState[a] # "pending"
@@ -92,29 +92,29 @@ DeliveryTimeout(d) == SettleDelivery(d, "rejected")
 DeliveryAbort(d) == SettleDelivery(d, "rejected")
 
 DefaultSenderOrSessionError ==
-  /\ \E d \in DELIVERIES : deliveryState[d] = "pending"
+  /\ \E d \in DELIVERY_IDS : deliveryState[d] = "pending"
   /\ deliveryState' =
-       [d \in DELIVERIES |->
+       [d \in DELIVERY_IDS |->
           IF deliveryState[d] = "pending" THEN "rejected" ELSE deliveryState[d]]
   /\ deliveryInMap' =
-       [d \in DELIVERIES |->
+       [d \in DELIVERY_IDS |->
           IF deliveryState[d] = "pending" THEN FALSE ELSE deliveryInMap[d]]
   /\ deliveryTimer' =
-       [d \in DELIVERIES |->
+       [d \in DELIVERY_IDS |->
           IF deliveryState[d] = "pending" THEN FALSE ELSE deliveryTimer[d]]
   /\ deliveryAbortListener' =
-       [d \in DELIVERIES |->
+       [d \in DELIVERY_IDS |->
           IF deliveryState[d] = "pending" THEN FALSE ELSE deliveryAbortListener[d]]
   /\ UNCHANGED << opState, listeners, timers, abortListeners, actionCount >>
 
 Next ==
-  \/ \E a \in ACTIONS :
+  \/ \E a \in OPS :
        \/ StartOperation(a)
        \/ OperationSuccess(a)
        \/ OperationFailure(a)
        \/ OperationTimeout(a)
        \/ OperationAbort(a)
-  \/ \E d \in DELIVERIES :
+  \/ \E d \in DELIVERY_IDS :
        \/ Send(d)
        \/ DeliveryAccepted(d)
        \/ DeliveryRejected(d)
@@ -125,38 +125,38 @@ Next ==
 Spec ==
   /\ Init
   /\ [][Next]_vars
-  /\ \A a \in ACTIONS : WF_vars(OperationTimeout(a))
-  /\ \A d \in DELIVERIES : WF_vars(DeliveryTimeout(d))
+  /\ \A a \in OPS : WF_vars(OperationTimeout(a))
+  /\ \A d \in DELIVERY_IDS : WF_vars(DeliveryTimeout(d))
 
 TypeOK ==
-  /\ opState \in [ACTIONS -> OpStates]
-  /\ listeners \in [ACTIONS -> BOOLEAN]
-  /\ timers \in [ACTIONS -> BOOLEAN]
-  /\ abortListeners \in [ACTIONS -> BOOLEAN]
-  /\ actionCount \in [ACTIONS -> 0..1]
-  /\ deliveryState \in [DELIVERIES -> DeliveryStates]
-  /\ deliveryInMap \in [DELIVERIES -> BOOLEAN]
-  /\ deliveryTimer \in [DELIVERIES -> BOOLEAN]
-  /\ deliveryAbortListener \in [DELIVERIES -> BOOLEAN]
+  /\ opState \in [OPS -> OpStates]
+  /\ listeners \in [OPS -> BOOLEAN]
+  /\ timers \in [OPS -> BOOLEAN]
+  /\ abortListeners \in [OPS -> BOOLEAN]
+  /\ actionCount \in [OPS -> 0..1]
+  /\ deliveryState \in [DELIVERY_IDS -> DeliveryStates]
+  /\ deliveryInMap \in [DELIVERY_IDS -> BOOLEAN]
+  /\ deliveryTimer \in [DELIVERY_IDS -> BOOLEAN]
+  /\ deliveryAbortListener \in [DELIVERY_IDS -> BOOLEAN]
 
 ActionCounterMatchesPending ==
-  \A a \in ACTIONS :
+  \A a \in OPS :
     actionCount[a] = IF opState[a] = "pending" THEN 1 ELSE 0
 
 OperationResourcesMatchPending ==
-  \A a \in ACTIONS :
+  \A a \in OPS :
     /\ listeners[a] = (opState[a] = "pending")
     /\ timers[a] = (opState[a] = "pending")
     /\ abortListeners[a] = (opState[a] = "pending")
 
 DeliveryMapMatchesPending ==
-  \A d \in DELIVERIES :
+  \A d \in DELIVERY_IDS :
     /\ deliveryInMap[d] = (deliveryState[d] = "pending")
     /\ deliveryTimer[d] = (deliveryState[d] = "pending")
     /\ deliveryAbortListener[d] = (deliveryState[d] = "pending")
 
 NoSettledDeliveryInMap ==
-  \A d \in DELIVERIES :
+  \A d \in DELIVERY_IDS :
     deliveryState[d] \in {"resolved", "rejected"} => ~deliveryInMap[d]
 
 ResourceCleanup ==
@@ -165,11 +165,11 @@ ResourceCleanup ==
   /\ NoSettledDeliveryInMap
 
 OperationEventuallySettles ==
-  \A a \in ACTIONS :
+  \A a \in OPS :
     [](opState[a] = "pending" => <>(opState[a] # "pending"))
 
 DeliveryEventuallySettles ==
-  \A d \in DELIVERIES :
+  \A d \in DELIVERY_IDS :
     [](deliveryState[d] = "pending" => <>(deliveryState[d] # "pending"))
 
 ====

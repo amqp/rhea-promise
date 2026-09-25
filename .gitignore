@@ -57,6 +57,7 @@ output/
 out/
 temp/
 typedoc
+states/
 
 # package lock file
 package-lock.json

@@ -27,7 +27,7 @@ Install or download `tla2tools.jar`, then run:
 java -cp /path/to/tla2tools.jar tlc2.TLC tla/AsyncWrapper.tla -config tla/AsyncWrapper.cfg
 ```
 
-The bundled configuration uses six representative async wrapper operations and three in-flight deliveries. Increase the `ACTIONS` or `DELIVERIES` constants in `AsyncWrapper.cfg` to explore a larger state space.
+The bundled configuration uses three representative async wrapper operations and two in-flight deliveries so TLC completes quickly. Increase the `OPS` or `DELIVERY_IDS` constants in `AsyncWrapper.cfg` to explore a larger state space.
 
 ## Verified properties
 

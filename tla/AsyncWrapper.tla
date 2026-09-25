@@ -54,7 +54,7 @@ Init ==
   /\ deliveryAbortListener = [d \in DELIVERY_IDS |-> FALSE]
 
 StartOperation(a) ==
-  /\ opState[a] # "pending"
+  /\ opState[a] = "idle"
   /\ opState' = [opState EXCEPT ![a] = "pending"]
   /\ opTerminalCause' = [opTerminalCause EXCEPT ![a] = "none"]
   /\ listeners' = [listeners EXCEPT ![a] = TRUE]
@@ -80,8 +80,18 @@ OperationFailure(a) == SettleOperation(a, "rejected", "failure")
 OperationTimeout(a) == SettleOperation(a, "rejected", "timeout")
 OperationAbort(a) == SettleOperation(a, "rejected", "abort")
 
+ResetOperation(a) ==
+  /\ opState[a] \in {"resolved", "rejected"}
+  /\ opState' = [opState EXCEPT ![a] = "idle"]
+  /\ opTerminalCause' = [opTerminalCause EXCEPT ![a] = "none"]
+  /\ listeners' = [listeners EXCEPT ![a] = FALSE]
+  /\ timers' = [timers EXCEPT ![a] = FALSE]
+  /\ abortListeners' = [abortListeners EXCEPT ![a] = FALSE]
+  /\ actionCount' = [actionCount EXCEPT ![a] = 0]
+  /\ UNCHANGED << deliveryState, deliveryTerminalCause, deliveryInMap, deliveryTimer, deliveryAbortListener >>
+
 Send(d) ==
-  /\ deliveryState[d] # "pending"
+  /\ deliveryState[d] = "unsent"
   /\ deliveryState' = [deliveryState EXCEPT ![d] = "pending"]
   /\ deliveryTerminalCause' = [deliveryTerminalCause EXCEPT ![d] = "none"]
   /\ deliveryInMap' = [deliveryInMap EXCEPT ![d] = TRUE]
@@ -106,6 +116,15 @@ DeliveryAccepted(d) == SettleDelivery(d, "resolved", "accepted")
 DeliveryRejected(d) == SettleDelivery(d, "rejected", "rejected")
 DeliveryTimeout(d) == SettleDelivery(d, "rejected", "timeout")
 DeliveryAbort(d) == SettleDelivery(d, "rejected", "abort")
+
+ResetDelivery(d) ==
+  /\ deliveryState[d] \in {"resolved", "rejected"}
+  /\ deliveryState' = [deliveryState EXCEPT ![d] = "unsent"]
+  /\ deliveryTerminalCause' = [deliveryTerminalCause EXCEPT ![d] = "none"]
+  /\ deliveryInMap' = [deliveryInMap EXCEPT ![d] = FALSE]
+  /\ deliveryTimer' = [deliveryTimer EXCEPT ![d] = FALSE]
+  /\ deliveryAbortListener' = [deliveryAbortListener EXCEPT ![d] = FALSE]
+  /\ UNCHANGED << opState, opTerminalCause, listeners, timers, abortListeners, actionCount >>
 
 DefaultSenderOrSessionError ==
   /\ \E d \in DELIVERY_IDS : deliveryState[d] = "pending"
@@ -133,12 +152,14 @@ Next ==
        \/ OperationFailure(a)
        \/ OperationTimeout(a)
        \/ OperationAbort(a)
+       \/ ResetOperation(a)
   \/ \E d \in DELIVERY_IDS :
        \/ Send(d)
        \/ DeliveryAccepted(d)
        \/ DeliveryRejected(d)
        \/ DeliveryTimeout(d)
        \/ DeliveryAbort(d)
+       \/ ResetDelivery(d)
   \/ DefaultSenderOrSessionError
 
 Spec ==

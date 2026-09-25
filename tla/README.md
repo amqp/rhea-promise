@@ -35,7 +35,7 @@ The TLC configuration checks:
 
 - `TypeOK`: all variables remain in their expected finite domains.
 - `ActionCounterMatchesPending`: `actionInitiated` is `1` exactly while an operation is pending and `0` after cleanup.
-- `ResourceCleanup`: listeners, timers, abort listeners, delivery map entries, and terminal causes match each promise lifecycle state.
+- `ResourceCleanup`: listeners, timers, abort listeners, delivery map entries, and terminal causes match each promise lifecycle state. This invariant includes the model's operation-resource, delivery-map, settled-delivery, and terminal-cause sub-conditions.
 - `OperationEventuallySettles`: every pending wrapper operation eventually leaves `pending`.
 - `DeliveryEventuallySettles`: every pending awaitable send eventually leaves `pending`.
 

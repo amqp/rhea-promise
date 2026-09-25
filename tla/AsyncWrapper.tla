@@ -14,6 +14,8 @@ DeliveryStates == {"unsent", "pending", "resolved", "rejected"}
 OpCauses == {"none", "success", "failure", "timeout", "abort"}
 DeliveryCauses == {"none", "accepted", "rejected", "timeout", "abort", "senderOrSessionError"}
 SettleOpCauses == OpCauses \ {"none"}
+\* senderOrSessionError is reserved for DefaultSenderOrSessionError, which
+\* rejects every pending awaitable send in deliveryDispositionMap.
 SettleDeliveryCauses == DeliveryCauses \ {"none", "senderOrSessionError"}
 
 VARIABLES
@@ -106,8 +108,6 @@ Send(d) ==
 SettleDelivery(d, outcome, cause) ==
   /\ deliveryState[d] = "pending"
   /\ outcome \in {"resolved", "rejected"}
-  \* senderOrSessionError is reserved for the bulk default error handler below,
-  \* which rejects every pending awaitable send in deliveryDispositionMap.
   /\ cause \in SettleDeliveryCauses
   /\ cause = "accepted" => outcome = "resolved"
   /\ cause \in {"rejected", "timeout", "abort"} => outcome = "rejected"

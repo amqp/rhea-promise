@@ -11,36 +11,44 @@ CONSTANTS OPS, DELIVERY_IDS
 
 OpStates == {"idle", "pending", "resolved", "rejected"}
 DeliveryStates == {"unsent", "pending", "resolved", "rejected"}
+OpCauses == {"none", "success", "failure", "timeout", "abort"}
+DeliveryCauses == {"none", "accepted", "rejected", "timeout", "abort", "senderOrSessionError"}
 
 VARIABLES
   opState,
+  opTerminalCause,
   listeners,
   timers,
   abortListeners,
   actionCount,
   deliveryState,
+  deliveryTerminalCause,
   deliveryInMap,
   deliveryTimer,
   deliveryAbortListener
 
 vars ==
   << opState,
+     opTerminalCause,
      listeners,
      timers,
      abortListeners,
      actionCount,
      deliveryState,
+     deliveryTerminalCause,
      deliveryInMap,
      deliveryTimer,
      deliveryAbortListener >>
 
 Init ==
   /\ opState = [a \in OPS |-> "idle"]
+  /\ opTerminalCause = [a \in OPS |-> "none"]
   /\ listeners = [a \in OPS |-> FALSE]
   /\ timers = [a \in OPS |-> FALSE]
   /\ abortListeners = [a \in OPS |-> FALSE]
   /\ actionCount = [a \in OPS |-> 0]
   /\ deliveryState = [d \in DELIVERY_IDS |-> "unsent"]
+  /\ deliveryTerminalCause = [d \in DELIVERY_IDS |-> "none"]
   /\ deliveryInMap = [d \in DELIVERY_IDS |-> FALSE]
   /\ deliveryTimer = [d \in DELIVERY_IDS |-> FALSE]
   /\ deliveryAbortListener = [d \in DELIVERY_IDS |-> FALSE]
@@ -48,54 +56,63 @@ Init ==
 StartOperation(a) ==
   /\ opState[a] # "pending"
   /\ opState' = [opState EXCEPT ![a] = "pending"]
+  /\ opTerminalCause' = [opTerminalCause EXCEPT ![a] = "none"]
   /\ listeners' = [listeners EXCEPT ![a] = TRUE]
   /\ timers' = [timers EXCEPT ![a] = TRUE]
   /\ abortListeners' = [abortListeners EXCEPT ![a] = TRUE]
   /\ actionCount' = [actionCount EXCEPT ![a] = 1]
-  /\ UNCHANGED << deliveryState, deliveryInMap, deliveryTimer, deliveryAbortListener >>
+  /\ UNCHANGED << deliveryState, deliveryTerminalCause, deliveryInMap, deliveryTimer, deliveryAbortListener >>
 
-SettleOperation(a, outcome) ==
+SettleOperation(a, outcome, cause) ==
   /\ opState[a] = "pending"
   /\ outcome \in {"resolved", "rejected"}
+  /\ cause \in OpCauses \ {"none"}
   /\ opState' = [opState EXCEPT ![a] = outcome]
+  /\ opTerminalCause' = [opTerminalCause EXCEPT ![a] = cause]
   /\ listeners' = [listeners EXCEPT ![a] = FALSE]
   /\ timers' = [timers EXCEPT ![a] = FALSE]
   /\ abortListeners' = [abortListeners EXCEPT ![a] = FALSE]
   /\ actionCount' = [actionCount EXCEPT ![a] = 0]
-  /\ UNCHANGED << deliveryState, deliveryInMap, deliveryTimer, deliveryAbortListener >>
+  /\ UNCHANGED << deliveryState, deliveryTerminalCause, deliveryInMap, deliveryTimer, deliveryAbortListener >>
 
-OperationSuccess(a) == SettleOperation(a, "resolved")
-OperationFailure(a) == SettleOperation(a, "rejected")
-OperationTimeout(a) == SettleOperation(a, "rejected")
-OperationAbort(a) == SettleOperation(a, "rejected")
+OperationSuccess(a) == SettleOperation(a, "resolved", "success")
+OperationFailure(a) == SettleOperation(a, "rejected", "failure")
+OperationTimeout(a) == SettleOperation(a, "rejected", "timeout")
+OperationAbort(a) == SettleOperation(a, "rejected", "abort")
 
 Send(d) ==
   /\ deliveryState[d] # "pending"
   /\ deliveryState' = [deliveryState EXCEPT ![d] = "pending"]
+  /\ deliveryTerminalCause' = [deliveryTerminalCause EXCEPT ![d] = "none"]
   /\ deliveryInMap' = [deliveryInMap EXCEPT ![d] = TRUE]
   /\ deliveryTimer' = [deliveryTimer EXCEPT ![d] = TRUE]
   /\ deliveryAbortListener' = [deliveryAbortListener EXCEPT ![d] = TRUE]
-  /\ UNCHANGED << opState, listeners, timers, abortListeners, actionCount >>
+  /\ UNCHANGED << opState, opTerminalCause, listeners, timers, abortListeners, actionCount >>
 
-SettleDelivery(d, outcome) ==
+SettleDelivery(d, outcome, cause) ==
   /\ deliveryState[d] = "pending"
   /\ outcome \in {"resolved", "rejected"}
+  /\ cause \in DeliveryCauses \ {"none", "senderOrSessionError"}
   /\ deliveryState' = [deliveryState EXCEPT ![d] = outcome]
+  /\ deliveryTerminalCause' = [deliveryTerminalCause EXCEPT ![d] = cause]
   /\ deliveryInMap' = [deliveryInMap EXCEPT ![d] = FALSE]
   /\ deliveryTimer' = [deliveryTimer EXCEPT ![d] = FALSE]
   /\ deliveryAbortListener' = [deliveryAbortListener EXCEPT ![d] = FALSE]
-  /\ UNCHANGED << opState, listeners, timers, abortListeners, actionCount >>
+  /\ UNCHANGED << opState, opTerminalCause, listeners, timers, abortListeners, actionCount >>
 
-DeliveryAccepted(d) == SettleDelivery(d, "resolved")
-DeliveryRejected(d) == SettleDelivery(d, "rejected")
-DeliveryTimeout(d) == SettleDelivery(d, "rejected")
-DeliveryAbort(d) == SettleDelivery(d, "rejected")
+DeliveryAccepted(d) == SettleDelivery(d, "resolved", "accepted")
+DeliveryRejected(d) == SettleDelivery(d, "rejected", "rejected")
+DeliveryTimeout(d) == SettleDelivery(d, "rejected", "timeout")
+DeliveryAbort(d) == SettleDelivery(d, "rejected", "abort")
 
 DefaultSenderOrSessionError ==
   /\ \E d \in DELIVERY_IDS : deliveryState[d] = "pending"
   /\ deliveryState' =
        [d \in DELIVERY_IDS |->
           IF deliveryState[d] = "pending" THEN "rejected" ELSE deliveryState[d]]
+  /\ deliveryTerminalCause' =
+       [d \in DELIVERY_IDS |->
+          IF deliveryState[d] = "pending" THEN "senderOrSessionError" ELSE deliveryTerminalCause[d]]
   /\ deliveryInMap' =
        [d \in DELIVERY_IDS |->
           IF deliveryState[d] = "pending" THEN FALSE ELSE deliveryInMap[d]]
@@ -105,7 +122,7 @@ DefaultSenderOrSessionError ==
   /\ deliveryAbortListener' =
        [d \in DELIVERY_IDS |->
           IF deliveryState[d] = "pending" THEN FALSE ELSE deliveryAbortListener[d]]
-  /\ UNCHANGED << opState, listeners, timers, abortListeners, actionCount >>
+  /\ UNCHANGED << opState, opTerminalCause, listeners, timers, abortListeners, actionCount >>
 
 Next ==
   \/ \E a \in OPS :
@@ -130,11 +147,13 @@ Spec ==
 
 TypeOK ==
   /\ opState \in [OPS -> OpStates]
+  /\ opTerminalCause \in [OPS -> OpCauses]
   /\ listeners \in [OPS -> BOOLEAN]
   /\ timers \in [OPS -> BOOLEAN]
   /\ abortListeners \in [OPS -> BOOLEAN]
   /\ actionCount \in [OPS -> 0..1]
   /\ deliveryState \in [DELIVERY_IDS -> DeliveryStates]
+  /\ deliveryTerminalCause \in [DELIVERY_IDS -> DeliveryCauses]
   /\ deliveryInMap \in [DELIVERY_IDS -> BOOLEAN]
   /\ deliveryTimer \in [DELIVERY_IDS -> BOOLEAN]
   /\ deliveryAbortListener \in [DELIVERY_IDS -> BOOLEAN]
@@ -159,10 +178,22 @@ NoSettledDeliveryInMap ==
   \A d \in DELIVERY_IDS :
     deliveryState[d] \in {"resolved", "rejected"} => ~deliveryInMap[d]
 
+OperationCauseMatchesState ==
+  \A a \in OPS :
+    /\ opState[a] \in {"idle", "pending"} => opTerminalCause[a] = "none"
+    /\ opState[a] \in {"resolved", "rejected"} => opTerminalCause[a] # "none"
+
+DeliveryCauseMatchesState ==
+  \A d \in DELIVERY_IDS :
+    /\ deliveryState[d] \in {"unsent", "pending"} => deliveryTerminalCause[d] = "none"
+    /\ deliveryState[d] \in {"resolved", "rejected"} => deliveryTerminalCause[d] # "none"
+
 ResourceCleanup ==
   /\ OperationResourcesMatchPending
   /\ DeliveryMapMatchesPending
   /\ NoSettledDeliveryInMap
+  /\ OperationCauseMatchesState
+  /\ DeliveryCauseMatchesState
 
 OperationEventuallySettles ==
   \A a \in OPS :

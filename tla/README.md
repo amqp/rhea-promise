@@ -17,7 +17,7 @@ It checks that each pending operation or send has matching promise-completion re
 - abort listener when modeled,
 - and, for sends, one `deliveryDispositionMap` entry.
 
-Terminal outcomes model success, AMQP error events, timeout, abort, and the default `sender_error` / `session_error` behavior that rejects all pending awaitable sends.
+Terminal outcomes model and track distinct causes for success, AMQP error events, timeout, abort, and the default `sender_error` / `session_error` behavior that rejects all pending awaitable sends.
 
 ## Running TLC
 
@@ -35,7 +35,7 @@ The TLC configuration checks:
 
 - `TypeOK`: all variables remain in their expected finite domains.
 - `ActionCounterMatchesPending`: `actionInitiated` is `1` exactly while an operation is pending and `0` after cleanup.
-- `ResourceCleanup`: listeners, timers, abort listeners, and delivery map entries exist exactly while their promise is pending.
+- `ResourceCleanup`: listeners, timers, abort listeners, delivery map entries, and terminal causes match each promise lifecycle state.
 - `OperationEventuallySettles`: every pending wrapper operation eventually leaves `pending`.
 - `DeliveryEventuallySettles`: every pending awaitable send eventually leaves `pending`.
 

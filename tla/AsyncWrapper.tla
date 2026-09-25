@@ -228,19 +228,6 @@ DeliveryCauseOutcomeConsistency ==
     /\ deliveryTerminalCause[d] = "accepted" => deliveryState[d] = "resolved"
     /\ deliveryTerminalCause[d] \in {"rejected", "timeout", "abort", "senderOrSessionError"} =>
          deliveryState[d] = "rejected"
-    /\ deliveryTerminalCause[d] = "senderOrSessionError" =>
-         /\ deliveryState[d] = "rejected"
-         /\ ~deliveryInMap[d]
-         /\ ~deliveryTimer[d]
-         /\ ~deliveryAbortListener[d]
-
-ResourceCleanup ==
-  /\ OperationResourcesMatchPending
-  /\ DeliveryMapMatchesPending
-  /\ NoSettledDeliveryInMap
-  /\ OperationCauseMatchesState
-  /\ DeliveryCauseMatchesState
-  /\ DeliveryCauseOutcomeConsistency
 
 OperationEventuallySettles ==
   \A a \in OPS :

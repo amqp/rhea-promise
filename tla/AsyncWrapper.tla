@@ -67,6 +67,8 @@ SettleOperation(a, outcome, cause) ==
   /\ opState[a] = "pending"
   /\ outcome \in {"resolved", "rejected"}
   /\ cause \in OpCauses \ {"none"}
+  /\ cause = "success" => outcome = "resolved"
+  /\ cause \in {"failure", "timeout", "abort"} => outcome = "rejected"
   /\ opState' = [opState EXCEPT ![a] = outcome]
   /\ opTerminalCause' = [opTerminalCause EXCEPT ![a] = cause]
   /\ listeners' = [listeners EXCEPT ![a] = FALSE]
@@ -105,6 +107,8 @@ SettleDelivery(d, outcome, cause) ==
   \* senderOrSessionError is reserved for the bulk default error handler below,
   \* which rejects every pending awaitable send in deliveryDispositionMap.
   /\ cause \in DeliveryCauses \ {"none", "senderOrSessionError"}
+  /\ cause = "accepted" => outcome = "resolved"
+  /\ cause \in {"rejected", "timeout", "abort"} => outcome = "rejected"
   /\ deliveryState' = [deliveryState EXCEPT ![d] = outcome]
   /\ deliveryTerminalCause' = [deliveryTerminalCause EXCEPT ![d] = cause]
   /\ deliveryInMap' = [deliveryInMap EXCEPT ![d] = FALSE]

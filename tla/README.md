@@ -27,7 +27,7 @@ Install or download `tla2tools.jar`, then run:
 java -cp /path/to/tla2tools.jar tlc2.TLC tla/AsyncWrapper.tla -config tla/AsyncWrapper.cfg
 ```
 
-The bundled configuration uses three representative async wrapper operation symbols and two in-flight deliveries so TLC completes quickly. The operation symbols are interchangeable representatives of the shared wrapper lifecycle; replace or extend `OPS` with names such as `CreateSender`, `CreateReceiver`, or `CreateAwaitableSender` to label a larger model. Increase `DELIVERY_IDS` to explore more concurrent sends.
+The bundled configuration uses three representative async wrapper operation symbols (`ConnOpen`, `SessClose`, and `LinkClose`) and two in-flight deliveries so TLC completes quickly. The operation symbols are interchangeable representatives of the shared wrapper lifecycle; replace or extend `OPS` with names such as `CreateSender`, `CreateReceiver`, or `CreateAwaitableSender` to label a larger model. Increase `DELIVERY_IDS` to explore more concurrent sends.
 
 ## Verified properties
 
